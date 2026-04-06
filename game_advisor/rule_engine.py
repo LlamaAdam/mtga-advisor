@@ -151,20 +151,23 @@ def check_surveil(state: GameState) -> list[RuleAlert]:
 
 
 def check_mulligan(state: GameState) -> list[RuleAlert]:
-    """Analyse the opening hand at turn 0 (or a mulliganed hand at turn 1).
+    """Analyse the opening hand at turn 1 (MTGA's first turnNumber).
 
-    Checks: land count extremes, colour availability vs spell requirements.
-    At turn 1 only fires if hand_size < 7 (player took a mulligan).
+    MTGA starts with turnNumber=1, so turn 0 never occurs in practice.
+
+    Fires:
+      turn == 1, any hand size  → opening hand (before or just after keep decision)
+      turn == 2, hand_size < 7 → player mulliganed and game is now turn 2
     """
     hand = state.you.hand
     if not hand:
         return []
     hand_size = len(hand)
 
-    if state.turn == 0:
-        pass  # always analyse at turn 0
-    elif state.turn == 1 and hand_size < 7:
-        pass  # analysed post-mulligan hand
+    if state.turn == 1:
+        pass  # opening hand — always analyse
+    elif state.turn == 2 and hand_size < 7:
+        pass  # mulliganed hand carried into turn 2
     else:
         return []
 
