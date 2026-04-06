@@ -181,9 +181,10 @@ def _setup_lands(*names):
 
 
 def test_mulligan_no_lands_danger():
+    # MTGA starts at turnNumber=1, so opening hand check fires at turn 1
     _setup_lands("Mountain")
     hand = [_make_hand_card("Shock", 1, ["R"]) for _ in range(7)]
-    state = _make_state(your_hand=hand, turn=0)
+    state = _make_state(your_hand=hand, turn=1)
     alerts = rule_engine.check_mulligan(state)
     assert any(a.severity == "DANGER" and "no land" in a.message.lower() for a in alerts)
 
@@ -191,7 +192,7 @@ def test_mulligan_no_lands_danger():
 def test_mulligan_one_land_warning():
     _setup_lands("Mountain")
     hand = [_make_hand_land("Mountain")] + [_make_hand_card("Shock", 1, ["R"]) for _ in range(6)]
-    state = _make_state(your_hand=hand, turn=0)
+    state = _make_state(your_hand=hand, turn=1)
     alerts = rule_engine.check_mulligan(state)
     assert any(a.severity == "WARNING" and "1 land" in a.message.lower() for a in alerts)
 
@@ -199,7 +200,7 @@ def test_mulligan_one_land_warning():
 def test_mulligan_flood_warning():
     _setup_lands("Mountain")
     hand = [_make_hand_land("Mountain") for _ in range(6)] + [_make_hand_card("Shock", 1, ["R"])]
-    state = _make_state(your_hand=hand, turn=0)
+    state = _make_state(your_hand=hand, turn=1)
     alerts = rule_engine.check_mulligan(state)
     assert any(a.severity == "WARNING" and "flood" in a.message.lower() for a in alerts)
 
@@ -208,7 +209,7 @@ def test_mulligan_good_hand_keep_recommendation():
     _setup_lands("Mountain")
     lands = [_make_hand_land("Mountain") for _ in range(3)]
     spells = [_make_hand_card("Shock", 1, ["R"]) for _ in range(4)]
-    state = _make_state(your_hand=lands + spells, turn=0)
+    state = _make_state(your_hand=lands + spells, turn=1)
     alerts = rule_engine.check_mulligan(state)
     assert any(a.severity == "INFO" and "keepable" in a.message.lower() for a in alerts)
 
@@ -221,34 +222,34 @@ def test_mulligan_color_screw_warning():
             _make_hand_card("Goblin", 2, ["R"]),
             _make_hand_card("Fireball", 3, ["R"]),
             _make_hand_card("Dragon", 5, ["R"])]
-    state = _make_state(your_hand=hand, turn=0)
+    state = _make_state(your_hand=hand, turn=1)
     alerts = rule_engine.check_mulligan(state)
     assert any(a.severity == "WARNING" and "red" in a.message.lower() for a in alerts)
 
 
-def test_mulligan_ignored_after_turn_0():
+def test_mulligan_ignored_after_turn_3():
+    """Turn 3+ with a full hand = game in progress, no mulligan advice."""
     _setup_lands("Mountain")
-    hand = [_make_hand_card("Shock", 1, ["R"]) for _ in range(7)]  # no lands, full hand = didn't mulligan
-    state = _make_state(your_hand=hand, turn=1)
+    hand = [_make_hand_card("Shock", 1, ["R"]) for _ in range(7)]
+    state = _make_state(your_hand=hand, turn=3)
     alerts = rule_engine.check_mulligan(state)
     assert alerts == []
 
 
-def test_mulligan_turn1_fires_on_mulliganed_hand_no_lands():
-    """At turn 1 with fewer than 7 cards (took a mulligan), still warn if no lands."""
+def test_mulligan_turn2_fires_on_mulliganed_hand_no_lands():
+    """At turn 2 with fewer than 7 cards (took a mulligan), still warn if no lands."""
     _setup_lands("Mountain")
-    # 6-card hand with no lands = took one mulligan and kept bad hand
     hand = [_make_hand_card("Shock", 1, ["R"]) for _ in range(6)]
-    state = _make_state(your_hand=hand, turn=1)
+    state = _make_state(your_hand=hand, turn=2)
     alerts = rule_engine.check_mulligan(state)
     assert any(a.severity == "DANGER" and "no land" in a.message.lower() for a in alerts)
 
 
-def test_mulligan_turn1_ignored_for_full_hand():
-    """At turn 1 with a full 7-card hand (no mulligan), don't analyse."""
+def test_mulligan_turn2_ignored_for_full_hand():
+    """Turn 2 with a full 7-card hand = no mulligan was taken, don't re-analyse."""
     _setup_lands("Mountain")
     hand = [_make_hand_land("Mountain")] + [_make_hand_card("Shock", 1, ["R"]) for _ in range(6)]
-    state = _make_state(your_hand=hand, turn=1)
+    state = _make_state(your_hand=hand, turn=2)
     alerts = rule_engine.check_mulligan(state)
     assert alerts == []
 
