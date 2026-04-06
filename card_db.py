@@ -195,10 +195,13 @@ def resolve(arena_ids: list[str | int]) -> dict[str, str]:
         found = _cache.get(i)
         if found and not found.startswith("Unknown("):
             result[i] = found
+        elif i in _bad_ids:
+            # Confirmed 404 from Scryfall — new set whose arena IDs aren't mapped yet
+            result[i] = f"NewCard({i})"
         else:
             result[i] = f"Unknown({i})"
-            # Queue for manual resolution if not permanently bad and not already queued
-            if i not in _bad_ids and i not in _queued_unknowns:
+            # Queue for background resolution attempt
+            if i not in _queued_unknowns:
                 _queued_unknowns.add(i)
                 pending_unknowns.put(i)
 
