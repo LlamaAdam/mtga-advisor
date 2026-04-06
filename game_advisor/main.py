@@ -23,6 +23,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import config
 import rule_engine
 import decklist
+import deck_manager
 import card_db
 from decision_log import DecisionLog
 
@@ -167,30 +168,115 @@ def main() -> None:
 
 
 def _load_decklist_interactive() -> None:
-    """Prompt the user to paste their MTGA decklist. Press Enter twice to finish."""
-    print("  Paste your MTGA decklist below (press Enter twice when done, or just Enter to skip):")
-    lines: list[str] = []
-    try:
-        while True:
-            line = input()
-            if line == "" and lines and lines[-1] == "":
-                break
-            if line == "" and not lines:
-                # Immediate empty = skip
-                break
-            lines.append(line)
-    except (EOFError, KeyboardInterrupt):
-        pass
+    """Show the deck selection menu. Load a saved deck or paste a new one."""
+    saved = deck_manager.list_decks()
 
-    text = "\n".join(lines).strip()
-    if not text:
+    print("  ┌─────────────────────────────────────────┐")
+    print("  │           Deck Selection                 │")
+    print("  └─────────────────────────────────────────┘")
+
+    if saved:
+        for i, name in enumerate(saved, 1):
+            total = deck_manager.deck_card_count(name)
+            print(f"    {i:>2}.  {name}  ({total} cards)")
+        print()
+        print("     n.  Paste new deck from MTGA")
+        print("     d.  Delete a saved deck")
+        print("     s.  Skip (no decklist this game)")
+    else:
+        print("    No saved decks yet.")
+        print()
+        print("     n.  Paste new deck from MTGA")
+        print("     s.  Skip (no decklist this game)")
+
+    print()
+
+    try:
+        choice = input("  Pick a number, n, d, or s (Enter = skip): ").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        choice = ""
+
+    # --- Skip ---
+    if choice in ("", "s"):
         print("  [Advisor] No decklist loaded — LLM advice will be generic.\n")
         return
 
-    parsed = decklist.parse_decklist(text)
-    decklist.active_deck = parsed
-    card_count = sum(parsed.values())
-    print(f"  [Advisor] Loaded {len(parsed)} unique cards ({card_count} total) from decklist.\n")
+    # --- Delete ---
+    if choice == "d":
+        if not saved:
+            print("  [Advisor] No saved decks to delete.\n")
+            return
+        try:
+            target = input("  Enter deck name or number to delete: ").strip()
+            # Allow number reference
+            if target.isdigit():
+                idx = int(target) - 1
+                if 0 <= idx < len(saved):
+                    target = saved[idx]
+            if deck_manager.delete_deck(target):
+                print(f"  [Advisor] Deleted '{target}'.\n")
+            else:
+                print(f"  [Advisor] Deck '{target}' not found.\n")
+        except (EOFError, KeyboardInterrupt):
+            pass
+        return
+
+    # --- Load saved deck by number ---
+    if choice.isdigit():
+        idx = int(choice) - 1
+        if 0 <= idx < len(saved):
+            name = saved[idx]
+            loaded = deck_manager.load_deck(name)
+            if loaded:
+                decklist.active_deck = loaded
+                total = sum(loaded.values())
+                print(f"  [Advisor] Loaded '{name}' ({len(loaded)} unique, {total} total cards).\n")
+                return
+        print("  [Advisor] Invalid choice — no decklist loaded.\n")
+        return
+
+    # --- Paste new deck ---
+    if choice == "n":
+        print("  Paste your MTGA decklist (press Enter twice when done):")
+        lines: list[str] = []
+        try:
+            while True:
+                line = input()
+                if line == "" and lines and lines[-1] == "":
+                    break
+                if line == "" and not lines:
+                    break
+                lines.append(line)
+        except (EOFError, KeyboardInterrupt):
+            pass
+
+        text = "\n".join(lines).strip()
+        if not text:
+            print("  [Advisor] No decklist entered — LLM advice will be generic.\n")
+            return
+
+        parsed = decklist.parse_decklist(text)
+        if not parsed:
+            print("  [Advisor] Could not parse decklist — check format and try again.\n")
+            return
+
+        decklist.active_deck = parsed
+        total = sum(parsed.values())
+        print(f"  [Advisor] Loaded {len(parsed)} unique cards ({total} total).")
+
+        # Offer to save for next time
+        try:
+            save_name = input("  Save this deck? Enter a name (or Enter to skip saving): ").strip()
+        except (EOFError, KeyboardInterrupt):
+            save_name = ""
+
+        if save_name:
+            deck_manager.save_deck(save_name, parsed)
+            print(f"  [Advisor] Deck saved as '{save_name}'.")
+        print()
+        return
+
+    print("  [Advisor] Unrecognised choice — no decklist loaded.\n")
 
 
 if __name__ == "__main__":
