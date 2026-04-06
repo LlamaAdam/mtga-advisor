@@ -10,9 +10,12 @@ import pytest
 @pytest.fixture(autouse=True)
 def clean_card_db():
     orig_oracle = card_db._oracle.copy()
+    orig_type_line = card_db._type_line.copy()
     yield
     card_db._oracle.clear()
     card_db._oracle.update(orig_oracle)
+    card_db._type_line.clear()
+    card_db._type_line.update(orig_type_line)
 
 
 def _make_creature(name: str, power: int, toughness: int, keywords=None,
@@ -33,9 +36,16 @@ def _make_hand_card(name: str, cmc: int, colors: list[str],
     )
 
 
+def _make_hand_land(name: str) -> HandCard:
+    return HandCard(
+        name=name, arena_id="0", instance_id=3,
+        mana_cost="", cmc=0, colors=[], castable=False,
+    )
+
+
 def _make_state(your_board=None, opp_board=None, your_hand=None,
                 your_life=20, opp_life=20, mana_available=3,
-                mana_colors=None) -> GameState:
+                mana_colors=None, turn=4) -> GameState:
     you = Player(
         seat_id=1, life=your_life,
         board=your_board or [],
@@ -44,7 +54,7 @@ def _make_state(your_board=None, opp_board=None, your_hand=None,
         mana_colors=mana_colors or ["R", "R", "W"],
     )
     opp = Player(seat_id=2, life=opp_life, board=opp_board or [], hand=[])
-    return GameState(turn=4, phase="Main 1", active_seat=1, you=you, opponent=opp)
+    return GameState(turn=turn, phase="Main 1", active_seat=1, you=you, opponent=opp)
 
 
 # --- Lethal detection ---
@@ -159,4 +169,66 @@ def test_flying_creature_can_block_ground_attacker():
 def test_no_removal_alert_when_hand_is_empty():
     state = _make_state(your_hand=[], opp_board=[_make_creature("X", 3, 3)])
     alerts = rule_engine.check_removal(state)
+    assert alerts == []
+
+
+# --- Mulligan detection ---
+
+def _setup_lands(*names):
+    """Inject type_line entries so rule_engine recognises these as lands."""
+    for name in names:
+        card_db._type_line[name.lower()] = f"Basic Land — {name}"
+
+
+def test_mulligan_no_lands_danger():
+    _setup_lands("Mountain")
+    hand = [_make_hand_card("Shock", 1, ["R"]) for _ in range(7)]
+    state = _make_state(your_hand=hand, turn=0)
+    alerts = rule_engine.check_mulligan(state)
+    assert any(a.severity == "DANGER" and "no land" in a.message.lower() for a in alerts)
+
+
+def test_mulligan_one_land_warning():
+    _setup_lands("Mountain")
+    hand = [_make_hand_land("Mountain")] + [_make_hand_card("Shock", 1, ["R"]) for _ in range(6)]
+    state = _make_state(your_hand=hand, turn=0)
+    alerts = rule_engine.check_mulligan(state)
+    assert any(a.severity == "WARNING" and "1 land" in a.message.lower() for a in alerts)
+
+
+def test_mulligan_flood_warning():
+    _setup_lands("Mountain")
+    hand = [_make_hand_land("Mountain") for _ in range(6)] + [_make_hand_card("Shock", 1, ["R"])]
+    state = _make_state(your_hand=hand, turn=0)
+    alerts = rule_engine.check_mulligan(state)
+    assert any(a.severity == "WARNING" and "flood" in a.message.lower() for a in alerts)
+
+
+def test_mulligan_good_hand_no_alert():
+    _setup_lands("Mountain")
+    lands = [_make_hand_land("Mountain") for _ in range(3)]
+    spells = [_make_hand_card("Shock", 1, ["R"]) for _ in range(4)]
+    state = _make_state(your_hand=lands + spells, turn=0)
+    alerts = rule_engine.check_mulligan(state)
+    assert alerts == []
+
+
+def test_mulligan_color_screw_warning():
+    card_db._type_line["island"] = "Basic Land — Island"
+    hand = [_make_hand_land("Island"), _make_hand_land("Island"),
+            _make_hand_card("Shock", 1, ["R"]),
+            _make_hand_card("Lightning Strike", 2, ["R"]),
+            _make_hand_card("Goblin", 2, ["R"]),
+            _make_hand_card("Fireball", 3, ["R"]),
+            _make_hand_card("Dragon", 5, ["R"])]
+    state = _make_state(your_hand=hand, turn=0)
+    alerts = rule_engine.check_mulligan(state)
+    assert any(a.severity == "WARNING" and "red" in a.message.lower() for a in alerts)
+
+
+def test_mulligan_ignored_after_turn_0():
+    _setup_lands("Mountain")
+    hand = [_make_hand_card("Shock", 1, ["R"]) for _ in range(7)]  # no lands
+    state = _make_state(your_hand=hand, turn=1)
+    alerts = rule_engine.check_mulligan(state)
     assert alerts == []

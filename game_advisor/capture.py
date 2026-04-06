@@ -6,18 +6,25 @@ Fuzzy-matches OCR text against known card names from card_db.
 Falls back gracefully if tesseract is not installed.
 """
 import difflib
+import importlib.util
 import sys
 import pathlib
 from typing import Optional
 
+# Load game_advisor/config.py explicitly to avoid shadowing by root config.py
+_config_path = pathlib.Path(__file__).parent / "config.py"
+_spec = importlib.util.spec_from_file_location("game_advisor_config", _config_path)
+config = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(config)
+
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
-import config
 import card_db
 
 try:
     import mss
     import pytesseract
     from PIL import Image, ImageFilter
+    pytesseract.pytesseract.tesseract_cmd = config.TESSERACT_CMD
     pytesseract.get_tesseract_version()  # raises TesseractNotFoundError if binary missing
     _CAPTURE_AVAILABLE = True
 except Exception:

@@ -1,7 +1,8 @@
 """
-Async GPT-4o advisor. Fires in a background thread on significant state
-changes. Caches responses by state hash to avoid redundant API calls.
-Rate-limited to at most one call per min_interval_seconds.
+Async LLM advisor. Supports OpenAI, OpenRouter, and Ollama backends.
+Fires in a background thread on significant state changes. Caches
+responses by state hash to avoid redundant API calls. Rate-limited
+to at most one call per min_interval_seconds.
 """
 from __future__ import annotations
 
@@ -35,8 +36,21 @@ class LLMAdvisor:
         model: str = config.OPENAI_MODEL,
         timeout: int = config.LLM_TIMEOUT_SECONDS,
         min_interval_seconds: int = config.LLM_MIN_INTERVAL_SECONDS,
+        backend: str = config.LLM_BACKEND,
     ):
-        self._client = openai.OpenAI(api_key=api_key)
+        _BASE_URLS = {
+            "ollama": "http://localhost:11434/v1",
+            "openrouter": "https://openrouter.ai/api/v1",
+            "openai": None,  # default
+        }
+        base_url = _BASE_URLS.get(backend)
+        # Ollama doesn't require a real key; use a placeholder if none set
+        if backend == "ollama" and not api_key:
+            api_key = "ollama"
+        self._client = openai.OpenAI(
+            api_key=api_key,
+            **({"base_url": base_url} if base_url else {}),
+        )
         self._model = model
         self._timeout = timeout
         self._min_interval = min_interval_seconds

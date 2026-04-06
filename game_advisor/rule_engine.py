@@ -27,6 +27,15 @@ _REMOVAL_ORACLE_MARKERS = [
     "destroy target", "exile target",
 ]
 
+_BASIC_LAND_COLORS: dict[str, list[str]] = {
+    "plains": ["W"], "island": ["U"], "swamp": ["B"],
+    "mountain": ["R"], "forest": ["G"],
+}
+
+_COLOR_NAMES: dict[str, str] = {
+    "W": "White", "U": "Blue", "B": "Black", "R": "Red", "G": "Green",
+}
+
 
 def check_lethal(state: GameState) -> list[RuleAlert]:
     """Fire DANGER if your untapped creatures can deal >= opponent life total."""
@@ -116,9 +125,77 @@ def check_removal(state: GameState) -> list[RuleAlert]:
     return alerts
 
 
+def check_mulligan(state: GameState) -> list[RuleAlert]:
+    """Analyse the opening hand at turn 0 and recommend a mulligan if needed.
+
+    Checks: land count extremes, colour availability vs spell requirements.
+    Only fires at turn 0; mulligan window is closed by turn 1.
+    """
+    if state.turn != 0:
+        return []
+    hand = state.you.hand
+    if not hand:
+        return []
+
+    lands = [c for c in hand if "land" in card_db.get_type_line(c.name).lower()]
+    spells = [c for c in hand if c not in lands]
+    land_count = len(lands)
+    hand_size = len(hand)
+
+    # No lands at all
+    if land_count == 0:
+        return [RuleAlert(
+            severity="DANGER",
+            message=f"No lands in {hand_size}-card hand — mulligan strongly recommended",
+        )]
+
+    # Only 1 land in a large hand
+    if land_count == 1 and hand_size >= 6:
+        return [RuleAlert(
+            severity="WARNING",
+            message=f"Only 1 land in {hand_size}-card hand — mulligan recommended",
+        )]
+
+    # Flooded (one fewer spell than lands)
+    if land_count >= hand_size - 1 and hand_size >= 6:
+        return [RuleAlert(
+            severity="WARNING",
+            message=f"{land_count}/{hand_size} lands in hand — flood risk, consider mulligan",
+        )]
+
+    # Colour mismatch: spells need colours the hand's lands can't produce
+    needed: set[str] = set()
+    for card in spells:
+        needed.update(card.colors)
+
+    if needed:
+        available: set[str] = set()
+        for card in lands:
+            base = card.name.lower().replace("snow-covered ", "")
+            if base in _BASIC_LAND_COLORS:
+                available.update(_BASIC_LAND_COLORS[base])
+            else:
+                # Non-basic: infer from type line subtypes (e.g. "Land — Forest Mountain")
+                tl = card_db.get_type_line(card.name).lower()
+                for basic, colors in _BASIC_LAND_COLORS.items():
+                    if basic in tl:
+                        available.update(colors)
+
+        missing = needed - available
+        if missing:
+            missing_str = "/".join(_COLOR_NAMES.get(c, c) for c in sorted(missing))
+            return [RuleAlert(
+                severity="WARNING",
+                message=f"Missing {missing_str} mana source in hand — colour screw risk",
+            )]
+
+    return []
+
+
 def run_all(state: GameState) -> list[RuleAlert]:
     """Run all checks and return combined alerts, most severe first."""
     alerts: list[RuleAlert] = []
+    alerts.extend(check_mulligan(state))
     alerts.extend(check_lethal(state))
     alerts.extend(check_threats(state))
     alerts.extend(check_combat(state))
