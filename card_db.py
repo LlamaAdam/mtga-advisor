@@ -250,7 +250,8 @@ def _try_arena_endpoint(arena_id: str) -> bool:
     """Fallback: fetch a single card via GET /cards/arena/{id}.
     Returns True and populates _cache if found.
     Returns False for transient failures (don't blacklist — retry next session).
-    Only adds to _bad_ids on confirmed HTTP 404 (card truly doesn't exist).
+    On confirmed HTTP 404, tries the local MTGA database before blacklisting.
+    Only adds to _bad_ids when both Scryfall and local DB fail.
     """
     try:
         resp = requests.get(
@@ -258,7 +259,10 @@ def _try_arena_endpoint(arena_id: str) -> bool:
             timeout=10,
         )
         if resp.status_code == 404:
-            _bad_ids.add(arena_id)   # confirmed non-existent
+            # Scryfall doesn't know this ID — try the local MTGA database first.
+            if _try_local_mtga_db(arena_id):
+                return True
+            _bad_ids.add(arena_id)   # confirmed non-existent in both sources
             return False
         if resp.status_code != 200:
             print(f"[card_db] arena endpoint returned {resp.status_code} for {arena_id} (will retry next session)")
@@ -283,6 +287,34 @@ def _try_arena_endpoint(arena_id: str) -> bool:
             _type_line[key] = tl
         return True
     except Exception:
+        return False
+
+
+def _try_local_mtga_db(arena_id: str) -> bool:
+    """Look up a card by Arena grpId in the local MTGA SQLite database.
+
+    This is the fallback for cards that Scryfall doesn't have arena_id mappings
+    for yet (e.g. brand-new sets where Scryfall data lags behind MTGA releases).
+    Returns True and populates _cache/_type_line/_cmc/_mana_cost if found.
+    """
+    try:
+        import mtga_local_db
+        result = mtga_local_db.lookup(arena_id)
+        if not result:
+            return False
+        name = result["name"]
+        _cache[arena_id] = name
+        key = name.lower()
+        if result.get("type_line"):
+            _type_line[key] = result["type_line"]
+        if result.get("cmc") is not None:
+            _cmc[key] = result["cmc"]
+        if result.get("mana_cost"):
+            _mana_cost[key] = result["mana_cost"]
+        print(f"[card_db] Local MTGA DB resolved: {arena_id} = '{name}'")
+        return True
+    except Exception as e:
+        print(f"[card_db] Local MTGA DB lookup failed for {arena_id}: {e}")
         return False
 
 

@@ -57,6 +57,14 @@ def main() -> None:
         print("  WARNING: OPENAI_API_KEY not set — LLM advice disabled.")
     print()
 
+    # Pre-populate card name cache from the local MTGA database so new sets that
+    # Scryfall hasn't mapped yet (e.g. Edge of Eternities) resolve correctly.
+    try:
+        import mtga_local_db
+        mtga_local_db.preload_into_card_db()
+    except Exception as _e:
+        print(f"  [mtga_local_db] Preload skipped: {_e}")
+
     # Start background card resolver so unknown arena IDs get resolved after initial lookup
     card_db.start_background_resolver()
 

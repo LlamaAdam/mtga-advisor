@@ -134,14 +134,14 @@ def test_scanner_fires_on_state_change(tmp_path):
 
 
 def test_scanner_parses_opponent_board(tmp_path):
-    card_db._cache["33333"] = "Goblin Guide"
-    card_db._type_line["goblin guide"] = "Creature — Goblin Scout"
-    card_db._oracle["goblin guide"] = "Haste"
-
     log_file = tmp_path / "Player.log"
     log_file.write_text("")
     received: list[GameState] = []
+    # Create scanner first so __init__ warm-up fires _load_cache() before we inject test data
     scanner = GameLogScanner(log_path=str(log_file))
+    card_db._cache["33333"] = "Goblin Guide"
+    card_db._type_line["goblin guide"] = "Creature — Goblin Scout"
+    card_db._oracle["goblin guide"] = "Haste"
     scanner.on_state_change = lambda s: received.append(s)
     log_file.write_text(_make_gre_log_line())
     scanner.poll()
