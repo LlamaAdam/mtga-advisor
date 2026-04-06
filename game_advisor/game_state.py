@@ -33,6 +33,8 @@ class Player:
     hand: list[HandCard] = field(default_factory=list)
     mana_available: int = 0
     mana_colors: list[str] = field(default_factory=list)
+    library_size: int = 0
+    graveyard_names: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -50,3 +52,4 @@ class GameState:
     opponent: Player
     recent_events: list[str] = field(default_factory=list)
     game_id: str = ""
+    cards_seen: set[str] = field(default_factory=set)  # all your card names seen this game

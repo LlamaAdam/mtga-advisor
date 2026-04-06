@@ -204,13 +204,13 @@ def test_mulligan_flood_warning():
     assert any(a.severity == "WARNING" and "flood" in a.message.lower() for a in alerts)
 
 
-def test_mulligan_good_hand_no_alert():
+def test_mulligan_good_hand_keep_recommendation():
     _setup_lands("Mountain")
     lands = [_make_hand_land("Mountain") for _ in range(3)]
     spells = [_make_hand_card("Shock", 1, ["R"]) for _ in range(4)]
     state = _make_state(your_hand=lands + spells, turn=0)
     alerts = rule_engine.check_mulligan(state)
-    assert alerts == []
+    assert any(a.severity == "INFO" and "keepable" in a.message.lower() for a in alerts)
 
 
 def test_mulligan_color_screw_warning():
@@ -228,7 +228,53 @@ def test_mulligan_color_screw_warning():
 
 def test_mulligan_ignored_after_turn_0():
     _setup_lands("Mountain")
-    hand = [_make_hand_card("Shock", 1, ["R"]) for _ in range(7)]  # no lands
+    hand = [_make_hand_card("Shock", 1, ["R"]) for _ in range(7)]  # no lands, full hand = didn't mulligan
     state = _make_state(your_hand=hand, turn=1)
     alerts = rule_engine.check_mulligan(state)
+    assert alerts == []
+
+
+def test_mulligan_turn1_fires_on_mulliganed_hand_no_lands():
+    """At turn 1 with fewer than 7 cards (took a mulligan), still warn if no lands."""
+    _setup_lands("Mountain")
+    # 6-card hand with no lands = took one mulligan and kept bad hand
+    hand = [_make_hand_card("Shock", 1, ["R"]) for _ in range(6)]
+    state = _make_state(your_hand=hand, turn=1)
+    alerts = rule_engine.check_mulligan(state)
+    assert any(a.severity == "DANGER" and "no land" in a.message.lower() for a in alerts)
+
+
+def test_mulligan_turn1_ignored_for_full_hand():
+    """At turn 1 with a full 7-card hand (no mulligan), don't analyse."""
+    _setup_lands("Mountain")
+    hand = [_make_hand_land("Mountain")] + [_make_hand_card("Shock", 1, ["R"]) for _ in range(6)]
+    state = _make_state(your_hand=hand, turn=1)
+    alerts = rule_engine.check_mulligan(state)
+    assert alerts == []
+
+
+# --- Surveil recommendation ---
+
+def test_surveil_alert_when_castable_surveil_card():
+    opp_board = [_make_creature("Goblin", 1, 1)]
+    your_hand = [_make_hand_card("Grim Wanderer", cmc=2, colors=["B"], castable=True)]
+    card_db._oracle["grim wanderer"] = "Surveil 2. Draw a card."
+    state = _make_state(your_hand=your_hand, opp_board=opp_board)
+    alerts = rule_engine.check_surveil(state)
+    assert any("surveil" in a.message.lower() and "Grim Wanderer" in a.message for a in alerts)
+
+
+def test_surveil_no_alert_when_not_castable():
+    your_hand = [_make_hand_card("Grim Wanderer", cmc=2, colors=["B"], castable=False)]
+    card_db._oracle["grim wanderer"] = "Surveil 2. Draw a card."
+    state = _make_state(your_hand=your_hand)
+    alerts = rule_engine.check_surveil(state)
+    assert alerts == []
+
+
+def test_surveil_no_alert_when_no_surveil_card():
+    your_hand = [_make_hand_card("Lightning Bolt", cmc=1, colors=["R"], castable=True)]
+    card_db._oracle["lightning bolt"] = "Lightning Bolt deals 3 damage to any target."
+    state = _make_state(your_hand=your_hand)
+    alerts = rule_engine.check_surveil(state)
     assert alerts == []

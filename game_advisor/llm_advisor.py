@@ -25,6 +25,16 @@ _spec.loader.exec_module(config)  # type: ignore[union-attr]
 import openai
 
 from game_state import GameState
+import decklist as _decklist
+
+_COT_SYSTEM_PROMPT = (
+    "You are an expert Magic: The Gathering advisor. Think step by step:\n"
+    "1. BOARD ASSESSMENT: Who is ahead? List key threats and advantages.\n"
+    "2. HAND EVALUATION: What plays are available this turn? What is the best card to cast?\n"
+    "3. RECOMMENDED ACTION: Give a specific, concrete recommendation (card name + target).\n"
+    "4. SUMMARY: One sentence — the single most important thing to do right now.\n\n"
+    "Keep the total response under 200 words. Use card names. Include combat math when relevant."
+)
 
 
 class LLMAdvisor:
@@ -90,11 +100,7 @@ class LLMAdvisor:
                 response = self._client.chat.completions.create(
                     model=self._model,
                     messages=[
-                        {"role": "system", "content": (
-                            "You are an expert Magic: The Gathering advisor. "
-                            "Give concise, actionable advice in 3 numbered points. "
-                            "Be specific about card names and combat math."
-                        )},
+                        {"role": "system", "content": _COT_SYSTEM_PROMPT},
                         {"role": "user", "content": prompt},
                     ],
                     timeout=self._timeout,
@@ -110,32 +116,51 @@ class LLMAdvisor:
             return advice
 
     def _build_prompt(self, state: GameState) -> str:
-        your_hand = ", ".join(
-            f"{c.name} ({c.mana_cost}){' [castable]' if c.castable else ''}"
-            for c in state.you.hand
-        ) or "Empty"
-        your_board = ", ".join(
-            f"{c.name} ({c.power}/{c.toughness}{(' ' + ' '.join(c.keywords)) if c.keywords else ''})"
-            for c in state.you.board
-        ) or "Empty"
-        opp_board = ", ".join(
-            f"{c.name} ({c.power}/{c.toughness}{(' ' + ' '.join(c.keywords)) if c.keywords else ''})"
-            for c in state.opponent.board
-        ) or "Empty"
-        recent = "; ".join(state.recent_events[-3:]) if state.recent_events else "None"
+        compressed = compress_state(state)
+        deck_line = ""
+        if _decklist.active_deck:
+            deck_line = "\n" + _decklist.deck_composition(_decklist.active_deck)
+            hand_ctx = _decklist.hand_overlap_summary(
+                _decklist.active_deck,
+                [c.name for c in state.you.hand],
+            )
+            if hand_ctx:
+                deck_line += " | " + hand_ctx
+        return compressed + deck_line
 
-        return (
-            f"Turn {state.turn} | You: {state.you.life} life | "
-            f"Opponent: {state.opponent.life} life | Phase: {state.phase}\n\n"
-            f"YOUR HAND: {your_hand}\n"
-            f"YOUR BOARD: {your_board}\n"
-            f"OPPONENT BOARD: {opp_board}\n"
-            f"Recent events: {recent}\n\n"
-            "Answer briefly:\n"
-            "1. Best play this turn?\n"
-            "2. Combat recommendation?\n"
-            "3. Highest priority threat to address?"
-        )
+
+def compress_state(state: GameState) -> str:
+    """Return a compact single-line board state string for the LLM prompt.
+
+    Format:
+      T{turn} {phase} | You {life}hp | Opp {life}hp | Board:[...] | Opp:[...] | Hand:[...] | Mana:{n}
+    """
+    def fmt_board(cards) -> str:
+        if not cards:
+            return "[]"
+        parts = []
+        for c in cards:
+            kw = (" " + ",".join(c.keywords)) if c.keywords else ""
+            tap = "~" if c.tapped else ""
+            parts.append(f"{c.name}{tap}({c.power}/{c.toughness}{kw})")
+        return "[" + ", ".join(parts) + "]"
+
+    def fmt_hand(cards) -> str:
+        if not cards:
+            return "[]"
+        return "[" + ", ".join(
+            f"{c.name}({c.mana_cost})" + ("*" if c.castable else "")
+            for c in cards
+        ) + "]"
+
+    return (
+        f"T{state.turn} {state.phase} | "
+        f"You {state.you.life}hp | Opp {state.opponent.life}hp | "
+        f"Board:{fmt_board(state.you.board)} | "
+        f"Opp:{fmt_board(state.opponent.board)} | "
+        f"Hand:{fmt_hand(state.you.hand)} | "
+        f"Mana:{state.you.mana_available}"
+    )
 
 
 def _state_hash(state: GameState) -> str:
