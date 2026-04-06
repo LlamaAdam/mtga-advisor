@@ -99,6 +99,13 @@ def get_mana_cost(card_name: str) -> str:
     return _mana_cost.get(card_name.strip().lower(), "")
 
 
+def get_type_line(card_name: str) -> str:
+    """Return full type line e.g. 'Creature — Angel Warrior'. Empty string if unknown."""
+    if not _type_line:
+        _load_cache()
+    return _type_line.get(card_name.strip().lower(), "")
+
+
 def preload_set(set_code: str):
     """
     Fetch every card in the set from Scryfall and cache arena_id -> name.
