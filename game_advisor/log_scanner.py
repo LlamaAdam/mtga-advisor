@@ -37,8 +37,10 @@ class GameLogScanner:
         self._last_mtime: float = 0
         self.on_state_change: Optional[Callable[[GameState], None]] = None
         self.on_game_over: Optional[Callable[[str], None]] = None  # "win" | "loss" | "draw"
+        self.on_new_game: Optional[Callable[[str], None]] = None   # game_id string
         self._gs_cache: dict = {}   # accumulated game state — Full replaces, Diff merges
         self._cards_seen: set[str] = set()  # all your card names seen this game
+        self._current_game_id: str = ""     # unique ID for the current game
         # Start at end of existing log so we only pick up new events, not history.
         # The resync() action in main.py resets _file_pos to 0 for replaying history.
         try:
@@ -106,11 +108,22 @@ class GameLogScanner:
                 global _cached_local_seat
                 _cached_local_seat = None  # reset seat cache at new game start
                 self._cards_seen = set()   # reset seen cards for new game
+                # Generate a stable game_id from the gameStateId in this Full message.
+                # Each game gets a new gameStateId starting from 1, so combine with a
+                # timestamp to make it unique across sessions.
+                gs_id = gsm.get("gameStateId", 0)
+                import time as _time
+                new_game_id = f"{int(_time.time())}_{gs_id}"
+                if new_game_id != self._current_game_id:
+                    self._current_game_id = new_game_id
+                    if self.on_new_game:
+                        self.on_new_game(new_game_id)
             elif msg_type == "GameStateType_Diff":
                 _merge_diff(self._gs_cache, gsm)
             else:
                 continue
-            state = _parse_game_state(self._gs_cache, self._cards_seen)
+            state = _parse_game_state(self._gs_cache, self._cards_seen,
+                                      game_id=self._current_game_id)
             if state:
                 # Update the seen-cards set from whatever was resolved in this state
                 self._cards_seen.update(c.name for c in state.you.hand)
@@ -220,7 +233,8 @@ def _detect_local_seat(zones: dict, objects: dict) -> Optional[int]:
     return _cached_local_seat
 
 
-def _parse_game_state(gs: dict, cards_seen: "set[str] | None" = None) -> Optional[GameState]:
+def _parse_game_state(gs: dict, cards_seen: "set[str] | None" = None,
+                      game_id: str = "") -> Optional[GameState]:
     turn_info = gs.get("turnInfo", {})
     turn = turn_info.get("turnNumber", 0)
     phase = _normalize_phase(turn_info.get("phase", ""), turn_info.get("step", ""))
@@ -255,6 +269,7 @@ def _parse_game_state(gs: dict, cards_seen: "set[str] | None" = None) -> Optiona
     return GameState(
         turn=turn, phase=phase, active_seat=active_seat,
         you=you, opponent=opp,
+        game_id=game_id,
         cards_seen=set(cards_seen) if cards_seen else set(),
     )
 

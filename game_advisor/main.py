@@ -87,17 +87,9 @@ def main() -> None:
     _current_advice: list[str] = ["Waiting for game..."]
 
     def on_state_change(state: GameState) -> None:
-        nonlocal decision_log
         _current_state[0] = state
         alerts = rule_engine.run_all(state)
         decision_log.record(state, alerts)
-        # Flush decision log when game_id changes (new game started)
-        if state.game_id and state.game_id != getattr(on_state_change, "_last_game_id", ""):
-            if getattr(on_state_change, "_last_game_id", ""):
-                path = decision_log.flush(on_state_change._last_game_id)
-                if path:
-                    print(f"[main] Decision log saved: {path}")
-            on_state_change._last_game_id = state.game_id
         dashboard.schedule_update(state, alerts, _current_advice[0])
         print(
             f"[main] Turn {state.turn} | {state.phase} | "
@@ -124,12 +116,23 @@ def main() -> None:
         scanner._last_mtime = 0
         scanner.poll()
 
+    def on_new_game(game_id: str) -> None:
+        """Fired when MTGA sends a GameStateType_Full (new game started)."""
+        print(f"[main] New game detected — id: {game_id}")
+        # Flush any leftover decisions from the previous game
+        old_path = decision_log.flush(game_id)
+        if old_path:
+            print(f"[main] Previous game log saved: {old_path}")
+        # Reset current advice so the old game's text doesn't bleed into the new game
+        _current_advice[0] = "New game — waiting for first state..."
+        dashboard.set_status(f"New game started")
+        dashboard.set_startup_message("New game detected — analysing opening hand...\n")
+
     def on_game_over(outcome: str) -> None:
         """Fired when MTGA reports a game result. Triggers post-loss analysis."""
         print(f"[main] Game over — outcome: {outcome}")
         # Always flush the decision log so it's saved regardless of outcome
-        game_id = getattr(on_state_change, "_last_game_id", "")
-        path = decision_log.flush(game_id)
+        path = decision_log.flush(scanner._current_game_id)
         if path:
             print(f"[main] Decision log saved: {path}")
 
@@ -172,6 +175,7 @@ def main() -> None:
 
     scanner.on_state_change = on_state_change
     scanner.on_game_over = on_game_over
+    scanner.on_new_game = on_new_game
     dashboard.on_force_refresh = force_refresh
     dashboard.on_resync = resync
 
