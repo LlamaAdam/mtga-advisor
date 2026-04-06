@@ -323,6 +323,9 @@ class AdvisorDashboard:
 
         # Your board
         self._your_board_list.delete(0, tk.END)
+        if not state.you.board:
+            self._your_board_list.insert(tk.END, "(empty)")
+            self._your_board_list.itemconfig(tk.END, fg=_GRAY)
         for card in state.you.board:
             tap = "[T]" if card.tapped else "   "
             kw = " ".join(card.keywords[:2]) if card.keywords else ""
@@ -332,6 +335,9 @@ class AdvisorDashboard:
 
         # Opponent board
         self._opp_board_list.delete(0, tk.END)
+        if not state.opponent.board:
+            self._opp_board_list.insert(tk.END, "(empty)")
+            self._opp_board_list.itemconfig(tk.END, fg=_GRAY)
         if state.opponent.board:
             scored = sorted(state.opponent.board,
                             key=lambda c: sum(1.5 if k == "flying" else 1.0 for k in c.keywords) * c.power,

@@ -102,7 +102,9 @@ def main() -> None:
         print(
             f"[main] Turn {state.turn} | {state.phase} | "
             f"You {state.you.life} vs Opp {state.opponent.life} | "
-            f"{len(alerts)} alerts"
+            f"{len(alerts)} alerts | "
+            f"board {len(state.you.board)}v{len(state.opponent.board)} | "
+            f"hand {len(state.you.hand)}"
         )
 
         def on_advice(text: str) -> None:
