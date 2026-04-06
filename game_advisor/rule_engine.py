@@ -173,6 +173,16 @@ def check_mulligan(state: GameState) -> list[RuleAlert]:
     else:
         return []
 
+    # If more than half the hand is still unresolved (Unknown), the land count
+    # will be wrong and we'd give dangerously misleading advice.  Report the
+    # problem and bail out until the background resolver catches up.
+    unknown_count = sum(1 for c in hand if c.name.startswith("Unknown("))
+    if unknown_count > hand_size // 2:
+        return [RuleAlert(
+            severity="INFO",
+            message=f"Resolving {unknown_count}/{hand_size} card names — re-check in a moment",
+        )]
+
     lands = [c for c in hand if "land" in card_db.get_type_line(c.name).lower()]
     spells = [c for c in hand if c not in lands]
     land_count = len(lands)
