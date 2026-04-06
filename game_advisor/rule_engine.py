@@ -37,12 +37,19 @@ _COLOR_NAMES: dict[str, str] = {
 }
 
 
+def _display_name(card) -> str:
+    """Return card name, or power/toughness for still-unresolved cards."""
+    if card.name.startswith("Unknown("):
+        return f"({card.power}/{card.toughness})"
+    return card.name
+
+
 def check_lethal(state: GameState) -> list[RuleAlert]:
     """Fire DANGER if your untapped creatures can deal >= opponent life total."""
     untapped = [c for c in state.you.board if not c.tapped]
     total_power = sum(c.power for c in untapped)
     if untapped and total_power >= state.opponent.life:
-        names = ", ".join(c.name for c in untapped)
+        names = ", ".join(_display_name(c) for c in untapped)
         return [RuleAlert(
             severity="DANGER",
             message=f"You have lethal — attack with: {names} ({total_power} power vs {state.opponent.life} life)",
@@ -61,7 +68,7 @@ def check_threats(state: GameState) -> list[RuleAlert]:
     kw_str = (", ".join(top.keywords)) if top.keywords else "no keywords"
     return [RuleAlert(
         severity=severity,
-        message=f"Top threat: {top.name} ({top.power}/{top.toughness}, {kw_str}) — score {score:.1f}",
+        message=f"Top threat: {_display_name(top)} ({top.power}/{top.toughness}, {kw_str}) — score {score:.1f}",
     )]
 
 
@@ -84,17 +91,17 @@ def check_combat(state: GameState) -> list[RuleAlert]:
         if not attacker_survives and not blocker_dies:
             alerts.append(RuleAlert(
                 severity="WARNING",
-                message=f"Don't attack with {attacker.name} ({attacker.power}/{attacker.toughness}) — loses to {best_block.name} ({best_block.power}/{best_block.toughness})",
+                message=f"Don't attack with {_display_name(attacker)} ({attacker.power}/{attacker.toughness}) — loses to {_display_name(best_block)} ({best_block.power}/{best_block.toughness})",
             ))
         elif not attacker_survives and blocker_dies:
             alerts.append(RuleAlert(
                 severity="WARNING",
-                message=f"Risky trade: {attacker.name} trades with {best_block.name}",
+                message=f"Risky trade: {_display_name(attacker)} trades with {_display_name(best_block)}",
             ))
         elif blocker_dies and attacker_survives:
             alerts.append(RuleAlert(
                 severity="INFO",
-                message=f"Favorable attack: {attacker.name} kills {best_block.name} and survives",
+                message=f"Favorable attack: {_display_name(attacker)} kills {_display_name(best_block)} and survives",
             ))
 
     return alerts
