@@ -43,11 +43,13 @@ from game_state import GameState        # no root conflict
 
 
 def main() -> None:
+    _backend_label = {"ollama": "Ollama (local)", "openrouter": "OpenRouter",
+                      "openai": "GPT-4o"}.get(config.LLM_BACKEND, config.LLM_BACKEND)
     print("=" * 55)
-    print("  MTGA Game Advisor  |  Powered by GPT-4o")
+    print(f"  MTGA Game Advisor  |  {_backend_label} / {config.OPENAI_MODEL}")
     print("=" * 55)
     print(f"\n  Arena log: {config.ARENA_LOG_PATH}")
-    if not config.OPENAI_API_KEY:
+    if config.LLM_BACKEND != "ollama" and not config.OPENAI_API_KEY:
         print("  WARNING: OPENAI_API_KEY not set — LLM advice disabled.")
     print()
 
@@ -119,8 +121,12 @@ def main() -> None:
 
     ocr_line = "OCR: Ready (screen capture active)" if _CAPTURE_AVAILABLE else \
                "OCR: Disabled — install Tesseract to enable screen capture fallback"
-    llm_line = "LLM: Ready (GPT-4o connected)" if config.OPENAI_API_KEY else \
-               "LLM: Disabled — set OPENAI_API_KEY in game_advisor/.env to enable advice"
+    if config.LLM_BACKEND == "ollama":
+        llm_line = f"LLM: Ready (Ollama / {config.OPENAI_MODEL})"
+    elif config.OPENAI_API_KEY:
+        llm_line = f"LLM: Ready ({_backend_label} / {config.OPENAI_MODEL})"
+    else:
+        llm_line = "LLM: Disabled — set OPENAI_API_KEY in game_advisor/.env to enable advice"
     log_line = f"Log: Watching {config.ARENA_LOG_PATH}"
     dashboard.set_startup_message(
         f"{ocr_line}\n{llm_line}\n{log_line}\n\n"
