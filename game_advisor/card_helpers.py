@@ -8,10 +8,15 @@ import sys
 import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
+# sys.path is extended here because card_db lives in the parent folder
+# rather than inside game_advisor/. This is intentional — card_db is
+# shared with the draft helper and not yet a proper package.
 import card_db
 
 _COLOR_SYMBOLS = {"W", "U", "B", "R", "G"}
 
+# Common combat-relevant keywords. MTG has 100+ keywords; this list
+# covers those most useful for advisor alerts (threats, blocks, combat).
 _KEYWORDS = [
     "flying", "trample", "lifelink", "deathtouch", "haste",
     "first strike", "double strike", "menace", "vigilance",
@@ -23,6 +28,8 @@ _KEYWORDS = [
 def get_colors(card_name: str) -> list[str]:
     """Return sorted list of color symbols from a card's mana cost. e.g. ['R'] for {1}{R}."""
     mc = card_db.get_mana_cost(card_name)
+    # Matches simple single-letter pips only (W, U, B, R, G).
+    # Hybrid ({W/U}) and Phyrexian ({W/P}) pips are not extracted.
     pips = re.findall(r'\{([A-Z])\}', mc)
     return sorted(set(p for p in pips if p in _COLOR_SYMBOLS))
 

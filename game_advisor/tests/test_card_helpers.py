@@ -1,8 +1,23 @@
-import sys, pathlib
+import pytest
+import sys
+import pathlib
+
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent.parent))
 import card_db
 import card_helpers
+
+
+@pytest.fixture(autouse=True)
+def clean_card_db_caches():
+    """Restore _mana_cost and _oracle to original state after each test."""
+    orig_mana = card_db._mana_cost.copy()
+    orig_oracle = card_db._oracle.copy()
+    yield
+    card_db._mana_cost.clear()
+    card_db._mana_cost.update(orig_mana)
+    card_db._oracle.clear()
+    card_db._oracle.update(orig_oracle)
 
 
 def test_get_colors_red_card():
