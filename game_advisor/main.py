@@ -124,7 +124,54 @@ def main() -> None:
         scanner._last_mtime = 0
         scanner.poll()
 
+    def on_game_over(outcome: str) -> None:
+        """Fired when MTGA reports a game result. Triggers post-loss analysis."""
+        print(f"[main] Game over — outcome: {outcome}")
+        # Always flush the decision log so it's saved regardless of outcome
+        game_id = getattr(on_state_change, "_last_game_id", "")
+        path = decision_log.flush(game_id)
+        if path:
+            print(f"[main] Decision log saved: {path}")
+
+        if outcome != "loss":
+            # Win or draw — just update the status bar
+            msg = "🏆 You won!" if outcome == "win" else "🤝 Draw."
+            dashboard.set_status(msg)
+            return
+
+        # Loss — request a post-game analysis paragraph from the LLM
+        dashboard.set_status("📋 Analysing your game...")
+        entries = decision_log._entries  # entries cleared by flush; re-read from file if needed
+        # If flush already cleared entries, reload from the saved file
+        if not entries and path:
+            try:
+                import json as _json
+                with open(path, encoding="utf-8") as _f:
+                    _data = _json.load(_f)
+                from decision_log import Decision
+                entries = [
+                    Decision(
+                        turn=d["turn"],
+                        phase=d["phase"],
+                        recommendations=d["recommendations"],
+                        inferred_action=d.get("inferred_action", "unknown"),
+                    )
+                    for d in _data.get("decisions", [])
+                ]
+            except Exception as _e:
+                print(f"[main] Could not reload decision log: {_e}")
+
+        def on_analysis(text: str) -> None:
+            _current_advice[0] = text
+            dashboard.schedule_llm_update(text)
+            dashboard.set_status("📋 Post-game review ready")
+
+        advisor.request_post_game_analysis_async(
+            entries, outcome, on_complete=on_analysis
+        )
+
     scanner.on_state_change = on_state_change
+    scanner.on_game_over = on_game_over
     dashboard.on_force_refresh = force_refresh
     dashboard.on_resync = resync
 

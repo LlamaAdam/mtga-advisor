@@ -81,6 +81,68 @@ class LLMAdvisor:
 
         threading.Thread(target=run, daemon=True).start()
 
+    def request_post_game_analysis_async(
+        self,
+        decisions: list,
+        outcome: str,
+        on_complete: Callable[[str], None],
+    ) -> None:
+        """Analyse the game's decision log after a loss and call on_complete(text).
+
+        decisions — list of Decision dataclass instances from DecisionLog
+        outcome   — "loss" | "win" | "draw"
+        """
+        def run():
+            result = self._call_post_game_api(decisions, outcome)
+            on_complete(result)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _call_post_game_api(self, decisions: list, outcome: str) -> str:
+        """Build a post-game analysis prompt and call the LLM."""
+        if not decisions:
+            return "No game data recorded to analyse."
+
+        # Summarise the game turn-by-turn (cap at 30 turns to stay within token limits)
+        turn_lines: list[str] = []
+        for d in decisions[-30:]:
+            warnings = [r for r in d.recommendations if "[DANGER]" in r or "[WARNING]" in r]
+            action = d.inferred_action
+            if warnings:
+                warn_str = "; ".join(w.replace("[DANGER] ", "").replace("[WARNING] ", "") for w in warnings[:2])
+                turn_lines.append(f"T{d.turn} {d.phase}: action='{action}' | warnings='{warn_str}'")
+            elif action and action != "passed / no visible change":
+                turn_lines.append(f"T{d.turn} {d.phase}: action='{action}'")
+
+        game_summary = "\n".join(turn_lines) if turn_lines else "(no significant events logged)"
+
+        system = (
+            "You are an expert Magic: The Gathering coach reviewing a game replay. "
+            "Be concise, specific, and constructive. Focus on the 2-3 biggest mistakes "
+            "or missed opportunities. Reference actual turn numbers and card names where available."
+        )
+        user = (
+            f"I just lost a game of MTG Arena. Here is a turn-by-turn log of key actions "
+            f"and any warnings the advisor flagged:\n\n"
+            f"{game_summary}\n\n"
+            f"In 2-3 short paragraphs, explain: (1) the biggest mistake(s) or missed opportunities, "
+            f"(2) what I should have done differently, and (3) one key lesson to take away."
+        )
+
+        try:
+            response = self._client.chat.completions.create(
+                model=self._model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                timeout=self._timeout,
+                max_tokens=400,
+            )
+            return response.choices[0].message.content.strip()
+        except Exception:
+            return self.OFFLINE_MESSAGE
+
     def _call_api(self, state: GameState) -> str:
         """Call GPT-4o synchronously. Returns cached or rate-limited result when applicable."""
         with self._lock:
