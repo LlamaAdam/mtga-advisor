@@ -162,6 +162,9 @@ def _detect_local_seat(zones: dict, objects: dict) -> Optional[int]:
     hand zone has at least one object instance ID that appears in gameObjects
     belongs to the local player.
 
+    During the mulligan phase MTGA may not populate playerIds on hand zones.
+    In that case we fall back to reading ownerSeatId from the visible card objects.
+
     Once detected the result is cached.  If detection fails (e.g. the player's
     hand is empty) we return the last known-good seat rather than None.
     """
@@ -169,13 +172,21 @@ def _detect_local_seat(zones: dict, objects: dict) -> Optional[int]:
     for zone in zones.values():
         if zone.get("type") != "ZoneType_Hand":
             continue
-        player_ids = zone.get("playerIds", [])
-        if not player_ids:
-            continue
         iids = set(zone.get("objectInstanceIds", []))
-        if iids & set(objects.keys()):
+        visible = iids & set(objects.keys())
+        if not visible:
+            continue  # no visible cards in this zone — opponent's hand (hidden)
+        # This zone has at least one visible card — belongs to the local player.
+        player_ids = zone.get("playerIds", [])
+        if player_ids:
             _cached_local_seat = player_ids[0]
             return _cached_local_seat
+        # playerIds absent (mulligan phase) — read ownerSeatId from a card object
+        for iid in visible:
+            owner = objects[iid].get("ownerSeatId")
+            if owner is not None:
+                _cached_local_seat = owner
+                return _cached_local_seat
     # Hand is empty or detection failed — return cached seat if we have one
     return _cached_local_seat
 
@@ -222,12 +233,37 @@ def _build_player(raw: dict, zones: dict, objects: dict, is_you: bool) -> Player
         for iid in zone.get("objectInstanceIds", []):
             obj_zone_type[iid] = zone_type
 
-    # Build hand zone lookup: instance_ids in hand zones owned by this player
-    # Hand zones DO carry playerIds, so we can filter by seat ownership.
+    # Build hand zone lookup: instance_ids in hand zones owned by this player.
+    # Three-pass approach handles both normal gameplay and the mulligan phase:
+    #   Pass 1 — playerIds match (standard in-game format)
+    #   Pass 2 — ownerSeatId match on card objects (mulligan phase fallback)
+    #   Pass 3 — visibility: any card visible in a hand zone = local player's card
+    #             (MTGA never exposes opponent hand cards in the log)
     hand_instance_ids: set[int] = set()
     for zone in zones.values():
         if zone.get("type") == "ZoneType_Hand" and seat_id in zone.get("playerIds", []):
             hand_instance_ids.update(zone.get("objectInstanceIds", []))
+
+    if not hand_instance_ids and is_you:
+        # Pass 2: playerIds absent — check ownerSeatId on game objects
+        for zone in zones.values():
+            if zone.get("type") != "ZoneType_Hand":
+                continue
+            for iid in zone.get("objectInstanceIds", []):
+                obj = objects.get(iid)
+                if obj and obj.get("ownerSeatId") == seat_id:
+                    hand_instance_ids.add(iid)
+
+    if not hand_instance_ids and is_you:
+        # Pass 3: neither playerIds nor ownerSeatId available (early mulligan snapshot).
+        # All cards visible in any hand zone belong to the local player because
+        # MTGA hides opponent hand cards (their instance IDs are absent from gameObjects).
+        for zone in zones.values():
+            if zone.get("type") != "ZoneType_Hand":
+                continue
+            for iid in zone.get("objectInstanceIds", []):
+                if iid in objects:
+                    hand_instance_ids.add(iid)
 
     # Iterate all game objects — only resolve names for cards in Hand or Battlefield.
     # Skipping library/graveyard/exile objects avoids wasting Scryfall quota on hidden cards.

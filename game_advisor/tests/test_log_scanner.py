@@ -280,6 +280,93 @@ def test_tapped_land_does_not_contribute_to_mana(tmp_path):
     assert received[0].you.mana_colors == ["R"]
 
 
+def _make_gre_mulligan_line() -> str:
+    """Build a log line that mimics the MTGA mulligan phase:
+    - turnNumber=0, no phase
+    - Hand zone has NO playerIds (MTGA omits them during mulligan)
+    - Card objects DO have ownerSeatId set
+    """
+    payload = {
+        "greToClientEvent": {
+            "greToClientMessages": [
+                {
+                    "type": "GREMessageType_GameStateMessage",
+                    "gameStateMessage": {
+                        "type": "GameStateType_Full",
+                        "turnInfo": {"turnNumber": 0},
+                        "zones": [
+                            {
+                                "zoneId": 40,
+                                "type": "ZoneType_Hand",
+                                # playerIds intentionally absent / empty — mulligan phase
+                                "playerIds": [],
+                                "objectInstanceIds": [301, 302],
+                            },
+                        ],
+                        "gameObjects": [
+                            {
+                                "instanceId": 301,
+                                "grpId": 55555,
+                                "type": "GameObjectType_Card",
+                                "zoneId": 40,
+                                "ownerSeatId": 1,
+                                "controllerSeatId": 1,
+                                "power": {"value": 0},
+                                "toughness": {"value": 0},
+                                "isTapped": False,
+                            },
+                            {
+                                "instanceId": 302,
+                                "grpId": 66666,
+                                "type": "GameObjectType_Card",
+                                "zoneId": 40,
+                                "ownerSeatId": 1,
+                                "controllerSeatId": 1,
+                                "power": {"value": 0},
+                                "toughness": {"value": 0},
+                                "isTapped": False,
+                            },
+                        ],
+                        "players": [
+                            {"systemSeatNumber": 1, "lifeTotal": 20},
+                            {"systemSeatNumber": 2, "lifeTotal": 20},
+                        ],
+                    },
+                }
+            ]
+        }
+    }
+    return json.dumps(payload)
+
+
+def test_mulligan_hand_parsed_without_player_ids(tmp_path):
+    """During the mulligan phase MTGA omits playerIds from hand zones.
+    The scanner must still detect the local player's hand via ownerSeatId fallback."""
+    log_file = tmp_path / "Player.log"
+    log_file.write_text("")
+    received: list[GameState] = []
+    # Create scanner first so __init__ warm-up fires _load_cache() before we inject
+    scanner = GameLogScanner(log_path=str(log_file))
+    # Inject AFTER scanner creation so warm-up doesn't overwrite our test values
+    card_db._cache["55555"] = "Plains"
+    card_db._type_line["plains"] = "Basic Land — Plains"
+    card_db._cache["66666"] = "Shock"
+    card_db._mana_cost["shock"] = "{R}"
+    card_db._cmc["shock"] = 1
+    scanner.on_state_change = lambda s: received.append(s)
+    log_file.write_text(_make_gre_mulligan_line())
+    scanner.poll()
+
+    assert len(received) == 1
+    state = received[0]
+    assert state.turn == 0
+    hand = state.you.hand
+    assert len(hand) == 2, f"Expected 2 hand cards, got {len(hand)}: {[c.name for c in hand]}"
+    names = {c.name for c in hand}
+    assert "Plains" in names
+    assert "Shock" in names
+
+
 def test_castable_hand_card_marked_castable(tmp_path):
     """A hand card whose CMC and colors are satisfied by available mana is marked castable."""
     # Create scanner against an empty file so _file_pos starts at 0, then write content.
