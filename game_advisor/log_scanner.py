@@ -204,6 +204,14 @@ def _parse_game_state(gs: dict, cards_seen: "set[str] | None" = None) -> Optiona
     zones = {z["zoneId"]: z for z in gs.get("zones", [])}
     objects = {o["instanceId"]: o for o in gs.get("gameObjects", [])}
 
+    # Pre-resolve ALL arena IDs in one batch Scryfall request before building
+    # player state.  This prevents per-card individual API calls in _build_player
+    # and guarantees hand cards have correct names before the rule engine runs —
+    # critical at the mulligan screen where "Plains" must be seen as a land.
+    all_grp_ids = [str(o["grpId"]) for o in objects.values() if o.get("grpId")]
+    if all_grp_ids:
+        card_db.resolve(all_grp_ids)
+
     # Dynamically detect local seat so boards stay correct regardless of seat assignment.
     seat = _detect_local_seat(zones, objects) or config.PLAYER_SEAT_ID
     you_raw = next((p for p in players_raw if p.get("systemSeatNumber") == seat), players_raw[0])

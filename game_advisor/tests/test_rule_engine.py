@@ -255,6 +255,17 @@ def test_mulligan_fires_at_turn0_mulligan_screen():
     assert any(a.severity == "INFO" and "keepable" in a.message.lower() for a in alerts)
 
 
+def test_mulligan_unknown_cards_defers_to_resolver():
+    """If >half the hand is still Unknown, report 'resolving' instead of wrong land count."""
+    hand = [HandCard(name=f"Unknown({i})", arena_id=str(i), instance_id=i,
+                     mana_cost="", cmc=0, colors=[]) for i in range(7)]
+    state = _make_state(your_hand=hand, turn=0)
+    alerts = rule_engine.check_mulligan(state)
+    assert len(alerts) == 1
+    assert alerts[0].severity == "INFO"
+    assert "resolving" in alerts[0].message.lower()
+
+
 def test_mulligan_turn2_fires_on_mulliganed_hand_no_lands():
     """At turn 2 with fewer than 7 cards (took a mulligan), still warn if no lands."""
     _setup_lands("Mountain")

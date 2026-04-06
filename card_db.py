@@ -343,8 +343,16 @@ def _fetch_collection_chunk(arena_ids: list[str], chunk_size: int):
 
             not_found = data.get("not_found", [])
             if not_found:
-                print(f"[card_db] {len(not_found)} IDs not found in Scryfall: "
+                print(f"[card_db] {len(not_found)} IDs not found via collection, trying arena endpoint: "
                       f"{[x.get('arena_id') for x in not_found[:5]]}")
+                # Collection endpoint misses many MTGA-specific printings.
+                # Fall through immediately to the direct /cards/arena/{id} endpoint
+                # rather than waiting for the background resolver, so the calling
+                # thread gets correct card names before firing on_state_change.
+                for identifier in not_found:
+                    arena_id_int = identifier.get("arena_id")
+                    if arena_id_int is not None:
+                        _try_arena_endpoint(str(arena_id_int))
 
             time.sleep(0.1)
 
