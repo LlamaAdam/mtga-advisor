@@ -33,7 +33,7 @@ class DraftState:
         self.pack_number: int = 1      # 1-indexed for display
         self.pick_number: int = 1      # 1-indexed for display
         self.current_pack: list[str] = []    # card names in current pack
-        self.picked_cards: list[str] = []    # card names picked so far (this pack)
+        self.picked_cards: list[str] = []    # card names picked so far (entire draft, cumulative)
         self.picked_ids: list[str] = []      # raw Arena IDs picked (for diffing)
         self.original_pack_size: int = 0     # inferred full size of this pack
         self.active: bool = False

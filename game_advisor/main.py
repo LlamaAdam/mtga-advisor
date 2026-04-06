@@ -22,11 +22,24 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
 import config
 import rule_engine
-from log_scanner import GameLogScanner
-from llm_advisor import LLMAdvisor
-from dashboard import AdvisorDashboard
-from capture import capture_opponent_cards
-from game_state import GameState
+
+# Each imported submodule calls sys.path.insert(0, root), displacing game_advisor/.
+# The root also has log_scanner.py and capture.py that shadow ours.
+# Re-assert game_advisor/ at [0] before each conflicting import.
+_here = str(pathlib.Path(__file__).parent)
+
+if sys.path[0] != _here:
+    sys.path.insert(0, _here)
+from log_scanner import GameLogScanner  # root has log_scanner.py (ArenaLogScanner)
+
+from llm_advisor import LLMAdvisor      # no root conflict
+from dashboard import AdvisorDashboard  # no root conflict
+
+if sys.path[0] != _here:               # log_scanner.py re-inserted root at [0]
+    sys.path.insert(0, _here)
+from capture import capture_opponent_cards, _CAPTURE_AVAILABLE  # root has capture.py
+
+from game_state import GameState        # no root conflict
 
 
 def main() -> None:
@@ -103,6 +116,19 @@ def main() -> None:
     capture_thread.start()
 
     dashboard.set_status("Waiting for MTGA game...")
+
+    ocr_line = "OCR: Ready (screen capture active)" if _CAPTURE_AVAILABLE else \
+               "OCR: Disabled — install Tesseract to enable screen capture fallback"
+    llm_line = "LLM: Ready (GPT-4o connected)" if config.OPENAI_API_KEY else \
+               "LLM: Disabled — set OPENAI_API_KEY in game_advisor/.env to enable advice"
+    log_line = f"Log: Watching {config.ARENA_LOG_PATH}"
+    dashboard.set_startup_message(
+        f"{ocr_line}\n{llm_line}\n{log_line}\n\n"
+        "Open MTGA and start a game — advice will appear here automatically.\n\n"
+        "  Space  = force advice refresh\n"
+        "  R      = resync log\n"
+        "  ESC    = quit"
+    )
     print("[main] Advisor started. Open MTGA and start a game!\n")
     dashboard.run()
     print("\nGoodbye!")

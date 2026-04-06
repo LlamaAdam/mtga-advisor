@@ -66,7 +66,10 @@ def check_combat(state: GameState) -> list[RuleAlert]:
         best_block = _find_best_blocker(attacker, opp_blockers)
         if best_block is None:
             continue
-        attacker_survives = attacker.toughness > best_block.power or "indestructible" in attacker.keywords
+        attacker_survives = (
+            attacker.toughness > best_block.power
+            and "deathtouch" not in best_block.keywords
+        ) or "indestructible" in attacker.keywords
         blocker_dies = best_block.toughness <= attacker.power or "deathtouch" in attacker.keywords
 
         if not attacker_survives and not blocker_dies:
@@ -136,7 +139,7 @@ def _find_best_blocker(attacker: BoardCard, blockers: list[BoardCard]) -> BoardC
     if "flying" in attacker.keywords:
         valid = [b for b in blockers if "flying" in b.keywords or "reach" in b.keywords]
     else:
-        valid = [b for b in blockers if "flying" not in b.keywords]
+        valid = list(blockers)  # all creatures can block a non-flying attacker
     if not valid:
         return None
     return max(valid, key=lambda b: b.power)

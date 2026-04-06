@@ -168,6 +168,10 @@ class AdvisorDashboard:
     def set_status(self, text: str) -> None:
         self._update_queue.put(("status", text))
 
+    def set_startup_message(self, text: str) -> None:
+        """Display a plain message in the advice panel before any game starts."""
+        self._update_queue.put(("startup", text))
+
     def run(self) -> None:
         """Start the tkinter mainloop. Blocks until window is closed."""
         self._poll_queue()
@@ -194,6 +198,12 @@ class AdvisorDashboard:
                 elif item[0] == "status":
                     _, text = item
                     self._status_var.set(text)
+                elif item[0] == "startup":
+                    _, text = item
+                    self._advice_text.config(state=tk.NORMAL)
+                    self._advice_text.delete("1.0", tk.END)
+                    self._advice_text.insert(tk.END, text, "llm")
+                    self._advice_text.config(state=tk.DISABLED)
         except queue.Empty:
             pass
         if self._running:

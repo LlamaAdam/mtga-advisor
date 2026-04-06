@@ -18,10 +18,11 @@ try:
     import mss
     import pytesseract
     from PIL import Image, ImageFilter
+    pytesseract.get_tesseract_version()  # raises TesseractNotFoundError if binary missing
     _CAPTURE_AVAILABLE = True
-except ImportError:
+except Exception:
     _CAPTURE_AVAILABLE = False
-    print("[capture] mss/pytesseract/Pillow not available — OCR disabled.")
+    print("[capture] OCR disabled — install Tesseract to enable screen capture fallback.")
 
 
 def capture_opponent_cards() -> list[str]:

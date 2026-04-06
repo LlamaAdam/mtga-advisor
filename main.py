@@ -130,7 +130,7 @@ def main():
         # Only print grade if ratings are already loaded (live pick, not log replay)
         if ratings_engine.is_loaded():
             wr, grade = tracker.adjusted_rating(card_name)
-            wr_str = f"{wr:.1f}%" if wr else "N/A"
+            wr_str = f"{wr:.1f}%" if wr is not None else "N/A"
             print(f"  Picked: {card_name} ({grade}, {wr_str})")
 
     def _ensure_ratings_loaded():

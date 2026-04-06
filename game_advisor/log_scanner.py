@@ -37,6 +37,7 @@ class GameLogScanner:
         self._file_pos: int = 0
         self._last_mtime: float = 0
         self.on_state_change: Optional[Callable[[GameState], None]] = None
+        self._gs_cache: dict = {}   # accumulated game state — Full replaces, Diff merges
         # Eagerly warm card_db caches so _load_cache() doesn't fire and replace
         # test-injected dict values mid-processing.
         card_db.get_mana_cost("")
@@ -82,12 +83,45 @@ class GameLogScanner:
         for msg in messages:
             if msg.get("type") != "GREMessageType_GameStateMessage":
                 continue
-            gs_raw = msg.get("gameStateMessage", {}).get("gameState", {})
-            if not gs_raw:
+            # Real MTGA format: fields sit directly in gameStateMessage (no nested
+            # "gameState" key).  GameStateType_Full replaces our cache entirely;
+            # GameStateType_Diff is a partial update that we merge in.
+            gsm = msg.get("gameStateMessage", {})
+            if not gsm:
                 continue
-            state = _parse_game_state(gs_raw)
+            msg_type = gsm.get("type", "")
+            if msg_type == "GameStateType_Full":
+                self._gs_cache = dict(gsm)
+            elif msg_type == "GameStateType_Diff":
+                _merge_diff(self._gs_cache, gsm)
+            else:
+                continue
+            state = _parse_game_state(self._gs_cache)
             if state and self.on_state_change:
                 self.on_state_change(state)
+
+
+def _merge_diff(base: dict, diff: dict) -> None:
+    """Merge a GameStateType_Diff into the base state dict in-place.
+    Lists (players, zones, gameObjects) are merged by their ID key so that
+    partial updates don't wipe entries that weren't included in the diff.
+    """
+    _LIST_ID_KEYS = {
+        "players": "systemSeatNumber",
+        "zones": "zoneId",
+        "gameObjects": "instanceId",
+    }
+    for key, value in diff.items():
+        if key in _LIST_ID_KEYS and isinstance(value, list):
+            id_key = _LIST_ID_KEYS[key]
+            existing = {item[id_key]: item for item in base.get(key, []) if id_key in item}
+            for item in value:
+                item_id = item.get(id_key)
+                if item_id is not None:
+                    existing[item_id] = {**existing.get(item_id, {}), **item}
+            base[key] = list(existing.values())
+        else:
+            base[key] = value
 
 
 def _extract_json(line: str) -> Optional[str]:

@@ -39,34 +39,35 @@ def _make_gre_log_line(turn: int = 3, your_life: int = 18, opp_life: int = 20) -
                 {
                     "type": "GREMessageType_GameStateMessage",
                     "msgId": 5,
+                    # Real MTGA format: fields sit directly in gameStateMessage,
+                    # NOT nested under a "gameState" key.
                     "gameStateMessage": {
                         "type": "GameStateType_Full",
                         "gameStateId": 12,
-                        "gameState": {
-                            "turnInfo": {
-                                "phase": "Phase_Main",
-                                "step": "Step_Main",
-                                "turnNumber": turn,
-                                "activePlayer": 1,
-                                "decisionPlayer": 1,
+                        "turnInfo": {
+                            "phase": "Phase_Main",
+                            "step": "Step_Main",
+                            "turnNumber": turn,
+                            "activePlayer": 1,
+                            "decisionPlayer": 1,
+                        },
+                        "zones": [
+                            {
+                                "zoneId": 28,
+                                "type": "ZoneType_Hand",
+                                # Hand zones DO carry playerIds
+                                "playerIds": [1],
+                                "objectInstanceIds": [101],
                             },
-                            "zones": [
-                                {
-                                    "zoneId": 28,
-                                    "type": "ZoneType_Hand",
-                                    # Hand zones DO carry playerIds
-                                    "playerIds": [1],
-                                    "objectInstanceIds": [101],
-                                },
-                                {
-                                    "zoneId": 29,
-                                    "type": "ZoneType_Battlefield",
-                                    # Battlefield is a shared zone — no playerIds
-                                    "playerIds": [],
-                                    "objectInstanceIds": [105],
-                                },
-                            ],
-                            "gameObjects": [
+                            {
+                                "zoneId": 29,
+                                "type": "ZoneType_Battlefield",
+                                # Battlefield is a shared zone — no playerIds
+                                "playerIds": [],
+                                "objectInstanceIds": [105],
+                            },
+                        ],
+                        "gameObjects": [
                                 {
                                     "instanceId": 101,
                                     "grpId": 12345,
@@ -91,11 +92,10 @@ def _make_gre_log_line(turn: int = 3, your_life: int = 18, opp_life: int = 20) -
                                     "isTapped": False,
                                 },
                             ],
-                            "players": [
-                                {"systemSeatNumber": 1, "lifeTotal": your_life},
-                                {"systemSeatNumber": 2, "lifeTotal": opp_life},
-                            ],
-                        }
+                        "players": [
+                            {"systemSeatNumber": 1, "lifeTotal": your_life},
+                            {"systemSeatNumber": 2, "lifeTotal": opp_life},
+                        ],
                     },
                 }
             ]
@@ -179,29 +179,28 @@ def _make_gre_log_line_with_land(tapped: bool) -> str:
                     "gameStateMessage": {
                         "type": "GameStateType_Full",
                         "gameStateId": 20,
-                        "gameState": {
-                            "turnInfo": {
-                                "phase": "Phase_Main",
-                                "step": "Step_Main",
-                                "turnNumber": 3,
-                                "activePlayer": 1,
-                                "decisionPlayer": 1,
+                        "turnInfo": {
+                            "phase": "Phase_Main",
+                            "step": "Step_Main",
+                            "turnNumber": 3,
+                            "activePlayer": 1,
+                            "decisionPlayer": 1,
+                        },
+                        "zones": [
+                            {
+                                "zoneId": 30,
+                                "type": "ZoneType_Hand",
+                                "playerIds": [1],
+                                "objectInstanceIds": [201],
                             },
-                            "zones": [
-                                {
-                                    "zoneId": 30,
-                                    "type": "ZoneType_Hand",
-                                    "playerIds": [1],
-                                    "objectInstanceIds": [201],
-                                },
-                                {
-                                    "zoneId": 31,
-                                    "type": "ZoneType_Battlefield",
-                                    "playerIds": [],
-                                    "objectInstanceIds": [202, 203],
-                                },
-                            ],
-                            "gameObjects": [
+                            {
+                                "zoneId": 31,
+                                "type": "ZoneType_Battlefield",
+                                "playerIds": [],
+                                "objectInstanceIds": [202, 203],
+                            },
+                        ],
+                        "gameObjects": [
                                 {
                                     # Hand card: Lightning Strike (R spell)
                                     "instanceId": 201,
@@ -239,11 +238,10 @@ def _make_gre_log_line_with_land(tapped: bool) -> str:
                                     "isTapped": tapped,
                                 },
                             ],
-                            "players": [
-                                {"systemSeatNumber": 1, "lifeTotal": 20},
-                                {"systemSeatNumber": 2, "lifeTotal": 20},
-                            ],
-                        }
+                        "players": [
+                            {"systemSeatNumber": 1, "lifeTotal": 20},
+                            {"systemSeatNumber": 2, "lifeTotal": 20},
+                        ],
                     },
                 }
             ]
@@ -254,6 +252,15 @@ def _make_gre_log_line_with_land(tapped: bool) -> str:
 
 def test_tapped_land_does_not_contribute_to_mana(tmp_path):
     """A tapped land on the battlefield must not be counted as available mana."""
+    log_file = tmp_path / "Player.log"
+    log_file.write_text(_make_gre_log_line_with_land(tapped=True))
+
+    # Construct scanner first so its __init__ warm-up call to get_mana_cost("")
+    # fires _load_cache() before we inject test data (otherwise _load_cache
+    # overwrites our injected values).
+    received: list[GameState] = []
+    scanner = GameLogScanner(log_path=str(log_file))
+
     card_db._cache["11111"] = "Lightning Strike"
     card_db._mana_cost["lightning strike"] = "{1}{R}"
     card_db._cmc["lightning strike"] = 2
@@ -263,12 +270,6 @@ def test_tapped_land_does_not_contribute_to_mana(tmp_path):
     # Plains (tapped) must NOT contribute
     card_db._cache["22223"] = "Plains"
     card_db._type_line["plains"] = "Basic Land — Plains"
-
-    log_file = tmp_path / "Player.log"
-    log_file.write_text(_make_gre_log_line_with_land(tapped=True))
-
-    received: list[GameState] = []
-    scanner = GameLogScanner(log_path=str(log_file))
     scanner.on_state_change = lambda s: received.append(s)
     scanner.poll()
 
@@ -280,6 +281,14 @@ def test_tapped_land_does_not_contribute_to_mana(tmp_path):
 
 def test_castable_hand_card_marked_castable(tmp_path):
     """A hand card whose CMC and colors are satisfied by available mana is marked castable."""
+    log_file = tmp_path / "Player.log"
+    log_file.write_text(_make_gre_log_line_with_land(tapped=False))
+
+    # Construct scanner first so its __init__ warm-up call fires _load_cache()
+    # before we inject test data.
+    received: list[GameState] = []
+    scanner = GameLogScanner(log_path=str(log_file))
+
     card_db._cache["11111"] = "Lightning Strike"
     card_db._mana_cost["lightning strike"] = "{1}{R}"
     card_db._cmc["lightning strike"] = 2
@@ -287,12 +296,6 @@ def test_castable_hand_card_marked_castable(tmp_path):
     card_db._cache["22222"] = "Mountain"
     card_db._type_line["mountain"] = "Basic Land — Mountain"
     card_db._cache["22223"] = "Mountain"
-
-    log_file = tmp_path / "Player.log"
-    log_file.write_text(_make_gre_log_line_with_land(tapped=False))
-
-    received: list[GameState] = []
-    scanner = GameLogScanner(log_path=str(log_file))
     scanner.on_state_change = lambda s: received.append(s)
     scanner.poll()
 

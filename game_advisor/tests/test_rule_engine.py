@@ -136,6 +136,26 @@ def test_removal_target_flagged_when_castable():
     assert any("Lightning Strike" in a.message for a in alerts)
 
 
+def test_deathtouch_blocker_is_risky_trade():
+    your_board = [_make_creature("Big 4/4", 4, 4)]
+    opp_board = [_make_creature("DT 1/1", 1, 1, keywords=["deathtouch"])]
+    state = _make_state(your_board=your_board, opp_board=opp_board)
+    alerts = rule_engine.check_combat(state)
+    # 4/4 kills the 1/1 (blocker dies), but 1/1 deathtouch kills the 4/4 (attacker dies) → trade
+    warnings = [a for a in alerts if a.severity == "WARNING" and "trade" in a.message.lower()]
+    assert warnings != []
+
+
+def test_flying_creature_can_block_ground_attacker():
+    # Opponent has only a flying blocker; your ground creature should still get a combat warning
+    your_board = [_make_creature("Ground 2/2", 2, 2)]
+    opp_board = [_make_creature("Dragon 5/5", 5, 5, keywords=["flying"])]
+    state = _make_state(your_board=your_board, opp_board=opp_board)
+    alerts = rule_engine.check_combat(state)
+    # Dragon can block Ground 2/2 and kills it → suicidal or trade
+    assert any("Ground 2/2" in a.message for a in alerts)
+
+
 def test_no_removal_alert_when_hand_is_empty():
     state = _make_state(your_hand=[], opp_board=[_make_creature("X", 3, 3)])
     alerts = rule_engine.check_removal(state)

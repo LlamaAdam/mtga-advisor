@@ -15,6 +15,12 @@ _PIP_RE = re.compile(r'\{([WUBRG])\}')
 
 _ADD_RE = re.compile(r'add\b[^.]*', re.IGNORECASE)
 
+_BASIC_LAND_NAMES: frozenset[str] = frozenset({
+    "Plains", "Island", "Swamp", "Mountain", "Forest",
+    "Snow-Covered Plains", "Snow-Covered Island",
+    "Snow-Covered Swamp", "Snow-Covered Mountain", "Snow-Covered Forest",
+})
+
 
 def _land_produced_colors(card_name: str) -> list[str]:
     """
@@ -50,6 +56,8 @@ class DeckTracker:
         self.picks: list[str] = []
         self.pack_number: int = 1
         self.pick_number: int = 1
+        self._metrics_cache: synergy.DeckMetrics | None = None
+        self._metrics_picks_snapshot: list[str] = []
 
     # ------------------------------------------------------------------
     # Picks
@@ -156,8 +164,15 @@ class DeckTracker:
     # ------------------------------------------------------------------
 
     def _deck_metrics(self) -> synergy.DeckMetrics:
-        """Build synergy metrics from current picks (cached per pick count)."""
-        return synergy.build_metrics(self.picks)
+        """
+        Build synergy metrics from current picks.
+        Memoized: rebuilds only when the picks list changes.
+        This avoids 14x redundant oracle scans per pack display.
+        """
+        if self.picks != self._metrics_picks_snapshot:
+            self._metrics_cache = synergy.build_metrics(self.picks)
+            self._metrics_picks_snapshot = list(self.picks)
+        return self._metrics_cache  # type: ignore[return-value]
 
     def adjusted_rating(self, card_name: str) -> tuple[float | None, str]:
         """
@@ -173,11 +188,6 @@ class DeckTracker:
         # Basic land names are hardcoded as a fast path because Arena IDs for
         # basics are resolved to names without fetching full oracle/type data,
         # so ratings.get_types() may return [] and the type-check would miss them.
-        _BASIC_LAND_NAMES: frozenset[str] = frozenset({
-            "Plains", "Island", "Swamp", "Mountain", "Forest",
-            "Snow-Covered Plains", "Snow-Covered Island",
-            "Snow-Covered Swamp", "Snow-Covered Mountain", "Snow-Covered Forest",
-        })
         types = ratings.get_types(card_name)
         if card_name in _BASIC_LAND_NAMES or ("Land" in types and not ratings.get_colors(card_name)):
             oracle = card_db.get_oracle(card_name).lower()

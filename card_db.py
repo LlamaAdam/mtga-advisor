@@ -13,6 +13,7 @@ import json
 import os
 import pathlib
 import queue
+import threading
 import time
 import requests
 
@@ -24,6 +25,7 @@ _mana_cost: dict[str, str] = {}      # card_name.lower() -> mana cost string e.g
 _type_line: dict[str, str] = {}      # card_name.lower() -> full type line e.g. "Creature — Angel Warrior"
 _bad_ids: set[str] = set()           # arena IDs permanently rejected by Scryfall
 _preloaded_sets: set[str] = set()
+_save_lock = threading.Lock()  # Prevents concurrent writes to the cache file
 
 # Queue of arena ID strings that couldn't be resolved — resolver thread consumes these
 pending_unknowns: queue.Queue = queue.Queue()
@@ -49,19 +51,20 @@ def _load_cache():
 
 
 def _save_cache():
-    try:
-        with open(_CACHE_FILE, "w", encoding="utf-8") as f:
-            json.dump({
-                "cards": _cache,
-                "oracle": _oracle,
-                "cmc": _cmc,
-                "mana_cost": _mana_cost,
-                "type_line": _type_line,
-                "bad_ids": list(_bad_ids),
-                "preloaded_sets": list(_preloaded_sets),
-            }, f)
-    except Exception:
-        pass
+    with _save_lock:
+        try:
+            with open(_CACHE_FILE, "w", encoding="utf-8") as f:
+                json.dump({
+                    "cards": _cache,
+                    "oracle": _oracle,
+                    "cmc": _cmc,
+                    "mana_cost": _mana_cost,
+                    "type_line": _type_line,
+                    "bad_ids": list(_bad_ids),
+                    "preloaded_sets": list(_preloaded_sets),
+                }, f)
+        except Exception:
+            pass
 
 
 def get_oracle(card_name: str) -> str:
