@@ -41,6 +41,7 @@ class GameLogScanner:
         self._gs_cache: dict = {}   # accumulated game state — Full replaces, Diff merges
         self._cards_seen: set[str] = set()  # all your card names seen this game
         self._current_game_id: str = ""     # unique ID for the current game
+        self._game_over_fired: bool = False  # prevent duplicate on_game_over calls
         # Start at end of existing log so we only pick up new events, not history.
         # The resync() action in main.py resets _file_pos to 0 for replaying history.
         try:
@@ -76,11 +77,16 @@ class GameLogScanner:
 
     def _process_content(self, content: str) -> None:
         for line in content.splitlines():
-            if "greToClientEvent" not in line:
-                continue
-            json_str = _extract_json(line)
-            if json_str:
-                self._handle_gre_json(json_str)
+            # GRE game state / game-over events
+            if "greToClientEvent" in line:
+                json_str = _extract_json(line)
+                if json_str:
+                    self._handle_gre_json(json_str)
+            # Match room state change — fires on concede / disconnect / match end
+            elif "MatchGameRoomStateChangedEvent" in line:
+                json_str = _extract_json(line)
+                if json_str:
+                    self._handle_match_room_event(json_str)
 
     def _handle_gre_json(self, json_str: str) -> None:
         try:
@@ -116,6 +122,7 @@ class GameLogScanner:
                 new_game_id = f"{int(_time.time())}_{gs_id}"
                 if new_game_id != self._current_game_id:
                     self._current_game_id = new_game_id
+                    self._game_over_fired = False  # reset for new game
                     if self.on_new_game:
                         self.on_new_game(new_game_id)
             elif msg_type == "GameStateType_Diff":
@@ -133,28 +140,123 @@ class GameLogScanner:
                     self.on_state_change(state)
 
 
+    def _handle_match_room_event(self, json_str: str) -> None:
+        """Handle MatchGameRoomStateChangedEvent — catches concedes and disconnects
+        that don't always produce a GREMessageType_GameOverResp in the GRE stream.
+
+        Fires on_game_over only if we haven't already fired it for this game
+        (tracked via _game_over_fired flag).
+        """
+        if not self.on_game_over:
+            return
+        if getattr(self, "_game_over_fired", False):
+            return  # GRE already handled it
+        try:
+            data = json.loads(json_str)
+        except json.JSONDecodeError:
+            return
+
+        # Navigate: matchGameRoomStateChangedEvent -> matchGameRoomInfo -> finalMatchResult
+        event = data.get("matchGameRoomStateChangedEvent", {})
+        room_info = event.get("matchGameRoomInfo", {})
+        state_type = room_info.get("stateType", "")
+
+        # Only act on terminal states
+        if state_type not in ("MatchGameRoomStateType_MatchCompleted",
+                              "MatchGameRoomStateType_Playing"):
+            return
+
+        result = room_info.get("finalMatchResult", {})
+        if not result:
+            return
+
+        result_list = result.get("resultList", [])
+        if not result_list:
+            return
+
+        print(f"[scanner] MatchRoomEvent resultList: {result_list}")
+
+        by_scope = {e.get("scope", ""): e for e in result_list}
+        entry = by_scope.get("MatchScope_Game") or by_scope.get("MatchScope_Match")
+        if not entry:
+            return
+
+        winning_team = entry.get("winningTeamId")
+        local_seat = _cached_local_seat or config.PLAYER_SEAT_ID
+        result_type = entry.get("result", "")
+
+        if result_type in ("ResultType_Draw", "ResultType_IntentionalDraw"):
+            self._game_over_fired = True
+            self.on_game_over("draw")
+            return
+
+        if winning_team is not None:
+            outcome = "win" if winning_team == local_seat else "loss"
+            print(f"[scanner] MatchRoom outcome: {outcome} (winner={winning_team} local={local_seat})")
+            self._game_over_fired = True
+            self.on_game_over(outcome)
+
     def _handle_game_over(self, msg: dict) -> None:
-        """Parse GREMessageType_GameOverResp and fire on_game_over('win'|'loss'|'draw')."""
+        """Parse GREMessageType_GameOverResp and fire on_game_over('win'|'loss'|'draw').
+
+        MTGA uses several result types:
+          ResultType_WinLoss   — normal end, also covers concedes
+          ResultType_Concede   — explicit concede (same win/loss logic)
+          ResultType_Draw      — intentional or rule draw
+        Scope is MatchScope_Game for individual games and MatchScope_Match for the
+        overall match.  In BO1 a concede often only emits MatchScope_Match.
+        We check Game scope first and fall back to Match scope so both are handled.
+        """
         if not self.on_game_over:
             return
         result_list = msg.get("gameOverResp", {}).get("resultList", [])
-        # Find the game-scope result (not match scope)
-        for entry in result_list:
-            scope = entry.get("scope", "")
-            result_type = entry.get("result", "")
-            if scope != "MatchScope_Game":
-                continue
-            if result_type != "ResultType_WinLoss":
-                # Draw or other outcome
-                self.on_game_over("draw")
-                return
-            winning_team = entry.get("winningTeamId")
-            local_seat = _cached_local_seat or config.PLAYER_SEAT_ID
-            if winning_team == local_seat:
-                self.on_game_over("win")
-            else:
-                self.on_game_over("loss")
+        print(f"[scanner] GameOverResp resultList: {result_list}")
+
+        # Prefer game-scope entry; fall back to match-scope so concedes aren't missed
+        _SCOPE_ORDER = ("MatchScope_Game", "MatchScope_Match")
+        by_scope = {e.get("scope", ""): e for e in result_list}
+
+        entry = None
+        for scope in _SCOPE_ORDER:
+            if scope in by_scope:
+                entry = by_scope[scope]
+                break
+
+        if entry is None:
+            print("[scanner] GameOverResp: no recognisable scope entry — ignoring")
             return
+
+        result_type = entry.get("result", "")
+        reason = entry.get("reason", "")
+        winning_team = entry.get("winningTeamId")
+        local_seat = _cached_local_seat or config.PLAYER_SEAT_ID
+
+        print(f"[scanner] Game ended: result={result_type} reason={reason} "
+              f"winner={winning_team} local={local_seat}")
+
+        # Draw types
+        if result_type in ("ResultType_Draw", "ResultType_IntentionalDraw"):
+            self._game_over_fired = True
+            self.on_game_over("draw")
+            return
+
+        # Win / loss (covers ResultType_WinLoss and ResultType_Concede)
+        if winning_team is not None:
+            if winning_team == local_seat:
+                outcome = "win"
+                if reason in ("ResultReason_Concede",) or result_type == "ResultType_Concede":
+                    print("[scanner] Opponent conceded — counting as win")
+            else:
+                outcome = "loss"
+                if reason in ("ResultReason_Concede",) or result_type == "ResultType_Concede":
+                    print("[scanner] You conceded — counting as loss")
+            self._game_over_fired = True
+            self.on_game_over(outcome)
+            return
+
+        # Fallback: no winning_team field (shouldn't happen but be safe)
+        self._game_over_fired = True
+        self.on_game_over("loss")
 
 
 def _merge_diff(base: dict, diff: dict) -> None:
