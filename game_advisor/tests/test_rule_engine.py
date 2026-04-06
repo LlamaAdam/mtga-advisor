@@ -11,11 +11,14 @@ import pytest
 def clean_card_db():
     orig_oracle = card_db._oracle.copy()
     orig_type_line = card_db._type_line.copy()
+    orig_bad_ids = card_db._bad_ids.copy()
     yield
     card_db._oracle.clear()
     card_db._oracle.update(orig_oracle)
     card_db._type_line.clear()
     card_db._type_line.update(orig_type_line)
+    card_db._bad_ids.clear()
+    card_db._bad_ids.update(orig_bad_ids)
 
 
 def _make_creature(name: str, power: int, toughness: int, keywords=None,

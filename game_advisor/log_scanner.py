@@ -210,6 +210,9 @@ def _parse_game_state(gs: dict, cards_seen: "set[str] | None" = None) -> Optiona
     # critical at the mulligan screen where "Plains" must be seen as a land.
     all_grp_ids = [str(o["grpId"]) for o in objects.values() if o.get("grpId")]
     if all_grp_ids:
+        # Any grpId present in MTGA's own log is a real card — un-blacklist it
+        # so a previous incorrectly-cached bad_id can't block resolution forever.
+        card_db.rehabilitate(all_grp_ids)
         card_db.resolve(all_grp_ids)
 
     # Dynamically detect local seat so boards stay correct regardless of seat assignment.

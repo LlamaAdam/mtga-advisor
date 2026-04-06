@@ -365,6 +365,25 @@ def name(arena_id: str | int) -> str:
     return resolve([arena_id])[str(arena_id)]
 
 
+def rehabilitate(arena_ids: list[str | int]) -> None:
+    """Remove IDs from _bad_ids so they will be retried on the next resolve().
+
+    Call this whenever MTGA's own log contains a grpId — that is proof the
+    card exists in the game, even if a previous Scryfall request failed or
+    was incorrectly blacklisted by an old code path.  Saves the updated
+    cache so the rehabilitation persists across restarts.
+    """
+    if not _bad_ids:
+        return
+    ids = {str(i) for i in arena_ids}
+    removed = _bad_ids & ids
+    if removed:
+        _bad_ids.difference_update(removed)  # mutate in-place — no global declaration needed
+        _save_cache()
+        print(f"[card_db] Rehabilitated {len(removed)} previously-blacklisted IDs: "
+              f"{sorted(removed)[:10]}")
+
+
 def start_background_resolver() -> None:
     """Start a daemon thread that retries unresolved arena IDs via the direct endpoint.
 

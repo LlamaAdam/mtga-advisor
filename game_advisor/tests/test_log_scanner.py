@@ -19,6 +19,7 @@ def clean_card_db_state():
     orig_cmc = card_db._cmc.copy()
     orig_oracle = card_db._oracle.copy()
     orig_type_line = card_db._type_line.copy()
+    orig_bad_ids = card_db._bad_ids.copy()  # prevent test IDs leaking into real cache
     yield
     for d, orig in [
         (card_db._cache, orig_cache),
@@ -29,6 +30,8 @@ def clean_card_db_state():
     ]:
         d.clear()
         d.update(orig)
+    card_db._bad_ids.clear()
+    card_db._bad_ids.update(orig_bad_ids)
 
 
 # --- Fixture: minimal valid GRE game state message ---
