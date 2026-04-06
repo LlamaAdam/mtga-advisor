@@ -181,7 +181,16 @@ def _setup_lands(*names):
 
 
 def test_mulligan_no_lands_danger():
-    # MTGA starts at turnNumber=1, so opening hand check fires at turn 1
+    # MTGA reports turnNumber=0 during the mulligan screen
+    _setup_lands("Mountain")
+    hand = [_make_hand_card("Shock", 1, ["R"]) for _ in range(7)]
+    state = _make_state(your_hand=hand, turn=0)
+    alerts = rule_engine.check_mulligan(state)
+    assert any(a.severity == "DANGER" and "no land" in a.message.lower() for a in alerts)
+
+
+def test_mulligan_no_lands_danger_turn1():
+    # Also fires at turn 1 (just after mulligan decision / start of first real turn)
     _setup_lands("Mountain")
     hand = [_make_hand_card("Shock", 1, ["R"]) for _ in range(7)]
     state = _make_state(your_hand=hand, turn=1)
@@ -234,6 +243,16 @@ def test_mulligan_ignored_after_turn_3():
     state = _make_state(your_hand=hand, turn=3)
     alerts = rule_engine.check_mulligan(state)
     assert alerts == []
+
+
+def test_mulligan_fires_at_turn0_mulligan_screen():
+    """turn=0 is the actual MTGA mulligan screen — advice must fire here."""
+    _setup_lands("Mountain")
+    lands = [_make_hand_land("Mountain") for _ in range(3)]
+    spells = [_make_hand_card("Shock", 1, ["R"]) for _ in range(4)]
+    state = _make_state(your_hand=lands + spells, turn=0)
+    alerts = rule_engine.check_mulligan(state)
+    assert any(a.severity == "INFO" and "keepable" in a.message.lower() for a in alerts)
 
 
 def test_mulligan_turn2_fires_on_mulliganed_hand_no_lands():
