@@ -57,7 +57,9 @@ def _get_connection() -> Optional[sqlite3.Connection]:
     if not path:
         return None
     try:
-        _conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        # check_same_thread=False is safe here — the connection is read-only
+        # and SQLite allows concurrent reads from multiple threads.
+        _conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True, check_same_thread=False)
         _db_path = path
         print(f"[mtga_local_db] Connected to {os.path.basename(path)}")
         return _conn
