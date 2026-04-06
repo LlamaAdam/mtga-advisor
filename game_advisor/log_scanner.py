@@ -36,6 +36,7 @@ class GameLogScanner:
         self.log_path = log_path
         self._last_mtime: float = 0
         self.on_state_change: Optional[Callable[[GameState], None]] = None
+        self.on_game_over: Optional[Callable[[str], None]] = None  # "win" | "loss" | "draw"
         self._gs_cache: dict = {}   # accumulated game state — Full replaces, Diff merges
         self._cards_seen: set[str] = set()  # all your card names seen this game
         # Start at end of existing log so we only pick up new events, not history.
@@ -87,6 +88,10 @@ class GameLogScanner:
 
         messages = data.get("greToClientEvent", {}).get("greToClientMessages", [])
         for msg in messages:
+            # Detect game-over before processing state messages
+            if msg.get("type") == "GREMessageType_GameOverResp":
+                self._handle_game_over(msg)
+                continue
             if msg.get("type") != "GREMessageType_GameStateMessage":
                 continue
             # Real MTGA format: fields sit directly in gameStateMessage (no nested
@@ -113,6 +118,30 @@ class GameLogScanner:
                 self._cards_seen.update(state.you.graveyard_names)
                 if self.on_state_change:
                     self.on_state_change(state)
+
+
+    def _handle_game_over(self, msg: dict) -> None:
+        """Parse GREMessageType_GameOverResp and fire on_game_over('win'|'loss'|'draw')."""
+        if not self.on_game_over:
+            return
+        result_list = msg.get("gameOverResp", {}).get("resultList", [])
+        # Find the game-scope result (not match scope)
+        for entry in result_list:
+            scope = entry.get("scope", "")
+            result_type = entry.get("result", "")
+            if scope != "MatchScope_Game":
+                continue
+            if result_type != "ResultType_WinLoss":
+                # Draw or other outcome
+                self.on_game_over("draw")
+                return
+            winning_team = entry.get("winningTeamId")
+            local_seat = _cached_local_seat or config.PLAYER_SEAT_ID
+            if winning_team == local_seat:
+                self.on_game_over("win")
+            else:
+                self.on_game_over("loss")
+            return
 
 
 def _merge_diff(base: dict, diff: dict) -> None:
