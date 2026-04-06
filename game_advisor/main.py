@@ -64,6 +64,13 @@ def main() -> None:
 
     decision_log = DecisionLog()
     dashboard = AdvisorDashboard()
+    # Wire 'D' key to snapshot the current in-memory log so the viewer always
+    # shows data even before the game ends / a new game starts.
+    dashboard.set_pre_log_callback(
+        lambda: decision_log.write_snapshot(
+            getattr(on_state_change, "_last_game_id", "current")
+        )
+    )
     scanner = GameLogScanner()
     advisor = LLMAdvisor()
 
