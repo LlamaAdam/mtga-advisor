@@ -245,15 +245,20 @@ def learn_name(arena_id: str, card_name: str):
 
 def _try_arena_endpoint(arena_id: str) -> bool:
     """Fallback: fetch a single card via GET /cards/arena/{id}.
-    Returns True and populates _cache if found; False otherwise.
-    Useful for Alchemy/digital-only cards that the collection POST rejects.
+    Returns True and populates _cache if found.
+    Returns False for transient failures (don't blacklist — retry next session).
+    Only adds to _bad_ids on confirmed HTTP 404 (card truly doesn't exist).
     """
     try:
         resp = requests.get(
             f"https://api.scryfall.com/cards/arena/{arena_id}",
             timeout=10,
         )
+        if resp.status_code == 404:
+            _bad_ids.add(arena_id)   # confirmed non-existent
+            return False
         if resp.status_code != 200:
+            print(f"[card_db] arena endpoint returned {resp.status_code} for {arena_id} (will retry next session)")
             return False
         data = resp.json()
         name = data.get("name", "")
@@ -300,11 +305,11 @@ def _fetch_collection_chunk(arena_ids: list[str], chunk_size: int):
             )
             if resp.status_code == 400:
                 if len(chunk) == 1:
-                    # Collection endpoint rejected this ID — try the direct arena endpoint
-                    # before permanently blacklisting (handles Alchemy/digital-only cards)
+                    # Collection endpoint rejected this ID — try the direct arena endpoint.
+                    # _try_arena_endpoint handles blacklisting (only on HTTP 404).
                     if not _try_arena_endpoint(chunk[0]):
-                        print(f"[card_db] Skipping invalid arena_id {chunk[0]}")
-                        _bad_ids.add(chunk[0])
+                        if chunk[0] not in _bad_ids:
+                            print(f"[card_db] Could not resolve arena_id {chunk[0]} this session")
                     continue
                 # Split and retry each half separately with a small delay
                 mid = len(chunk) // 2
@@ -350,3 +355,26 @@ def _fetch_collection_chunk(arena_ids: list[str], chunk_size: int):
 def name(arena_id: str | int) -> str:
     """Resolve a single Arena ID to a card name."""
     return resolve([arena_id])[str(arena_id)]
+
+
+def start_background_resolver() -> None:
+    """Start a daemon thread that retries unresolved arena IDs via the direct endpoint.
+
+    Consumes items from the pending_unknowns queue.  Rate-limited to one request
+    per 0.5 s so we stay well under Scryfall's rate limit.
+    """
+    def _resolver_loop():
+        while True:
+            try:
+                arena_id = pending_unknowns.get(timeout=5)
+            except Exception:
+                continue  # queue.Empty or other — keep looping
+            if arena_id in _cache or arena_id in _bad_ids:
+                continue
+            if _try_arena_endpoint(arena_id):
+                print(f"[card_db] Background resolver found: {arena_id} = '{_cache.get(arena_id)}'")
+                _save_cache()
+            time.sleep(0.5)
+
+    t = threading.Thread(target=_resolver_loop, daemon=True, name="card_db-resolver")
+    t.start()

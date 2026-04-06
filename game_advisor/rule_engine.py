@@ -2,12 +2,15 @@
 Synchronous rule-based checks that run on every game state update.
 Returns a list of RuleAlert objects for immediate display in the dashboard.
 """
+import math
 import sys
 import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 import card_db
+import decklist as _decklist
 from game_state import BoardCard, GameState, HandCard, RuleAlert
+from math_utils import hypergeometric_cdf_at_least, prob_draw_at_least_one
 
 _KEYWORD_MULTIPLIERS: dict[str, float] = {
     "flying": 1.5,
@@ -132,22 +135,42 @@ def check_removal(state: GameState) -> list[RuleAlert]:
     return alerts
 
 
+def check_surveil(state: GameState) -> list[RuleAlert]:
+    """Flag castable cards in hand that have surveil, suggesting library manipulation."""
+    alerts: list[RuleAlert] = []
+    for card in state.you.hand:
+        if not card.castable:
+            continue
+        oracle = card_db.get_oracle(card.name).lower()
+        if "surveil" in oracle:
+            alerts.append(RuleAlert(
+                severity="INFO",
+                message=f"Surveil available: cast {card.name} to look at top of library",
+            ))
+    return alerts
+
+
 def check_mulligan(state: GameState) -> list[RuleAlert]:
-    """Analyse the opening hand at turn 0 and recommend a mulligan if needed.
+    """Analyse the opening hand at turn 0 (or a mulliganed hand at turn 1).
 
     Checks: land count extremes, colour availability vs spell requirements.
-    Only fires at turn 0; mulligan window is closed by turn 1.
+    At turn 1 only fires if hand_size < 7 (player took a mulligan).
     """
-    if state.turn != 0:
-        return []
     hand = state.you.hand
     if not hand:
+        return []
+    hand_size = len(hand)
+
+    if state.turn == 0:
+        pass  # always analyse at turn 0
+    elif state.turn == 1 and hand_size < 7:
+        pass  # analysed post-mulligan hand
+    else:
         return []
 
     lands = [c for c in hand if "land" in card_db.get_type_line(c.name).lower()]
     spells = [c for c in hand if c not in lands]
     land_count = len(lands)
-    hand_size = len(hand)
 
     # No lands at all
     if land_count == 0:
@@ -196,7 +219,131 @@ def check_mulligan(state: GameState) -> list[RuleAlert]:
                 message=f"Missing {missing_str} mana source in hand — colour screw risk",
             )]
 
-    return []
+    # Hand passes all checks — recommend keeping, add probability context if decklist loaded
+    prob_note = ""
+    if _decklist.active_deck:
+        deck = _decklist.active_deck
+        deck_size = sum(deck.values())
+        total_lands_in_deck = sum(
+            count for name, count in deck.items()
+            if "land" in card_db.get_type_line(name).lower()
+        )
+        if deck_size > hand_size and total_lands_in_deck > land_count:
+            remaining_deck = deck_size - hand_size
+            remaining_lands = total_lands_in_deck - land_count
+            lands_needed = max(0, 3 - land_count)  # target ≥3 by turn 4
+            draws_available = 4  # turns 1-4
+            if lands_needed > 0:
+                p = hypergeometric_cdf_at_least(
+                    lands_needed, remaining_deck, remaining_lands, draws_available
+                )
+                prob_note = f" | {p:.0%} to hit 3 lands by T4"
+            else:
+                prob_note = " | already at 3+ lands"
+
+    return [RuleAlert(
+        severity="INFO",
+        message=f"Hand looks keepable: {land_count} lands, {len(spells)} spells in {hand_size} cards{prob_note}",
+    )]
+
+
+def check_lethal_clock(state: GameState) -> list[RuleAlert]:
+    """Calculate how many attack steps each player needs to win at current board power.
+
+    Tapped creatures are excluded from your offensive clock (they can't attack).
+    Returns INFO with clock numbers and WARNING if the opponent's clock is faster.
+    """
+    your_power = sum(c.power for c in state.you.board if not c.tapped)
+    opp_power = sum(c.power for c in state.opponent.board)
+
+    if your_power == 0 and opp_power == 0:
+        return []
+
+    your_turns = math.ceil(state.opponent.life / your_power) if your_power > 0 else 999
+    opp_turns = math.ceil(state.you.life / opp_power) if opp_power > 0 else 999
+
+    parts: list[str] = []
+    if your_power > 0:
+        parts.append(f"you kill in {your_turns} attack(s)")
+    if opp_power > 0:
+        parts.append(f"opponent kills you in {opp_turns} attack(s)")
+
+    severity = "WARNING" if opp_turns < your_turns else "INFO"
+    return [RuleAlert(
+        severity=severity,
+        message="Lethal clock: " + ", ".join(parts),
+    )]
+
+
+def check_role(state: GameState) -> list[RuleAlert]:
+    """Classify the player's role as Aggressor, Defender, or Flexible.
+
+    Score combines board power advantage and life differential.
+    Returns INFO with role and a brief reason.
+    """
+    your_power = sum(c.power for c in state.you.board)
+    opp_power = sum(c.power for c in state.opponent.board)
+
+    if your_power == 0 and opp_power == 0:
+        return []
+
+    life_diff = state.you.life - state.opponent.life
+    power_diff = your_power - opp_power
+    score = power_diff + (life_diff / 5.0)
+
+    if score >= 3:
+        role = "Aggressor"
+        reason = "board and life lead — press for damage"
+    elif score <= -3:
+        role = "Defender"
+        reason = "behind on board or life — prioritise blocking and answers"
+    else:
+        role = "Flexible"
+        reason = "even game — adapt to opponent's next move"
+
+    return [RuleAlert(
+        severity="INFO",
+        message=f"Role: {role} — {reason}",
+    )]
+
+
+def check_outs(state: GameState) -> list[RuleAlert]:
+    """Show draw probabilities for lands and win-cons given the known library size.
+
+    Requires decklist.active_deck to be populated and state.you.library_size > 0.
+    Win-cons are defined as non-land cards with CMC >= 5 in the deck.
+    """
+    if not _decklist.active_deck:
+        return []
+    library_size = getattr(state.you, "library_size", 0)
+    if library_size <= 0:
+        return []
+
+    # Count remaining lands in deck (total deck lands minus seen cards rough estimate)
+    cards_seen: set[str] = getattr(state, "cards_seen", set())
+    deck = _decklist.active_deck
+
+    land_outs = 0
+    wincon_outs = 0
+    for name, count in deck.items():
+        is_land = "land" in card_db.get_type_line(name).lower()
+        seen_count = min(count, sum(1 for s in cards_seen if s == name))
+        remaining = max(0, count - seen_count)
+        if is_land:
+            land_outs += remaining
+        elif card_db.get_cmc(name) >= 5:
+            wincon_outs += remaining
+
+    p_land = prob_draw_at_least_one(library_size, land_outs, 1)
+    p_wincon = prob_draw_at_least_one(library_size, wincon_outs, 1) if wincon_outs > 0 else 0.0
+
+    return [RuleAlert(
+        severity="INFO",
+        message=(
+            f"Draw odds (library {library_size}): "
+            f"{p_land:.0%} land, {p_wincon:.0%} win-con"
+        ),
+    )]
 
 
 def run_all(state: GameState) -> list[RuleAlert]:
@@ -204,9 +351,13 @@ def run_all(state: GameState) -> list[RuleAlert]:
     alerts: list[RuleAlert] = []
     alerts.extend(check_mulligan(state))
     alerts.extend(check_lethal(state))
+    alerts.extend(check_lethal_clock(state))
+    alerts.extend(check_role(state))
     alerts.extend(check_threats(state))
     alerts.extend(check_combat(state))
     alerts.extend(check_removal(state))
+    alerts.extend(check_surveil(state))
+    alerts.extend(check_outs(state))
     return alerts
 
 

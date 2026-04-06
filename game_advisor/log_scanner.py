@@ -37,6 +37,7 @@ class GameLogScanner:
         self._last_mtime: float = 0
         self.on_state_change: Optional[Callable[[GameState], None]] = None
         self._gs_cache: dict = {}   # accumulated game state — Full replaces, Diff merges
+        self._cards_seen: set[str] = set()  # all your card names seen this game
         # Start at end of existing log so we only pick up new events, not history.
         # The resync() action in main.py resets _file_pos to 0 for replaying history.
         try:
@@ -97,13 +98,21 @@ class GameLogScanner:
             msg_type = gsm.get("type", "")
             if msg_type == "GameStateType_Full":
                 self._gs_cache = dict(gsm)
+                global _cached_local_seat
+                _cached_local_seat = None  # reset seat cache at new game start
+                self._cards_seen = set()   # reset seen cards for new game
             elif msg_type == "GameStateType_Diff":
                 _merge_diff(self._gs_cache, gsm)
             else:
                 continue
-            state = _parse_game_state(self._gs_cache)
-            if state and self.on_state_change:
-                self.on_state_change(state)
+            state = _parse_game_state(self._gs_cache, self._cards_seen)
+            if state:
+                # Update the seen-cards set from whatever was resolved in this state
+                self._cards_seen.update(c.name for c in state.you.hand)
+                self._cards_seen.update(c.name for c in state.you.board)
+                self._cards_seen.update(state.you.graveyard_names)
+                if self.on_state_change:
+                    self.on_state_change(state)
 
 
 def _merge_diff(base: dict, diff: dict) -> None:
@@ -142,6 +151,9 @@ def _extract_json(line: str) -> Optional[str]:
         return None
 
 
+_cached_local_seat: Optional[int] = None  # persists across game state updates
+
+
 def _detect_local_seat(zones: dict, objects: dict) -> Optional[int]:
     """Detect local player seat by finding the hand zone whose cards appear in gameObjects.
 
@@ -149,7 +161,11 @@ def _detect_local_seat(zones: dict, objects: dict) -> Optional[int]:
     appear in gameObjects.  The local player's hand cards ARE present.  Whichever
     hand zone has at least one object instance ID that appears in gameObjects
     belongs to the local player.
+
+    Once detected the result is cached.  If detection fails (e.g. the player's
+    hand is empty) we return the last known-good seat rather than None.
     """
+    global _cached_local_seat
     for zone in zones.values():
         if zone.get("type") != "ZoneType_Hand":
             continue
@@ -158,11 +174,13 @@ def _detect_local_seat(zones: dict, objects: dict) -> Optional[int]:
             continue
         iids = set(zone.get("objectInstanceIds", []))
         if iids & set(objects.keys()):
-            return player_ids[0]
-    return None
+            _cached_local_seat = player_ids[0]
+            return _cached_local_seat
+    # Hand is empty or detection failed — return cached seat if we have one
+    return _cached_local_seat
 
 
-def _parse_game_state(gs: dict) -> Optional[GameState]:
+def _parse_game_state(gs: dict, cards_seen: "set[str] | None" = None) -> Optional[GameState]:
     turn_info = gs.get("turnInfo", {})
     turn = turn_info.get("turnNumber", 0)
     phase = _normalize_phase(turn_info.get("phase", ""), turn_info.get("step", ""))
@@ -183,7 +201,11 @@ def _parse_game_state(gs: dict) -> Optional[GameState]:
     you = _build_player(you_raw, zones, objects, is_you=True)
     opp = _build_player(opp_raw, zones, objects, is_you=False)
 
-    return GameState(turn=turn, phase=phase, active_seat=active_seat, you=you, opponent=opp)
+    return GameState(
+        turn=turn, phase=phase, active_seat=active_seat,
+        you=you, opponent=opp,
+        cards_seen=set(cards_seen) if cards_seen else set(),
+    )
 
 
 def _build_player(raw: dict, zones: dict, objects: dict, is_you: bool) -> Player:
@@ -274,6 +296,27 @@ def _build_player(raw: dict, zones: dict, objects: dict, is_you: bool) -> Player
         has_colors = all(c in available_color_set for c in hc.colors)
         hc.castable = can_afford and has_colors
 
+    # Library size — count objects in this player's library zone
+    library_size = 0
+    graveyard_names: list[str] = []
+    for zone in zones.values():
+        z_type = zone.get("type", "")
+        z_players = zone.get("playerIds", [])
+        if seat_id not in z_players:
+            continue
+        if z_type == "ZoneType_Library":
+            # objectInstanceIds are present in Full state; use as library count
+            lib_ids = zone.get("objectInstanceIds", [])
+            if lib_ids:
+                library_size = len(lib_ids)
+        elif z_type == "ZoneType_Graveyard" and is_you:
+            for iid in zone.get("objectInstanceIds", []):
+                obj = objects.get(iid)
+                if obj and obj.get("type") == "GameObjectType_Card":
+                    grp_id = obj.get("grpId", 0)
+                    if grp_id:
+                        graveyard_names.append(card_db.name(str(grp_id)))
+
     return Player(
         seat_id=seat_id,
         life=life,
@@ -281,6 +324,8 @@ def _build_player(raw: dict, zones: dict, objects: dict, is_you: bool) -> Player
         hand=hand_cards,
         mana_available=untapped_land_count,
         mana_colors=mana_colors,
+        library_size=library_size,
+        graveyard_names=graveyard_names,
     )
 
 

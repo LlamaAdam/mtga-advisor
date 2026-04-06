@@ -98,8 +98,8 @@ def test_build_prompt_contains_key_info():
     state = _make_state()
     advisor = LLMAdvisor(api_key="test-key")
     prompt = advisor._build_prompt(state)
-    assert "Turn 3" in prompt
-    assert "18" in prompt           # your life
+    assert "T3" in prompt             # turn (compressed format)
+    assert "18" in prompt             # your life
     assert "Goblin Blast-Runner" in prompt
     assert "Lightning Strike" in prompt
     assert "Warden of the Inner Sky" in prompt
