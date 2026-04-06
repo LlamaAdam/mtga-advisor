@@ -114,12 +114,13 @@ def test_scanner_fires_on_state_change(tmp_path):
     card_db._type_line["goblin guide"] = "Creature — Goblin Scout"
     card_db._oracle["goblin guide"] = "Haste"
 
+    # Create scanner before writing content so it starts at position 0 (empty file).
     log_file = tmp_path / "Player.log"
-    log_file.write_text(_make_gre_log_line(turn=3, your_life=18, opp_life=20))
-
+    log_file.write_text("")
     received: list[GameState] = []
     scanner = GameLogScanner(log_path=str(log_file))
     scanner.on_state_change = lambda s: received.append(s)
+    log_file.write_text(_make_gre_log_line(turn=3, your_life=18, opp_life=20))
     scanner.poll()
 
     assert len(received) == 1
@@ -135,11 +136,11 @@ def test_scanner_parses_opponent_board(tmp_path):
     card_db._oracle["goblin guide"] = "Haste"
 
     log_file = tmp_path / "Player.log"
-    log_file.write_text(_make_gre_log_line())
-
+    log_file.write_text("")
     received: list[GameState] = []
     scanner = GameLogScanner(log_path=str(log_file))
     scanner.on_state_change = lambda s: received.append(s)
+    log_file.write_text(_make_gre_log_line())
     scanner.poll()
 
     opp_board = received[0].opponent.board
@@ -252,14 +253,14 @@ def _make_gre_log_line_with_land(tapped: bool) -> str:
 
 def test_tapped_land_does_not_contribute_to_mana(tmp_path):
     """A tapped land on the battlefield must not be counted as available mana."""
+    # Create scanner against an empty file so _file_pos starts at 0, then write content.
+    # Scanner must be created first so __init__ warm-up fires _load_cache() before
+    # we inject test data (otherwise _load_cache overwrites our injected values).
     log_file = tmp_path / "Player.log"
-    log_file.write_text(_make_gre_log_line_with_land(tapped=True))
-
-    # Construct scanner first so its __init__ warm-up call to get_mana_cost("")
-    # fires _load_cache() before we inject test data (otherwise _load_cache
-    # overwrites our injected values).
+    log_file.write_text("")
     received: list[GameState] = []
     scanner = GameLogScanner(log_path=str(log_file))
+    log_file.write_text(_make_gre_log_line_with_land(tapped=True))
 
     card_db._cache["11111"] = "Lightning Strike"
     card_db._mana_cost["lightning strike"] = "{1}{R}"
@@ -281,13 +282,14 @@ def test_tapped_land_does_not_contribute_to_mana(tmp_path):
 
 def test_castable_hand_card_marked_castable(tmp_path):
     """A hand card whose CMC and colors are satisfied by available mana is marked castable."""
+    # Create scanner against an empty file so _file_pos starts at 0, then write content.
+    # Scanner must be created first so __init__ warm-up fires _load_cache() before
+    # we inject test data.
     log_file = tmp_path / "Player.log"
-    log_file.write_text(_make_gre_log_line_with_land(tapped=False))
-
-    # Construct scanner first so its __init__ warm-up call fires _load_cache()
-    # before we inject test data.
+    log_file.write_text("")
     received: list[GameState] = []
     scanner = GameLogScanner(log_path=str(log_file))
+    log_file.write_text(_make_gre_log_line_with_land(tapped=False))
 
     card_db._cache["11111"] = "Lightning Strike"
     card_db._mana_cost["lightning strike"] = "{1}{R}"

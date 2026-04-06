@@ -34,10 +34,15 @@ _BASIC_LAND_TYPES = {
 class GameLogScanner:
     def __init__(self, log_path: str = config.ARENA_LOG_PATH):
         self.log_path = log_path
-        self._file_pos: int = 0
         self._last_mtime: float = 0
         self.on_state_change: Optional[Callable[[GameState], None]] = None
         self._gs_cache: dict = {}   # accumulated game state — Full replaces, Diff merges
+        # Start at end of existing log so we only pick up new events, not history.
+        # The resync() action in main.py resets _file_pos to 0 for replaying history.
+        try:
+            self._file_pos: int = os.path.getsize(log_path)
+        except OSError:
+            self._file_pos = 0
         # Eagerly warm card_db caches so _load_cache() doesn't fire and replace
         # test-injected dict values mid-processing.
         card_db.get_mana_cost("")
@@ -137,6 +142,26 @@ def _extract_json(line: str) -> Optional[str]:
         return None
 
 
+def _detect_local_seat(zones: dict, objects: dict) -> Optional[int]:
+    """Detect local player seat by finding the hand zone whose cards appear in gameObjects.
+
+    In MTGA logs the opponent's hand cards are hidden — their instance IDs do not
+    appear in gameObjects.  The local player's hand cards ARE present.  Whichever
+    hand zone has at least one object instance ID that appears in gameObjects
+    belongs to the local player.
+    """
+    for zone in zones.values():
+        if zone.get("type") != "ZoneType_Hand":
+            continue
+        player_ids = zone.get("playerIds", [])
+        if not player_ids:
+            continue
+        iids = set(zone.get("objectInstanceIds", []))
+        if iids & set(objects.keys()):
+            return player_ids[0]
+    return None
+
+
 def _parse_game_state(gs: dict) -> Optional[GameState]:
     turn_info = gs.get("turnInfo", {})
     turn = turn_info.get("turnNumber", 0)
@@ -147,12 +172,13 @@ def _parse_game_state(gs: dict) -> Optional[GameState]:
     if len(players_raw) < 2:
         return None
 
-    seat = config.PLAYER_SEAT_ID
-    you_raw = next((p for p in players_raw if p.get("systemSeatNumber") == seat), players_raw[0])
-    opp_raw = next((p for p in players_raw if p.get("systemSeatNumber") != seat), players_raw[1])
-
     zones = {z["zoneId"]: z for z in gs.get("zones", [])}
     objects = {o["instanceId"]: o for o in gs.get("gameObjects", [])}
+
+    # Dynamically detect local seat so boards stay correct regardless of seat assignment.
+    seat = _detect_local_seat(zones, objects) or config.PLAYER_SEAT_ID
+    you_raw = next((p for p in players_raw if p.get("systemSeatNumber") == seat), players_raw[0])
+    opp_raw = next((p for p in players_raw if p.get("systemSeatNumber") != seat), players_raw[1])
 
     you = _build_player(you_raw, zones, objects, is_you=True)
     opp = _build_player(opp_raw, zones, objects, is_you=False)
@@ -181,18 +207,33 @@ def _build_player(raw: dict, zones: dict, objects: dict, is_you: bool) -> Player
         if zone.get("type") == "ZoneType_Hand" and seat_id in zone.get("playerIds", []):
             hand_instance_ids.update(zone.get("objectInstanceIds", []))
 
-    # Iterate all game objects
+    # Iterate all game objects — only resolve names for cards in Hand or Battlefield.
+    # Skipping library/graveyard/exile objects avoids wasting Scryfall quota on hidden cards.
     for obj in objects.values():
+        # Only process real card objects; skip abilities, tokens without arena IDs, etc.
+        if obj.get("type") != "GameObjectType_Card":
+            continue
+        grp_id = obj.get("grpId", 0)
+        if not grp_id:
+            continue
+
         iid = obj.get("instanceId")
-        arena_id = str(obj.get("grpId", ""))
-        name = card_db.name(arena_id)  # uses public API -> queues unknown IDs
+        zone_type = obj_zone_type.get(iid, "")
+
+        is_my_battlefield = (zone_type == "ZoneType_Battlefield"
+                             and obj.get("controllerSeatId") == seat_id)
+        is_my_hand = (zone_type == "ZoneType_Hand" and is_you and iid in hand_instance_ids)
+
+        if not is_my_battlefield and not is_my_hand:
+            continue
+
+        arena_id = str(grp_id)
+        name = card_db.name(arena_id)
         power = obj.get("power", {}).get("value", 0)
         toughness = obj.get("toughness", {}).get("value", 0)
         keywords = get_keywords(name)
-        zone_type = obj_zone_type.get(iid, "")
 
-        # Battlefield cards: use controllerSeatId for ownership
-        if zone_type == "ZoneType_Battlefield" and obj.get("controllerSeatId") == seat_id:
+        if is_my_battlefield:
             tapped = obj.get("isTapped", False)
             attacking = obj.get("attackState", "") == "AttackState_Attacking"
             board_cards.append(BoardCard(
@@ -200,9 +241,7 @@ def _build_player(raw: dict, zones: dict, objects: dict, is_you: bool) -> Player
                 power=power, toughness=toughness, keywords=keywords,
                 tapped=tapped, attacking=attacking,
             ))
-
-        # Hand cards: only track your own hand (opponent hand is hidden in log)
-        elif zone_type == "ZoneType_Hand" and is_you and iid in hand_instance_ids:
+        else:  # is_my_hand
             mana_cost = card_db.get_mana_cost(name)
             cmc = card_db.get_cmc(name)
             colors = get_colors(name)
