@@ -243,6 +243,41 @@ def learn_name(arena_id: str, card_name: str):
         print(f"[card_db] Scryfall lookup for '{card_name}' failed: {e}")
 
 
+def _try_arena_endpoint(arena_id: str) -> bool:
+    """Fallback: fetch a single card via GET /cards/arena/{id}.
+    Returns True and populates _cache if found; False otherwise.
+    Useful for Alchemy/digital-only cards that the collection POST rejects.
+    """
+    try:
+        resp = requests.get(
+            f"https://api.scryfall.com/cards/arena/{arena_id}",
+            timeout=10,
+        )
+        if resp.status_code != 200:
+            return False
+        data = resp.json()
+        name = data.get("name", "")
+        if not name:
+            return False
+        _cache[arena_id] = name
+        key = name.lower()
+        oracle = data.get("oracle_text", "")
+        if oracle:
+            _oracle[key] = oracle
+        raw_cmc = data.get("cmc")
+        if raw_cmc is not None:
+            _cmc[key] = int(raw_cmc)
+        mc = data.get("mana_cost", "")
+        if mc:
+            _mana_cost[key] = mc
+        tl = data.get("type_line", "")
+        if tl:
+            _type_line[key] = tl
+        return True
+    except Exception:
+        return False
+
+
 def _fetch_collection(arena_ids: list[str]):
     """
     Batch-fetch from Scryfall /cards/collection for missing IDs.
@@ -265,9 +300,11 @@ def _fetch_collection_chunk(arena_ids: list[str], chunk_size: int):
             )
             if resp.status_code == 400:
                 if len(chunk) == 1:
-                    # Single bad ID — permanently skip, never retry
-                    print(f"[card_db] Skipping invalid arena_id {chunk[0]}")
-                    _bad_ids.add(chunk[0])
+                    # Collection endpoint rejected this ID — try the direct arena endpoint
+                    # before permanently blacklisting (handles Alchemy/digital-only cards)
+                    if not _try_arena_endpoint(chunk[0]):
+                        print(f"[card_db] Skipping invalid arena_id {chunk[0]}")
+                        _bad_ids.add(chunk[0])
                     continue
                 # Split and retry each half separately with a small delay
                 mid = len(chunk) // 2
