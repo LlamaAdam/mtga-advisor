@@ -114,6 +114,15 @@ def test_favorable_attack_flagged():
     assert infos != []
 
 
+def test_trade_attack_flagged_as_warning():
+    your_board = [_make_creature("My 2/2", 2, 2)]
+    opp_board = [_make_creature("Opp 2/2", 2, 2)]
+    state = _make_state(your_board=your_board, opp_board=opp_board)
+    alerts = rule_engine.check_combat(state)
+    trade_warnings = [a for a in alerts if a.severity == "WARNING" and "trade" in a.message.lower()]
+    assert trade_warnings != []
+
+
 # --- Removal targeting ---
 
 def test_removal_target_flagged_when_castable():

@@ -23,7 +23,7 @@ _KEYWORD_MULTIPLIERS: dict[str, float] = {
 }
 
 _REMOVAL_ORACLE_MARKERS = [
-    "deals", "damage to any target", "damage to target creature",
+    "deals damage", "damage to any target", "damage to target creature",
     "destroy target", "exile target",
 ]
 
@@ -74,6 +74,11 @@ def check_combat(state: GameState) -> list[RuleAlert]:
                 severity="WARNING",
                 message=f"Don't attack with {attacker.name} ({attacker.power}/{attacker.toughness}) — loses to {best_block.name} ({best_block.power}/{best_block.toughness})",
             ))
+        elif not attacker_survives and blocker_dies:
+            alerts.append(RuleAlert(
+                severity="WARNING",
+                message=f"Risky trade: {attacker.name} trades with {best_block.name}",
+            ))
         elif blocker_dies and attacker_survives:
             alerts.append(RuleAlert(
                 severity="INFO",
@@ -113,8 +118,8 @@ def run_all(state: GameState) -> list[RuleAlert]:
     alerts: list[RuleAlert] = []
     alerts.extend(check_lethal(state))
     alerts.extend(check_threats(state))
-    alerts.extend(check_removal(state))
     alerts.extend(check_combat(state))
+    alerts.extend(check_removal(state))
     return alerts
 
 
