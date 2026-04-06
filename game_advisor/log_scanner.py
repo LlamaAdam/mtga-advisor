@@ -25,13 +25,6 @@ import config
 from game_state import BoardCard, GameState, HandCard, Player
 from card_helpers import get_colors, get_keywords
 
-# Eagerly warm all card_db lazy caches so that _load_cache() never fires
-# mid-processing and replaces the module-level dict references via `global`.
-card_db.get_mana_cost("")
-card_db.get_cmc("")
-card_db.get_oracle("")
-card_db.get_type_line("")
-
 _BASIC_LAND_TYPES = {
     "plains": ["W"], "island": ["U"], "swamp": ["B"],
     "mountain": ["R"], "forest": ["G"],
@@ -43,9 +36,13 @@ class GameLogScanner:
         self.log_path = log_path
         self._file_pos: int = 0
         self._last_mtime: float = 0
-
-        # Callbacks — assign before calling poll()
         self.on_state_change: Optional[Callable[[GameState], None]] = None
+        # Eagerly warm card_db caches so _load_cache() doesn't fire and replace
+        # test-injected dict values mid-processing.
+        card_db.get_mana_cost("")
+        card_db.get_cmc("")
+        card_db.get_oracle("")
+        card_db.get_type_line("")
 
     def poll(self) -> None:
         """Read new log content since last poll and process any game state messages."""
@@ -135,38 +132,52 @@ def _build_player(raw: dict, zones: dict, objects: dict, is_you: bool) -> Player
     board_cards: list[BoardCard] = []
     hand_cards: list[HandCard] = []
 
+    # Build lookup: instance_id -> zone_type
+    # Used to know which zone each game object is in.
+    obj_zone_type: dict[int, str] = {}
     for zone in zones.values():
-        if seat_id not in zone.get("playerIds", []):
-            continue
         zone_type = zone.get("type", "")
         for iid in zone.get("objectInstanceIds", []):
-            obj = objects.get(iid)
-            if not obj:
-                continue
-            arena_id = str(obj.get("grpId", ""))
-            name = card_db._cache.get(arena_id) or f"Unknown({arena_id})"
-            power = obj.get("power", {}).get("value", 0)
-            toughness = obj.get("toughness", {}).get("value", 0)
-            keywords = get_keywords(name)
+            obj_zone_type[iid] = zone_type
+
+    # Build hand zone lookup: instance_ids in hand zones owned by this player
+    # Hand zones DO carry playerIds, so we can filter by seat ownership.
+    hand_instance_ids: set[int] = set()
+    for zone in zones.values():
+        if zone.get("type") == "ZoneType_Hand" and seat_id in zone.get("playerIds", []):
+            hand_instance_ids.update(zone.get("objectInstanceIds", []))
+
+    # Iterate all game objects
+    for obj in objects.values():
+        iid = obj.get("instanceId")
+        arena_id = str(obj.get("grpId", ""))
+        name = card_db.name(arena_id)  # uses public API -> queues unknown IDs
+        power = obj.get("power", {}).get("value", 0)
+        toughness = obj.get("toughness", {}).get("value", 0)
+        keywords = get_keywords(name)
+        zone_type = obj_zone_type.get(iid, "")
+
+        # Battlefield cards: use controllerSeatId for ownership
+        if zone_type == "ZoneType_Battlefield" and obj.get("controllerSeatId") == seat_id:
             tapped = obj.get("isTapped", False)
             attacking = obj.get("attackState", "") == "AttackState_Attacking"
+            board_cards.append(BoardCard(
+                name=name, arena_id=arena_id, instance_id=iid,
+                power=power, toughness=toughness, keywords=keywords,
+                tapped=tapped, attacking=attacking,
+            ))
 
-            if zone_type == "ZoneType_Battlefield":
-                board_cards.append(BoardCard(
-                    name=name, arena_id=arena_id, instance_id=iid,
-                    power=power, toughness=toughness, keywords=keywords,
-                    tapped=tapped, attacking=attacking,
-                ))
-            elif zone_type == "ZoneType_Hand" and is_you:
-                mana_cost = card_db.get_mana_cost(name)
-                cmc = card_db.get_cmc(name)
-                colors = get_colors(name)
-                hand_cards.append(HandCard(
-                    name=name, arena_id=arena_id, instance_id=iid,
-                    mana_cost=mana_cost, cmc=cmc, colors=colors,
-                ))
+        # Hand cards: only track your own hand (opponent hand is hidden in log)
+        elif zone_type == "ZoneType_Hand" and is_you and iid in hand_instance_ids:
+            mana_cost = card_db.get_mana_cost(name)
+            cmc = card_db.get_cmc(name)
+            colors = get_colors(name)
+            hand_cards.append(HandCard(
+                name=name, arena_id=arena_id, instance_id=iid,
+                mana_cost=mana_cost, cmc=cmc, colors=colors,
+            ))
 
-    # Compute available mana from untapped lands on your board
+    # Compute available mana from untapped lands on this player's board
     mana_colors: list[str] = []
     untapped_land_count = 0
     for card in board_cards:
@@ -174,15 +185,16 @@ def _build_player(raw: dict, zones: dict, objects: dict, is_you: bool) -> Player
         if "land" not in type_line or card.tapped:
             continue
         untapped_land_count += 1
-        # Basic land colors from name
         base = card.name.lower().replace("snow-covered ", "")
         if base in _BASIC_LAND_TYPES:
             mana_colors.extend(_BASIC_LAND_TYPES[base])
         else:
-            # Non-basic: use color identity from mana cost of the card itself
+            # Non-basic land: infer colors from mana cost field
+            # Note: hybrid/Phyrexian pips are not captured (known limitation)
             mana_colors.extend(get_colors(card.name))
 
     # Mark castable hand cards
+    # Note: hybrid-cost cards may be incorrectly marked castable (known limitation in get_colors)
     available_color_set = set(mana_colors)
     for hc in hand_cards:
         can_afford = hc.cmc <= untapped_land_count

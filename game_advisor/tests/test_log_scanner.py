@@ -54,13 +54,15 @@ def _make_gre_log_line(turn: int = 3, your_life: int = 18, opp_life: int = 20) -
                                 {
                                     "zoneId": 28,
                                     "type": "ZoneType_Hand",
+                                    # Hand zones DO carry playerIds
                                     "playerIds": [1],
                                     "objectInstanceIds": [101],
                                 },
                                 {
                                     "zoneId": 29,
                                     "type": "ZoneType_Battlefield",
-                                    "playerIds": [2],
+                                    # Battlefield is a shared zone — no playerIds
+                                    "playerIds": [],
                                     "objectInstanceIds": [105],
                                 },
                             ],
@@ -81,6 +83,7 @@ def _make_gre_log_line(turn: int = 3, your_life: int = 18, opp_life: int = 20) -
                                     "grpId": 33333,
                                     "type": "GameObjectType_Card",
                                     "zoneId": 29,
+                                    # controllerSeatId indicates ownership on shared zones
                                     "controllerSeatId": 2,
                                     "ownerSeatId": 2,
                                     "power": {"value": 2},
@@ -162,3 +165,139 @@ def test_scanner_skips_missing_file():
     scanner = GameLogScanner(log_path="/nonexistent/Player.log")
     scanner.on_state_change = lambda s: None
     scanner.poll()  # should not raise
+
+
+def _make_gre_log_line_with_land(tapped: bool) -> str:
+    """Build a log line where player 1 has a Forest (possibly tapped) on the battlefield
+    and a hand card (Lightning Strike, cmc=2, color=R)."""
+    payload = {
+        "greToClientEvent": {
+            "greToClientMessages": [
+                {
+                    "type": "GREMessageType_GameStateMessage",
+                    "msgId": 10,
+                    "gameStateMessage": {
+                        "type": "GameStateType_Full",
+                        "gameStateId": 20,
+                        "gameState": {
+                            "turnInfo": {
+                                "phase": "Phase_Main",
+                                "step": "Step_Main",
+                                "turnNumber": 3,
+                                "activePlayer": 1,
+                                "decisionPlayer": 1,
+                            },
+                            "zones": [
+                                {
+                                    "zoneId": 30,
+                                    "type": "ZoneType_Hand",
+                                    "playerIds": [1],
+                                    "objectInstanceIds": [201],
+                                },
+                                {
+                                    "zoneId": 31,
+                                    "type": "ZoneType_Battlefield",
+                                    "playerIds": [],
+                                    "objectInstanceIds": [202, 203],
+                                },
+                            ],
+                            "gameObjects": [
+                                {
+                                    # Hand card: Lightning Strike (R spell)
+                                    "instanceId": 201,
+                                    "grpId": 11111,
+                                    "type": "GameObjectType_Card",
+                                    "zoneId": 30,
+                                    "controllerSeatId": 1,
+                                    "ownerSeatId": 1,
+                                    "power": {"value": 0},
+                                    "toughness": {"value": 0},
+                                    "isTapped": False,
+                                },
+                                {
+                                    # Battlefield: Mountain (untapped, always)
+                                    "instanceId": 202,
+                                    "grpId": 22222,
+                                    "type": "GameObjectType_Card",
+                                    "zoneId": 31,
+                                    "controllerSeatId": 1,
+                                    "ownerSeatId": 1,
+                                    "power": {"value": 0},
+                                    "toughness": {"value": 0},
+                                    "isTapped": False,
+                                },
+                                {
+                                    # Battlefield: a second land, tapped state is configurable
+                                    "instanceId": 203,
+                                    "grpId": 22223,
+                                    "type": "GameObjectType_Card",
+                                    "zoneId": 31,
+                                    "controllerSeatId": 1,
+                                    "ownerSeatId": 1,
+                                    "power": {"value": 0},
+                                    "toughness": {"value": 0},
+                                    "isTapped": tapped,
+                                },
+                            ],
+                            "players": [
+                                {"systemSeatNumber": 1, "lifeTotal": 20},
+                                {"systemSeatNumber": 2, "lifeTotal": 20},
+                            ],
+                        }
+                    },
+                }
+            ]
+        }
+    }
+    return json.dumps(payload)
+
+
+def test_tapped_land_does_not_contribute_to_mana(tmp_path):
+    """A tapped land on the battlefield must not be counted as available mana."""
+    card_db._cache["11111"] = "Lightning Strike"
+    card_db._mana_cost["lightning strike"] = "{1}{R}"
+    card_db._cmc["lightning strike"] = 2
+    # Mountain (untapped) contributes 1 R mana
+    card_db._cache["22222"] = "Mountain"
+    card_db._type_line["mountain"] = "Basic Land — Mountain"
+    # Plains (tapped) must NOT contribute
+    card_db._cache["22223"] = "Plains"
+    card_db._type_line["plains"] = "Basic Land — Plains"
+
+    log_file = tmp_path / "Player.log"
+    log_file.write_text(_make_gre_log_line_with_land(tapped=True))
+
+    received: list[GameState] = []
+    scanner = GameLogScanner(log_path=str(log_file))
+    scanner.on_state_change = lambda s: received.append(s)
+    scanner.poll()
+
+    assert len(received) == 1
+    # Only the untapped Mountain counts
+    assert received[0].you.mana_available == 1
+    assert received[0].you.mana_colors == ["R"]
+
+
+def test_castable_hand_card_marked_castable(tmp_path):
+    """A hand card whose CMC and colors are satisfied by available mana is marked castable."""
+    card_db._cache["11111"] = "Lightning Strike"
+    card_db._mana_cost["lightning strike"] = "{1}{R}"
+    card_db._cmc["lightning strike"] = 2
+    # Two untapped Mountains provide {R}{R} and 2 generic mana
+    card_db._cache["22222"] = "Mountain"
+    card_db._type_line["mountain"] = "Basic Land — Mountain"
+    card_db._cache["22223"] = "Mountain"
+
+    log_file = tmp_path / "Player.log"
+    log_file.write_text(_make_gre_log_line_with_land(tapped=False))
+
+    received: list[GameState] = []
+    scanner = GameLogScanner(log_path=str(log_file))
+    scanner.on_state_change = lambda s: received.append(s)
+    scanner.poll()
+
+    assert len(received) == 1
+    hand = received[0].you.hand
+    assert len(hand) == 1
+    assert hand[0].name == "Lightning Strike"
+    assert hand[0].castable is True
