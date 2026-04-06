@@ -11,13 +11,21 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
 # OpenAI
 OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY", "")
+if not OPENAI_API_KEY:
+    import warnings
+    warnings.warn(
+        "OPENAI_API_KEY not set — LLM advice will be disabled. "
+        "Copy game_advisor/.env.example to game_advisor/.env and set your key.",
+        stacklevel=1,
+    )
 OPENAI_MODEL: str = "gpt-4o"
 LLM_TIMEOUT_SECONDS: int = 10
 LLM_MIN_INTERVAL_SECONDS: int = 8
 
 # MTGA log path (same as draft helper)
-ARENA_LOG_PATH: str = os.path.expandvars(
-    r"%LOCALAPPDATA%\..\LocalLow\Wizards Of The Coast\MTGA\Player.log"
+ARENA_LOG_PATH: str = os.path.join(
+    os.environ.get("USERPROFILE", "C:/Users/Default"),
+    "AppData", "LocalLow", "Wizards Of The Coast", "MTGA", "Player.log"
 )
 
 # Dashboard: position and size for second monitor
