@@ -11,7 +11,7 @@ import queue
 import threading
 import tkinter as tk
 from tkinter import font as tkfont
-from typing import Optional
+from typing import Callable, Optional
 
 import sys
 import pathlib
@@ -223,6 +223,15 @@ class AdvisorDashboard:
         self.root.bind("R", lambda _: self._on_resync())
         self.root.bind("d", lambda _: self._show_decision_log())
         self.root.bind("D", lambda _: self._show_decision_log())
+        self._pre_log_callback: Optional[Callable[[], None]] = None
+
+    def set_pre_log_callback(self, fn: "Callable[[], None]") -> None:
+        """Register a callable that is invoked before the decision log viewer opens.
+
+        Use this to flush/snapshot the current in-memory decision log to disk
+        so the viewer always shows the latest game data.
+        """
+        self._pre_log_callback = fn
 
     # ------------------------------------------------------------------
     # Public API — thread-safe via queue
@@ -391,6 +400,12 @@ class AdvisorDashboard:
     def _show_decision_log(self) -> None:
         """Load and display the most recent decision log JSON in the advice panel."""
         import json, os, pathlib, glob as _glob
+        # Snapshot current in-memory log so we always see the latest game data
+        if self._pre_log_callback is not None:
+            try:
+                self._pre_log_callback()
+            except Exception:
+                pass
         logs_dir = pathlib.Path(__file__).parent / "logs"
         files = sorted(_glob.glob(str(logs_dir / "*.json")))
         if not files:

@@ -51,11 +51,31 @@ class DecisionLog:
 
     def flush(self, game_id: str = "") -> str:
         """Write the accumulated log to disk and reset.  Returns the file path."""
+        path = self._write_to_disk(game_id)
+        if path:
+            self._entries = []
+            self._prev_state = None
+        return path
+
+    def write_snapshot(self, game_id: str = "") -> str:
+        """Write current entries to disk WITHOUT clearing them.
+
+        Used when the user wants to view the log for the current in-progress
+        game (e.g. pressing D). Overwrites any existing snapshot for the same
+        game so the viewer always sees the latest state.
+        """
+        return self._write_to_disk(game_id, snapshot=True)
+
+    def _write_to_disk(self, game_id: str = "", snapshot: bool = False) -> str:
+        """Internal: serialise entries to a JSON file. Returns the file path or ''."""
         if not self._entries:
             return ""
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         safe_id = game_id.replace("/", "_").replace(":", "_")[:32] if game_id else "game"
-        filename = f"{ts}_{safe_id}.json"
+        if snapshot:
+            filename = f"snapshot_{safe_id}.json"
+        else:
+            filename = f"{ts}_{safe_id}.json"
         path = os.path.join(self._log_dir, filename)
         data = {
             "game_id": game_id,
@@ -64,8 +84,6 @@ class DecisionLog:
         }
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
-        self._entries = []
-        self._prev_state = None
         return path
 
     # ------------------------------------------------------------------
