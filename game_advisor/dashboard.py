@@ -21,6 +21,11 @@ import card_db as _cdb
 from game_state import GameState, RuleAlert
 
 _BG = "#1a1a2e"
+_ROLE_COLORS = {
+    "Aggressor": "#f44336",   # red — press damage
+    "Defender":  "#2196f3",   # blue — hold back
+    "Flexible":  "#ff9800",   # orange — adapt
+}
 _BG2 = "#16213e"
 _ACCENT = "#0f3460"
 _TEXT = "#e0e0e0"
@@ -29,6 +34,45 @@ _RED = "#f44336"
 _YELLOW = "#ff9800"
 _BLUE = "#2196f3"
 _GRAY = "#757575"
+
+def _extract_role(alerts: "list[RuleAlert]") -> "tuple[str, str]":
+    """Return (role_name, color) from alerts. Empty string if no role alert."""
+    for a in alerts:
+        if a.message.startswith("Role: "):
+            for role in ("Aggressor", "Defender", "Flexible"):
+                if role in a.message:
+                    return role, _ROLE_COLORS.get(role, _TEXT)
+    return "", _TEXT
+
+
+def _extract_clock(alerts: "list[RuleAlert]") -> str:
+    """Return compact lethal clock string from alerts, or empty string."""
+    for a in alerts:
+        if a.message.startswith("Lethal clock: "):
+            # Shorten: "you kill in 2 attack(s), opponent kills you in 4 attack(s)"
+            # → "⚔ kill T2  🛡 T4"
+            msg = a.message[len("Lethal clock: "):]
+            parts = msg.split(", ")
+            short_parts = []
+            for p in parts:
+                if "you kill" in p:
+                    n = "".join(c for c in p if c.isdigit())
+                    short_parts.append(f"⚔ kill T{n}")
+                elif "opponent kills" in p:
+                    n = "".join(c for c in p if c.isdigit())
+                    short_parts.append(f"🛡 opp T{n}")
+            return "  ".join(short_parts)
+    return ""
+
+
+def _extract_draw_odds(alerts: "list[RuleAlert]") -> str:
+    """Return the draw odds string from alerts, or empty string."""
+    for a in alerts:
+        if a.message.startswith("Draw odds"):
+            # Strip the leading "Draw odds (library N): " prefix for compact display
+            return a.message
+    return ""
+
 
 _SEVERITY_COLOR = {
     "DANGER": _RED,
@@ -67,7 +111,9 @@ class AdvisorDashboard:
 
     def _build_ui(self) -> None:
         self._build_status_bar()
+        self._build_role_clock_bar()
         self._build_boards_section()
+        self._build_stats_strip()
         self._build_hand_section()
         self._build_advice_section()
 
@@ -80,6 +126,23 @@ class AdvisorDashboard:
         lbl = tk.Label(frame, textvariable=self._status_var,
                        bg=_ACCENT, fg=_TEXT, font=("Consolas", 12, "bold"))
         lbl.pack(expand=True)
+
+    def _build_role_clock_bar(self) -> None:
+        """Thin bar below status showing role badge and lethal clock."""
+        frame = tk.Frame(self.root, bg=_BG2, height=24)
+        frame.pack(fill=tk.X, padx=0, pady=0)
+        frame.pack_propagate(False)
+
+        self._role_var = tk.StringVar(value="")
+        self._clock_var = tk.StringVar(value="")
+
+        self._role_lbl = tk.Label(frame, textvariable=self._role_var,
+                                  bg=_BG2, font=("Consolas", 10, "bold"), width=18)
+        self._role_lbl.pack(side=tk.LEFT, padx=8)
+
+        self._clock_lbl = tk.Label(frame, textvariable=self._clock_var,
+                                   bg=_BG2, fg=_TEXT, font=("Consolas", 10))
+        self._clock_lbl.pack(side=tk.LEFT, padx=4)
 
     def _build_boards_section(self) -> None:
         outer = tk.Frame(self.root, bg=_BG2, height=200)
@@ -109,6 +172,17 @@ class AdvisorDashboard:
             selectbackground=_ACCENT, bd=0, highlightthickness=0,
         )
         self._opp_board_list.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+
+    def _build_stats_strip(self) -> None:
+        """Compact strip showing library size and live draw odds (visible when data available)."""
+        frame = tk.Frame(self.root, bg=_ACCENT, height=22)
+        frame.pack(fill=tk.X, padx=0, pady=0)
+        frame.pack_propagate(False)
+
+        self._stats_var = tk.StringVar(value="")
+        lbl = tk.Label(frame, textvariable=self._stats_var,
+                       bg=_ACCENT, fg=_TEXT, font=("Consolas", 9))
+        lbl.pack(side=tk.LEFT, padx=8)
 
     def _build_hand_section(self) -> None:
         frame = tk.LabelFrame(self.root, text=" YOUR HAND ",
@@ -147,6 +221,8 @@ class AdvisorDashboard:
         self.root.bind("<space>", lambda _: self._on_force_refresh())
         self.root.bind("r", lambda _: self._on_resync())
         self.root.bind("R", lambda _: self._on_resync())
+        self.root.bind("d", lambda _: self._show_decision_log())
+        self.root.bind("D", lambda _: self._show_decision_log())
 
     # ------------------------------------------------------------------
     # Public API — thread-safe via queue
@@ -215,6 +291,26 @@ class AdvisorDashboard:
             f"Turn {state.turn}  |  You: {state.you.life} ♥  Opp: {state.opponent.life} ♥"
             f"  |  {state.phase}"
         )
+
+        # Role badge + lethal clock bar
+        role, role_color = _extract_role(alerts)
+        self._role_var.set(f"[ {role} ]" if role else "")
+        self._role_lbl.config(fg=role_color)
+        clock = _extract_clock(alerts)
+        self._clock_var.set(clock)
+
+        # Stats strip — library size + draw odds
+        lib = getattr(state.you, "library_size", 0)
+        odds = _extract_draw_odds(alerts)
+        if lib > 0 or odds:
+            parts = []
+            if lib > 0:
+                parts.append(f"Library: {lib}")
+            if odds:
+                parts.append(odds)
+            self._stats_var.set("  ".join(parts))
+        else:
+            self._stats_var.set("")
 
         # Your board
         self._your_board_list.delete(0, tk.END)
@@ -291,3 +387,43 @@ class AdvisorDashboard:
     def _on_resync(self) -> None:
         if self.on_resync:
             threading.Thread(target=self.on_resync, daemon=True).start()
+
+    def _show_decision_log(self) -> None:
+        """Load and display the most recent decision log JSON in the advice panel."""
+        import json, os, pathlib, glob as _glob
+        logs_dir = pathlib.Path(__file__).parent / "logs"
+        files = sorted(_glob.glob(str(logs_dir / "*.json")))
+        if not files:
+            self._advice_text.config(state=tk.NORMAL)
+            self._advice_text.delete("1.0", tk.END)
+            self._advice_text.insert(tk.END, "No decision logs found yet.\nPlay a game first!\n", "INFO")
+            self._advice_text.config(state=tk.DISABLED)
+            return
+
+        latest = files[-1]
+        try:
+            with open(latest, encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            return
+
+        self._advice_text.config(state=tk.NORMAL)
+        self._advice_text.delete("1.0", tk.END)
+        fname = os.path.basename(latest)
+        self._advice_text.insert(tk.END, f"📋 Decision Log: {fname}\n", "INFO")
+        self._advice_text.insert(tk.END, "─" * 60 + "\n", "separator")
+
+        decisions = data.get("decisions", [])
+        for d in decisions[-20:]:   # show last 20 turns
+            turn = d.get("turn", "?")
+            phase = d.get("phase", "")
+            action = d.get("inferred_action", "unknown")
+            recs = d.get("recommendations", [])
+
+            self._advice_text.insert(tk.END, f"\nT{turn} {phase} — {action}\n", "llm")
+            for r in recs[:3]:   # top 3 alerts per turn
+                sev = "DANGER" if r.startswith("[DANGER]") else "WARNING" if r.startswith("[WARNING]") else "INFO"
+                self._advice_text.insert(tk.END, f"  {r}\n", sev)
+
+        self._advice_text.insert(tk.END, "\n─── Press Space to return to live view ───\n", "separator")
+        self._advice_text.config(state=tk.DISABLED)
