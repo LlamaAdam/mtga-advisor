@@ -32,6 +32,7 @@ from deck import DeckTracker
 from log_scanner import ArenaLogScanner
 from overlay import OverlayApp
 import config
+import draft_advisor
 
 
 def main():
@@ -102,8 +103,16 @@ def main():
     def on_pack_update(card_names: list[str]):
         """Called whenever a new pack is shown."""
         tracker.sync_from_log(scanner.state)
-        best = tracker.best_pick(card_names)
-        orig = scanner.state.original_pack_size
+        pack_num  = scanner.state.pack_number
+        pick_num  = scanner.state.pick_number
+        orig      = scanner.state.original_pack_size
+
+        # Pack-opening pick (pick 1 of packs 2 and 3): recommend the strongest
+        # card by absolute win rate regardless of current deck colors.
+        # Taking the best card in the pack signals and preserves flexibility.
+        is_pack_opener = (pick_num == 1 and pack_num >= 2)
+
+        best = tracker.best_pick(card_names, ignore_colors=is_pack_opener)
         app.schedule_update(card_names, best, orig)
 
         if best and ratings_engine.is_loaded():
@@ -113,8 +122,9 @@ def main():
                 key=lambda x: x[1] if x[1] is not None else -999,
                 reverse=True,
             )
-            print(f"\n  Pack {scanner.state.pack_number} | Pick {scanner.state.pick_number}"
-                  f"  ({orig}-card pack)")
+            print(f"\n  === Pack {pack_num} | Pick {pick_num} ===")
+            if is_pack_opener:
+                print(f"  [Pack opener — recommending strongest card regardless of color]")
             print(f"  {'Grade':<6} {'WR':>6}   Card")
             print(f"  {'-'*42}")
             for name, wr, grade in graded:
@@ -122,16 +132,72 @@ def main():
                 arrow = "  <-- PICK THIS" if name == best else ""
                 print(f"  {grade:<6} {wr_s:>6}   {name}{arrow}")
 
+            # LLM explanation — fires async when the decision is genuinely close
+            # or at the start of a new pack. Output appears below the card table.
+            main_colors = tracker.main_colors()
+            if draft_advisor.should_explain(graded, main_colors, pack_num, pick_num):
+                def _on_advice(text: str):
+                    print(f"\n  [Advisor] {text}\n")
+                draft_advisor.explain_pick_async(
+                    pack_number=pack_num,
+                    pick_number=pick_num,
+                    top_cards=graded,
+                    picks_so_far=tracker.picks,
+                    main_colors=main_colors,
+                    on_complete=_on_advice,
+                )
+
     def on_pick(card_name: str):
         """Called when the player picks a card."""
         tracker.sync_from_log(scanner.state)
         orig = scanner.state.original_pack_size
         app.schedule_update(scanner.state.current_pack, None, orig)
-        # Only print grade if ratings are already loaded (live pick, not log replay)
-        if ratings_engine.is_loaded():
-            wr, grade = tracker.adjusted_rating(card_name)
-            wr_str = f"{wr:.1f}%" if wr is not None else "N/A"
-            print(f"  Picked: {card_name} ({grade}, {wr_str})")
+
+        if not ratings_engine.is_loaded():
+            return
+
+        wr, grade = tracker.adjusted_rating(card_name)
+        wr_str = f"{wr:.1f}%" if wr is not None else "N/A"
+        print(f"  Picked: {card_name} ({grade}, {wr_str})")
+
+        # Mid-draft review every 5 picks — catch direction problems early
+        n_picks = len(tracker.picks)
+        if n_picks > 0 and n_picks % 5 == 0:
+            _fire_draft_review(scanner.state.pack_number, scanner.state.pick_number)
+
+    def _fire_draft_review(pack_number: int, pick_number: int) -> None:
+        """Build pick context and fire an async mid-draft review via the LLM."""
+        import ratings as _r
+
+        picks_with_meta: list[tuple[str, str, str]] = []
+        curve: dict[int, int] = {}
+        for name in tracker.picks:
+            _, grade = tracker.adjusted_rating(name)
+            colors = "".join(_r.get_colors(name)) or "C"  # C = colorless
+            picks_with_meta.append((name, grade, colors))
+            cmc = _r.get_cmc(name)
+            if cmc is not None:
+                curve[cmc] = curve.get(cmc, 0) + 1
+
+        main_colors = tracker.main_colors()
+
+        def _on_review(text: str) -> None:
+            total = len(tracker.picks)
+            print(f"\n  {'=' * 50}")
+            print(f"  MID-DRAFT REVIEW  ({total} picks in)")
+            print(f"  {'=' * 50}")
+            for line in text.splitlines():
+                print(f"  {line}")
+            print(f"  {'=' * 50}\n")
+
+        draft_advisor.review_draft_async(
+            pack_number=pack_number,
+            pick_number=pick_number,
+            picks=picks_with_meta,
+            main_colors=main_colors,
+            curve=curve,
+            on_complete=_on_review,
+        )
 
     def _ensure_ratings_loaded():
         """Load ratings from cache (or fetch) if not yet loaded. Called before resync."""
@@ -195,7 +261,8 @@ def main():
         if found:
             tracker.sync_from_log(scanner.state)
             pack = scanner.state.current_pack
-            best = tracker.best_pick(pack)
+            is_pack_opener = (scanner.state.pick_number == 1 and scanner.state.pack_number >= 2)
+            best = tracker.best_pick(pack, ignore_colors=is_pack_opener)
             orig = scanner.state.original_pack_size
             app.schedule_update(pack, best, orig)
             print(f"[main] Resync complete — {len(scanner.state.picked_cards)} picks loaded.")
