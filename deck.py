@@ -343,10 +343,14 @@ class DeckTracker:
         grade = ratings.winrate_to_grade(wr)
         return wr, grade
 
-    def best_pick(self, card_names: list[str]) -> str | None:
+    def best_pick(self, card_names: list[str], ignore_colors: bool = False) -> str | None:
         """
         Return the card with the highest adjusted win rate.
         Returns None if ratings are not loaded — never guess when we have no data.
+
+        ignore_colors=True: use the raw "All Decks" win rate with no off-color
+        penalty applied. Used for the first pick of packs 2 and 3 where picking
+        the objectively strongest card regardless of color is correct.
         """
         if not ratings.is_loaded():
             return None
@@ -355,8 +359,10 @@ class DeckTracker:
         for name in card_names:
             if not name:
                 continue
-            wr, _ = self.adjusted_rating(name)
-            # Only consider cards that have actual 17Lands data
+            if ignore_colors:
+                wr = ratings.get_winrate(name, "All Decks")
+            else:
+                wr, _ = self.adjusted_rating(name)
             if wr is not None and wr > best_wr:
                 best_wr, best_name = wr, name
         return best_name
