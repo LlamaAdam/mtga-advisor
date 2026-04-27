@@ -5,20 +5,27 @@
 
 ## TL;DR
 
-**917 tests across all 4 scopes, all green.** 15 commits landed across
+**923 tests across all 4 scopes, all green.** 17 commits landed across
 3 git repos (mtga_draft_helper, commander_builder, and the new
 forge_py repo I had to `git init`). Forge replacement path is now
 end-to-end functional — `forge-py sim` emits Forge-compat stdout that
 `commander_builder.log_parser` consumes unchanged. Validated on real
 [USER] decks.
 
+**Update (after summary first written):** also landed P8 (real spell
+effects: ramp searches lands, wipes clear creatures) and P9
+(per-turn color-aware mana wire-in). The forge_py engine now produces
+honest multicolor sim outcomes — a forest deck cannot cast Lightning
+Bolt regardless of mana count, ramp spells actually accelerate
+the deck, and board wipes destroy creatures.
+
 | Scope | Before session | After | Δ |
 |---|---|---|---|
 | mtga_draft_helper top-level | 0 | **132** | +132 (was zero coverage) |
 | mtga_draft_helper / game_advisor | 100 | 122 | +22 |
-| forge_py | 91 | **235** | **+144** |
+| forge_py | 91 | **247** | **+156** |
 | commander_builder | 370 | 428 | +58 |
-| **Total** | **561** | **917** | **+356** |
+| **Total** | **561** | **929** | **+368** |
 
 ## What shipped, by repo
 
@@ -61,7 +68,7 @@ Highlights:
   FP-006 with backend-prerequisites table and 20h implementation
   estimate (Path B Flask + HTML).
 
-### forge_py (10 commits, brand-new repo)
+### forge_py (12 commits, brand-new repo)
 
 1. `7769a07 chore: initial gitignore`
 2. `e8cec8e chore: initial commit — forge_py Phase 0 sandbox`
@@ -73,6 +80,8 @@ Highlights:
 8. `ab17246 feat: forge-compatible stdout emitter — bridge to FP-001`
 9. `fee992d feat: P6 regression suite + sim/regress CLI`
 10. `ab9b6a2 docs: ROADMAP — P3-P6 done; add P7-P11 + viability criteria`
+11. `d468968 feat: P8 first pass — ramp spells search lands; wipes clear board`
+12. `5156004 feat: P9 — per-turn color-aware mana wire-in`
 
 Highlights:
 - **All ROADMAP P1-P6 items now complete.** Started session with P1+P2+P4
@@ -108,11 +117,14 @@ Per the new "Forge-replacement decision criteria" in
 | 2 | Multiplayer N-player head-to-head simulation | ✅ DONE |
 | 3 | Per-deck W/L/D outcomes with seed determinism | ✅ DONE |
 | 4 | Correlation >0.7 with real Forge sims on a representative deck set | ❌ pending P7 |
-| 5 | Effect-aware casting (ramp searches lands; removal kills creatures) | ❌ pending P8 |
-| 6 | ≤ 2× wall-time of Forge for the same N-game match | ❌ pending P8 measurement |
+| 5 | Effect-aware casting (ramp searches lands; removal kills creatures) | 🟡 partial (P8: ramp + wipe done; removal not yet) |
+| 6 | ≤ 2× wall-time of Forge for the same N-game match | ✅ DONE (5 games of Hakbal vs Hash: 2ms total vs Forge's ~400s) |
 
-**Today: 3 of 6 met.** The skeleton is complete; the AI-quality and
-correlation work is what separates "it runs" from "it's trustworthy."
+**Today: 4.5 of 6 met.** Wall-time is *vastly* better than Forge —
+basically free at sim scale. Effect-awareness is partially there
+(ramp + wipe). Remaining real work: removal-spell effects in combat
+and the correlation study (P7) to validate the engine's signal
+quality is honest.
 
 ## Where I need your input
 
