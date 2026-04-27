@@ -19,13 +19,36 @@ honest multicolor sim outcomes — a forest deck cannot cast Lightning
 Bolt regardless of mana count, ramp spells actually accelerate
 the deck, and board wipes destroy creatures.
 
+**Update (after "yes to all" approval):** all 6 user-input items
+addressed in the same session.
+
+- #1 + #2 + #4 docs-only items committed.
+- #5 user's pre-existing `deck.py` + `main.py` WIP committed
+  (`feat: pack-opener picks ignore color signals + LLM mid-draft review`).
+- #3 P7 correlation-study harness landed
+  (`scripts/correlate_with_forge.py` + 7 tests). Smoke run on 3 B3
+  decks already surfaced a transitivity bias in
+  `combat.run_multiplayer_game` ("first-listed wins" effect — Hakbal
+  > Hash 80%, Hakbal > Mothy 80%, Hash > Mothy 80%; impossible
+  transitively). Tracked as a P7 follow-up; harness is doing its job.
+- #6 FP-006 backend prep landed
+  (`commander_builder/src/commander_builder/deck_dashboard.py` +
+  25 tests). Single `build_dashboard(deck_path)` returns the seven-
+  panel UI feed: commander, deck_progress, stat_tiles (with
+  est_price_usd via Scryfall `prices.usd`, power_level via
+  bracket+CMC+game-changer heuristic), mana_curve, categories
+  (with new `land_payoff` and `win_condition` roles), theme_tags,
+  suggested_adds (with `match_pct` 1..100). JSON-serializable, ready
+  for the Flask layer to consume verbatim. Closes ~6h of the 20h
+  FP-006 estimate.
+
 | Scope | Before session | After | Δ |
 |---|---|---|---|
 | mtga_draft_helper top-level | 0 | **132** | +132 (was zero coverage) |
 | mtga_draft_helper / game_advisor | 100 | 122 | +22 |
-| forge_py | 91 | **247** | **+156** |
-| commander_builder | 370 | 428 | +58 |
-| **Total** | **561** | **929** | **+368** |
+| forge_py | 91 | **254** | **+163** |
+| commander_builder | 370 | **453** | **+83** |
+| **Total** | **561** | **961** | **+400** |
 
 ## What shipped, by repo
 
