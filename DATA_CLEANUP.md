@@ -163,10 +163,10 @@ projects. Tracked as FP-A in FUTURE_PLANS.md, not a quick cleanup.
 
 ## What's left
 
-Option 5 (rewrite history with `git filter-repo` to strip the 4MB
-screenshot from past commits) was deliberately deferred. The repo isn't
-big enough to justify the destructive operation. Skip unless the repo
-grows to a real problem size.
+**Option 5 (history rewrite via `git filter-repo`) — permanently
+skipped (user-confirmed 2026-04-27).** The repo isn't big enough to
+justify the destructive operation. The 4MB screenshot stays in past
+commits but won't be added going forward.
 
 (Boxes checked as actions land. Unchecked = pending.)
 
