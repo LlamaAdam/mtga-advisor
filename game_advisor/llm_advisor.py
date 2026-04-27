@@ -188,7 +188,61 @@ class LLMAdvisor:
             )
             if hand_ctx:
                 deck_line += " | " + hand_ctx
-        return compressed + deck_line
+        appendix = card_text_appendix(state)
+        return compressed + deck_line + appendix
+
+
+def card_text_appendix(
+    state: GameState, max_chars_per_card: int = 200, max_cards: int = 12,
+) -> str:
+    """Render an oracle-text appendix for the LLM prompt.
+
+    Includes oracle text for cards the LLM is most likely to reason about:
+    your hand (the playable choices) plus opponent's board (the threats
+    you're responding to). Each entry is truncated to ``max_chars_per_card``
+    so a 7-card hand + 3 opponent threats stays around ~2000 prompt chars
+    instead of ballooning to 5k+.
+
+    Card text is sourced via ``card_db.get_oracle`` which prefers the
+    shared `mtg_cards/oracle_snapshots/` store (current Oracle text,
+    post-errata) over the local cache. This is the FP-B change: the
+    LLM advisor reads authoritative card text rather than relying on
+    its training-data memory of cards (which lags errata).
+
+    Returns "" when no oracle text is available for any card — keeps
+    the prompt tight when running with an empty cache.
+    """
+    import card_db
+
+    cards: list[tuple[str, str]] = []  # (label, name) pairs
+    seen: set[str] = set()
+    for c in state.you.hand:
+        if c.name in seen:
+            continue
+        cards.append(("hand", c.name))
+        seen.add(c.name)
+    for c in state.opponent.board:
+        if c.name in seen:
+            continue
+        cards.append(("opp-board", c.name))
+        seen.add(c.name)
+        if len(cards) >= max_cards:
+            break
+
+    lines: list[str] = []
+    for label, name in cards[:max_cards]:
+        oracle = card_db.get_oracle(name)
+        if not oracle:
+            continue
+        # Collapse newlines, truncate.
+        oracle_compact = " ".join(oracle.split())
+        if len(oracle_compact) > max_chars_per_card:
+            oracle_compact = oracle_compact[: max_chars_per_card - 1] + "…"
+        lines.append(f"  - [{label}] {name}: {oracle_compact}")
+
+    if not lines:
+        return ""
+    return "\nCard text reference (current Oracle):\n" + "\n".join(lines)
 
 
 def compress_state(state: GameState) -> str:
