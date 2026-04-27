@@ -8,7 +8,12 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def clean_card_db():
+def clean_card_db(monkeypatch):
+    """Restore module dicts after each test, AND disable the shared-store
+    lookup so tests retain control via the local `_oracle` etc. dicts.
+    Without this the new shared-store integration would override
+    synthetic test data with real Scryfall snapshots."""
+    monkeypatch.setattr("card_db._resolve_shared_cards_dir", lambda: None)
     orig_oracle = card_db._oracle.copy()
     orig_type_line = card_db._type_line.copy()
     orig_bad_ids = card_db._bad_ids.copy()

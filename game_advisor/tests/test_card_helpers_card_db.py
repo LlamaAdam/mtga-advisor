@@ -7,8 +7,10 @@ import card_db
 
 
 @pytest.fixture(autouse=True)
-def clean_type_line_cache():
-    """Restore _type_line to its original state after each test."""
+def clean_type_line_cache(monkeypatch):
+    """Restore _type_line after each test, AND disable shared-store lookup
+    so synthetic test data takes effect."""
+    monkeypatch.setattr("card_db._resolve_shared_cards_dir", lambda: None)
     original = card_db._type_line.copy()
     yield
     card_db._type_line.clear()

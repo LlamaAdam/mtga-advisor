@@ -13,7 +13,11 @@ from game_state import GameState
 
 
 @pytest.fixture(autouse=True)
-def clean_card_db_state():
+def clean_card_db_state(monkeypatch):
+    # Disable shared-store lookup so tests retain control of card data via
+    # the local module dicts. Without this the new shared-store integration
+    # would override synthetic test data with real Scryfall snapshots.
+    monkeypatch.setattr("card_db._resolve_shared_cards_dir", lambda: None)
     orig_cache = card_db._cache.copy()
     orig_mana = card_db._mana_cost.copy()
     orig_cmc = card_db._cmc.copy()
