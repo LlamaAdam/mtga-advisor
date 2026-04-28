@@ -171,31 +171,32 @@ For now the two halves coexist fine.
 
 ---
 
-## FP-D — Test coverage for legacy draft helper
+## FP-D — Test coverage for legacy draft helper ✅ DONE 2026-04-28
 
-**What.** Add a `tests/` directory at the top level and write tests
-for the draft-helper code (currently 0 tests). Target: 50+ tests
-covering:
+**Resolution.** 50+ test target met and exceeded. Top-level
+`tests/` directory now ships **196 tests** across nine files:
 
-- `card_db.py` — card lookup, ID resolution, blacklist behavior
-- `deck.py` — deck object operations, color counting
-- `log_scanner.py` — Arena Player.log parsing for draft events
-- `ratings.py` — 17lands API integration (mocked HTTP)
-- `synergy.py` — pick recommendation logic
+- `test_api.py` — 25 tests for the 17Lands client (mocked HTTP)
+- `test_card_db.py` — 26 tests for card-name caching, oracle lookup,
+  ID resolution + atomic-rename save path
+- `test_card_detector.py` — 16 tests for peak finding + grid
+  detection (with synthetic numpy images)
+- `test_deck.py` — deck object ops + color counting
+- `test_draft_advisor.py` — 15 tests for `should_explain` decision
+  logic + LLM prompt builders
+- `test_log_scanner.py` — 17 tests for Arena Player.log parsing
+- `test_mtga_local_db.py` — local card DB
+- `test_overlay.py` — 6 tests for `OverlayApp.grid_centers`
+- `test_ratings.py` — 25 tests for grading + Bayesian smoothing
+- `test_synergy.py` — pick recommendation logic
 
-**Why it might matter.** Half the codebase has no test coverage. Bug
-fixes since the last test-touched commit (e.g., the recent SQLite
-thread-safety fix at commit 2b34098) had no automated regression
-guard. Tests would catch the kind of silent drift that's already
-happened.
+Real bug found along the way: `card_db._save_cache` had no atomic
+rename, so a crash mid-write left the 1.6MB arena_id_cache.json
+truncated and unreadable on next startup. Fixed via .tmp +
+os.replace pattern with regression tests.
 
-**Cost.** ~10–15h for the 50-test target. Expect to find 2–3
-real bugs along the way (typical TDD-on-existing-code yield).
-
-**What would unblock it.** Just commitment. No external dependency.
-
-**Current take.** Worth doing in chunks of 3–5h per session. Start
-with the highest-blast-radius file (`card_db.py` or `deck.py`).
+Run via `pytest tests/` (scope-locally; mixing with `game_advisor/
+tests/` triggers the documented `config.py` collision).
 
 ---
 
