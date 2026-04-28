@@ -99,19 +99,39 @@ def _load_cache():
 
 
 def _save_cache():
+    """Persist the in-memory cache atomically.
+
+    Writes to a `.tmp` sibling, fsyncs, then `os.replace`s into place.
+    Without this, a crash mid-write left the cache as truncated JSON
+    and the next startup raised — see FP-E in FUTURE_PLANS.md. The
+    atomic-rename pattern is the smallest fix; full SQLite migration
+    is the larger FP-E item, deferred until the schema benefits
+    matter (cross-process sharing, indexed lookup).
+    """
     with _save_lock:
         try:
-            with open(_CACHE_FILE, "w", encoding="utf-8") as f:
-                json.dump({
-                    "cards": _cache,
-                    "oracle": _oracle,
-                    "cmc": _cmc,
-                    "mana_cost": _mana_cost,
-                    "type_line": _type_line,
-                    "bad_ids": list(_bad_ids),
-                    "preloaded_sets": list(_preloaded_sets),
-                }, f)
+            payload = {
+                "cards": _cache,
+                "oracle": _oracle,
+                "cmc": _cmc,
+                "mana_cost": _mana_cost,
+                "type_line": _type_line,
+                "bad_ids": list(_bad_ids),
+                "preloaded_sets": list(_preloaded_sets),
+            }
+            tmp_path = _CACHE_FILE + ".tmp"
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f)
+                f.flush()
+                try:
+                    os.fsync(f.fileno())
+                except (OSError, AttributeError):
+                    # fsync isn't supported on all platforms / file objects.
+                    pass
+            os.replace(tmp_path, _CACHE_FILE)
         except Exception:
+            # Cache write failures are non-fatal — the cache rebuilds
+            # itself from network calls on the next session.
             pass
 
 

@@ -22,3 +22,13 @@ import pathlib
 _REPO = pathlib.Path(__file__).resolve().parents[1]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
+
+
+def pytest_configure(config):
+    """Register custom markers used by tests."""
+    config.addinivalue_line(
+        "markers",
+        "real_save: opt out of the test_card_db autouse stub of "
+        "_save_cache (used by tests that exercise the real atomic "
+        "write path)",
+    )
