@@ -17,17 +17,23 @@ import pytest
 import card_db
 
 
+_REAL_SAVE_CACHE = card_db._save_cache  # Captured before any test stubs it.
+
+
 @pytest.fixture(autouse=True)
-def isolate_card_db(monkeypatch):
+def isolate_card_db(monkeypatch, request):
     """Isolate each test from on-disk cache and shared store.
 
     Each test gets:
     - Empty in-memory caches (snapshot + restore).
     - Shared-store lookup disabled (so synthetic data takes effect).
-    - `_save_cache` and `_load_cache` no-ops (no real file I/O).
+    - `_save_cache` and `_load_cache` no-ops (no real file I/O), unless
+      the test is marked ``real_save`` (used to exercise the atomic
+      write path itself).
     """
     monkeypatch.setattr("card_db._resolve_shared_cards_dir", lambda: None)
-    monkeypatch.setattr("card_db._save_cache", lambda: None)
+    if "real_save" not in request.keywords:
+        monkeypatch.setattr("card_db._save_cache", lambda: None)
     monkeypatch.setattr("card_db._load_cache", lambda: None)
     orig_cache = card_db._cache.copy()
     orig_oracle = card_db._oracle.copy()
@@ -224,3 +230,35 @@ def test_learn_name_normalizes_int_id_to_string(monkeypatch):
     )
     card_db.learn_name(12345, "Foo")
     assert card_db._cache["12345"] == "Foo"
+
+
+# ---------------------------------------------------------------------------
+# _save_cache atomic-rename behavior (FP-E defensive fix)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.real_save
+def test_save_cache_uses_atomic_rename(tmp_path, monkeypatch):
+    """Save should write to .tmp then os.replace into the canonical
+    path. A crash mid-write must not leave the canonical file
+    truncated."""
+    cache_file = tmp_path / "arena_id_cache.json"
+    monkeypatch.setattr("card_db._CACHE_FILE", str(cache_file))
+    card_db._cache["1"] = "Lightning Bolt"
+    card_db._save_cache()
+
+    assert cache_file.exists()
+    assert not (tmp_path / "arena_id_cache.json.tmp").exists()
+    body = json.loads(cache_file.read_text(encoding="utf-8"))
+    assert body["cards"]["1"] == "Lightning Bolt"
+
+
+@pytest.mark.real_save
+def test_save_cache_failure_is_swallowed(tmp_path, monkeypatch):
+    """Cache writes are best-effort; an OS error from a missing
+    parent dir must not propagate."""
+    monkeypatch.setattr(
+        "card_db._CACHE_FILE",
+        str(tmp_path / "nonexistent_dir" / "cache.json"),
+    )
+    # Should not raise — parent dir doesn't exist.
+    card_db._save_cache()
