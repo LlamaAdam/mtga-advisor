@@ -7,15 +7,63 @@ Two strategies:
   2. resolve(ids) — individual/batch fallback via /cards/collection.
 
 Results cached in arena_id_cache.json between sessions.
+
+Oracle / cmc / type-line lookups consult the shared `C:\\dev\\mtg_cards\\`
+folder first (when present) before falling back to the local in-process
+cache. The shared store is populated by `forge_py prime` and the per-card
+`forge_py.cards.refresh` API. See FUTURE_PLANS.md FP-A.
 """
 
 import json
 import os
 import pathlib
 import queue
+import re
 import threading
 import time
 import requests
+
+
+def _resolve_shared_cards_dir() -> pathlib.Path | None:
+    """Resolve the shared `mtg_cards` folder, mirroring the resolvers in the
+    sister projects. Returns None when the canonical location doesn't exist
+    AND the env var isn't set — callers fall back to the local cache.
+
+    Order of precedence:
+    1. ``MTG_CARDS_DIR`` environment variable
+    2. ``C:\\dev\\mtg_cards`` if it exists
+    3. None
+    """
+    env = os.environ.get("MTG_CARDS_DIR")
+    if env:
+        return pathlib.Path(env)
+    canonical = pathlib.Path("C:/dev/mtg_cards")
+    if canonical.exists():
+        return canonical
+    return None
+
+
+def _shared_snapshot_path(card_name: str) -> pathlib.Path | None:
+    """Return the per-card snapshot path in the shared store, or None when
+    the shared folder isn't configured."""
+    shared = _resolve_shared_cards_dir()
+    if not shared:
+        return None
+    slug = re.sub(r"[^a-z0-9]+", "_", card_name.lower()).strip("_") or "unknown"
+    return shared / "oracle_snapshots" / f"{slug}.json"
+
+
+def _load_shared_snapshot(card_name: str) -> dict | None:
+    """Load the shared-store snapshot for ``card_name`` if present + valid.
+    Returns None on any failure (caller falls back to local cache)."""
+    path = _shared_snapshot_path(card_name)
+    if path is None or not path.exists():
+        return None
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
 
 _CACHE_FILE = str(pathlib.Path(__file__).parent / "arena_id_cache.json")
 _cache: dict[str, str] = {}          # str(arena_id) -> card name
@@ -51,31 +99,78 @@ def _load_cache():
 
 
 def _save_cache():
+    """Persist the in-memory cache atomically.
+
+    Writes to a `.tmp` sibling, fsyncs, then `os.replace`s into place.
+    Without this, a crash mid-write left the cache as truncated JSON
+    and the next startup raised — see FP-E in FUTURE_PLANS.md. The
+    atomic-rename pattern is the smallest fix; full SQLite migration
+    is the larger FP-E item, deferred until the schema benefits
+    matter (cross-process sharing, indexed lookup).
+    """
     with _save_lock:
         try:
-            with open(_CACHE_FILE, "w", encoding="utf-8") as f:
-                json.dump({
-                    "cards": _cache,
-                    "oracle": _oracle,
-                    "cmc": _cmc,
-                    "mana_cost": _mana_cost,
-                    "type_line": _type_line,
-                    "bad_ids": list(_bad_ids),
-                    "preloaded_sets": list(_preloaded_sets),
-                }, f)
+            payload = {
+                "cards": _cache,
+                "oracle": _oracle,
+                "cmc": _cmc,
+                "mana_cost": _mana_cost,
+                "type_line": _type_line,
+                "bad_ids": list(_bad_ids),
+                "preloaded_sets": list(_preloaded_sets),
+            }
+            tmp_path = _CACHE_FILE + ".tmp"
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f)
+                f.flush()
+                try:
+                    os.fsync(f.fileno())
+                except (OSError, AttributeError):
+                    # fsync isn't supported on all platforms / file objects.
+                    pass
+            os.replace(tmp_path, _CACHE_FILE)
         except Exception:
+            # Cache write failures are non-fatal — the cache rebuilds
+            # itself from network calls on the next session.
             pass
 
 
 def get_oracle(card_name: str) -> str:
-    """Return oracle text for a card name (lowercased lookup). Empty string if unknown."""
+    """Return oracle text for a card name. Empty string if unknown.
+
+    Lookup order:
+    1. Shared `mtg_cards/oracle_snapshots/<slug>.json` (current Scryfall data)
+    2. Local in-process cache loaded from arena_id_cache.json (legacy)
+
+    The shared store wins when present because its data is refreshed
+    daily via `forge_py prime` and is closer to ground truth — Wizards'
+    Oracle text changes via errata, and the local cache may be months
+    stale.
+    """
+    snapshot = _load_shared_snapshot(card_name)
+    if snapshot:
+        oracle = snapshot.get("oracle_text") or ""
+        if oracle:
+            return oracle
     if not _oracle:
         _load_cache()
     return _oracle.get(card_name.strip().lower(), "")
 
 
 def get_cmc(card_name: str) -> int:
-    """Return converted mana cost from Scryfall cache. 0 if unknown."""
+    """Return converted mana cost. 0 if unknown.
+
+    Same shared-then-local lookup order as `get_oracle`. The shared
+    store's `cmc` field is a float in Scryfall's API; we coerce to int
+    here to match the legacy interface."""
+    snapshot = _load_shared_snapshot(card_name)
+    if snapshot:
+        cmc = snapshot.get("cmc")
+        if cmc is not None:
+            try:
+                return int(cmc)
+            except (TypeError, ValueError):
+                pass
     if not _cmc:
         _load_cache()
     return _cmc.get(card_name.strip().lower(), 0)
@@ -86,24 +181,40 @@ def get_subtypes(card_name: str) -> list[str]:
     Return creature subtypes from the Scryfall type line.
     e.g. "Legendary Creature — Angel Warrior" → ["Angel", "Warrior"]
     Returns empty list if type line is unknown or has no subtypes.
+
+    Goes through `get_type_line()` so the shared-store lookup (FP-A)
+    feeds errata'd subtypes (creature-type updates do happen — Phyrexian,
+    Demon → Devil rebrandings, etc.) into the result.
     """
-    if not _type_line:
-        _load_cache()
-    tl = _type_line.get(card_name.strip().lower(), "")
+    tl = get_type_line(card_name)
     if not tl or "—" not in tl:
         return []
     return tl.split("—", 1)[1].strip().split()
 
 
 def get_mana_cost(card_name: str) -> str:
-    """Return mana cost string e.g. '{2}{B}{B}' from Scryfall cache. Empty if unknown."""
+    """Return mana cost string e.g. '{2}{B}{B}'. Empty if unknown.
+
+    Same shared-then-local lookup order as `get_oracle`."""
+    snapshot = _load_shared_snapshot(card_name)
+    if snapshot:
+        mana = snapshot.get("mana_cost") or ""
+        if mana:
+            return mana
     if not _mana_cost:
         _load_cache()
     return _mana_cost.get(card_name.strip().lower(), "")
 
 
 def get_type_line(card_name: str) -> str:
-    """Return full type line e.g. 'Creature — Angel Warrior'. Empty string if unknown."""
+    """Return full type line e.g. 'Creature — Angel Warrior'. Empty if unknown.
+
+    Same shared-then-local lookup order as `get_oracle`."""
+    snapshot = _load_shared_snapshot(card_name)
+    if snapshot:
+        tl = snapshot.get("type_line") or ""
+        if tl:
+            return tl
     if not _type_line:
         _load_cache()
     return _type_line.get(card_name.strip().lower(), "")

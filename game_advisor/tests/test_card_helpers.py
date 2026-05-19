@@ -9,8 +9,11 @@ import card_helpers
 
 
 @pytest.fixture(autouse=True)
-def clean_card_db_caches():
-    """Restore _mana_cost and _oracle to original state after each test."""
+def clean_card_db_caches(monkeypatch):
+    """Restore module dicts after each test, AND disable the shared-store
+    lookup so synthetic test data takes effect (tests set local cache
+    entries directly and expect those to win)."""
+    monkeypatch.setattr("card_db._resolve_shared_cards_dir", lambda: None)
     orig_mana = card_db._mana_cost.copy()
     orig_oracle = card_db._oracle.copy()
     yield
