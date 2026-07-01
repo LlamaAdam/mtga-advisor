@@ -1,27 +1,22 @@
 """
-Async LLM advisor. Supports OpenAI, OpenRouter, and Ollama backends.
-Fires in a background thread on significant state changes. Caches
-responses by state hash to avoid redundant API calls. Rate-limited
-to at most one call per min_interval_seconds.
+Async LLM advisor. Supports OpenAI, OpenRouter, Ollama, and the
+subscription `claude` CLI as backends. Fires in a background thread on
+significant state changes. Caches responses by state hash to avoid
+redundant API calls. Rate-limited to at most one call per
+min_interval_seconds.
 """
 from __future__ import annotations
 
 import hashlib
-import sys
-import pathlib
+import json
+import os
+import shutil
+import subprocess
 import threading
 import time
 from typing import Callable, Optional
 
-import importlib.util as _ilu
-
-# Import game_advisor/config.py explicitly by path to avoid shadowing by the
-# root-level config.py when the parent directory is on sys.path.
-_config_path = pathlib.Path(__file__).parent / "config.py"
-_spec = _ilu.spec_from_file_location("game_advisor_config", _config_path)
-config = _ilu.module_from_spec(_spec)  # type: ignore[arg-type]
-_spec.loader.exec_module(config)  # type: ignore[union-attr]
-
+import config
 import openai
 
 from game_state import GameState
@@ -36,6 +31,73 @@ _COT_SYSTEM_PROMPT = (
     "Keep the total response under 200 words. Use card names. Include combat math when relevant."
 )
 
+# Env vars that could redirect the subscription `claude` CLI to a BILLED
+# endpoint or inject an API key. Scrubbed from the child process so
+# LLM_BACKEND=claude always uses the logged-in subscription, never
+# per-token billing — even if a key is set for other tooling (e.g. the
+# openrouter backend's OPENAI_API_KEY, which shares this process's env).
+_CLAUDE_CLI_BILLING_REDIRECT_VARS = {"CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX"}
+
+
+def _claude_cli_available() -> bool:
+    return shutil.which("claude") is not None
+
+
+def _complete_via_claude_cli(system: str, user_msg: str, *, timeout: int = 60) -> str:
+    """Run a completion through the subscription `claude` CLI instead of an
+    API-billed backend. Mirrors commander_builder's _curator_complete_via_cli.
+
+    system + user are sent on STDIN (not argv) to avoid command-line length
+    limits. Raises RuntimeError on failure — callers should catch and fall
+    back to LLMAdvisor.OFFLINE_MESSAGE.
+    """
+    claude = shutil.which("claude")
+    if not claude:
+        raise RuntimeError("`claude` CLI not found on PATH (needed for "
+                            "LLM_BACKEND=claude)")
+
+    prompt = f"{system}\n\n---\n\n{user_msg}"
+    env = {k: v for k, v in os.environ.items()
+           if not k.startswith("ANTHROPIC_")
+           and k not in _CLAUDE_CLI_BILLING_REDIRECT_VARS}
+    cmd = [claude, "-p", "--output-format", "json"]
+
+    last_err = ""
+    for attempt in range(2):
+        try:
+            proc = subprocess.run(
+                cmd, input=prompt, env=env, capture_output=True, text=True,
+                encoding="utf-8", errors="replace", timeout=timeout,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(f"claude CLI timed out after {timeout}s") from exc
+
+        if proc.returncode != 0:
+            last_err = (f"claude CLI failed rc={proc.returncode}: "
+                        f"{(proc.stderr or proc.stdout or '')[-300:]}")
+        else:
+            try:
+                data = json.loads(proc.stdout)
+            except json.JSONDecodeError:
+                text = proc.stdout.strip()
+                if text:
+                    return text
+                last_err = "claude CLI returned empty non-JSON output"
+                data = None
+            if isinstance(data, dict):
+                if data.get("is_error"):
+                    last_err = f"claude CLI reported error: {data.get('result')}"
+                else:
+                    result = str(data.get("result") or "")
+                    if result.strip():
+                        return result
+                    last_err = "claude CLI returned empty result"
+
+        if attempt == 0:
+            time.sleep(3)  # brief backoff before the single retry
+
+    raise RuntimeError(f"claude CLI failed after retry: {last_err}")
+
 
 class LLMAdvisor:
     OFFLINE_MESSAGE = "Advisor offline — rule alerts active."
@@ -48,19 +110,24 @@ class LLMAdvisor:
         min_interval_seconds: int = config.LLM_MIN_INTERVAL_SECONDS,
         backend: str = config.LLM_BACKEND,
     ):
-        _BASE_URLS = {
-            "ollama": "http://localhost:11434/v1",
-            "openrouter": "https://openrouter.ai/api/v1",
-            "openai": None,  # default
-        }
-        base_url = _BASE_URLS.get(backend)
-        # Ollama doesn't require a real key; use a placeholder if none set
-        if backend == "ollama" and not api_key:
-            api_key = "ollama"
-        self._client = openai.OpenAI(
-            api_key=api_key,
-            **({"base_url": base_url} if base_url else {}),
-        )
+        self._backend = backend
+        if backend == "claude":
+            # Subscription CLI backend — no OpenAI-compatible client needed.
+            self._client = None
+        else:
+            _BASE_URLS = {
+                "ollama": "http://localhost:11434/v1",
+                "openrouter": "https://openrouter.ai/api/v1",
+                "openai": None,  # default
+            }
+            base_url = _BASE_URLS.get(backend)
+            # Ollama doesn't require a real key; use a placeholder if none set
+            if backend == "ollama" and not api_key:
+                api_key = "ollama"
+            self._client = openai.OpenAI(
+                api_key=api_key,
+                **({"base_url": base_url} if base_url else {}),
+            )
         self._model = model
         self._timeout = timeout
         self._min_interval = min_interval_seconds
@@ -68,6 +135,28 @@ class LLMAdvisor:
         self._last_call_time: float = 0.0
         self._last_advice: str = ""
         self._lock = threading.Lock()
+
+    def _complete(self, system: str, user: str, *, max_tokens: int) -> str:
+        """Dispatch a completion to the configured backend. Returns
+        OFFLINE_MESSAGE on any failure (network, auth, CLI missing, etc.)."""
+        if self._backend == "claude":
+            try:
+                return _complete_via_claude_cli(system, user, timeout=self._timeout)
+            except Exception:
+                return self.OFFLINE_MESSAGE
+        try:
+            response = self._client.chat.completions.create(
+                model=self._model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                timeout=self._timeout,
+                max_tokens=max_tokens,
+            )
+            return response.choices[0].message.content.strip()
+        except Exception:
+            return self.OFFLINE_MESSAGE
 
     def request_advice_async(
         self,
@@ -129,19 +218,7 @@ class LLMAdvisor:
             f"(2) what I should have done differently, and (3) one key lesson to take away."
         )
 
-        try:
-            response = self._client.chat.completions.create(
-                model=self._model,
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-                timeout=self._timeout,
-                max_tokens=400,
-            )
-            return response.choices[0].message.content.strip()
-        except Exception:
-            return self.OFFLINE_MESSAGE
+        return self._complete(system, user, max_tokens=400)
 
     def _call_api(self, state: GameState) -> str:
         """Call GPT-4o synchronously. Returns cached or rate-limited result when applicable."""
@@ -158,19 +235,7 @@ class LLMAdvisor:
                 return self._last_advice
 
             prompt = self._build_prompt(state)
-            try:
-                response = self._client.chat.completions.create(
-                    model=self._model,
-                    messages=[
-                        {"role": "system", "content": _COT_SYSTEM_PROMPT},
-                        {"role": "user", "content": prompt},
-                    ],
-                    timeout=self._timeout,
-                    max_tokens=300,
-                )
-                advice = response.choices[0].message.content.strip()
-            except Exception:
-                advice = self.OFFLINE_MESSAGE
+            advice = self._complete(_COT_SYSTEM_PROMPT, prompt, max_tokens=300)
 
             self._cache[state_hash] = advice
             self._last_call_time = time.monotonic()
@@ -212,7 +277,7 @@ def card_text_appendix(
     Returns "" when no oracle text is available for any card — keeps
     the prompt tight when running with an empty cache.
     """
-    import card_db
+    from draft_helper import card_db
 
     cards: list[tuple[str, str]] = []  # (label, name) pairs
     seen: set[str] = set()

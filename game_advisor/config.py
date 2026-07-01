@@ -9,7 +9,8 @@ load_dotenv(pathlib.Path(__file__).parent / ".env")
 # Add parent folder to path so we can import card_db
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
-# LLM backend — supports OpenAI, OpenRouter, or Ollama (local)
+# LLM backend — supports OpenAI, OpenRouter, Ollama (local), or the
+# subscription `claude` CLI
 #
 # For Ollama (local, free):
 #   LLM_BACKEND=ollama
@@ -24,6 +25,11 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 #   LLM_BACKEND=openrouter
 #   OPENAI_API_KEY=sk-or-v1-...
 #   LLM_MODEL=openai/gpt-4o  (or any OpenRouter model slug)
+#
+# For Claude via the subscription CLI (no API key, no per-token billing —
+# requires `claude` on PATH and an active Claude subscription login):
+#   LLM_BACKEND=claude
+#   (LLM_MODEL is ignored; the CLI's configured default model is used)
 
 LLM_BACKEND: str = os.environ.get("LLM_BACKEND", "ollama").lower()
 OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY", "")
@@ -32,8 +38,12 @@ _default_model = {
     "ollama": "llama3",
     "openrouter": "openai/gpt-4o",
     "openai": "gpt-4o",
+    "claude": "claude-cli-default",
 }.get(LLM_BACKEND, "llama3")
 OPENAI_MODEL: str = os.environ.get("LLM_MODEL", _default_model)
+
+# Timeout for a single `claude` CLI subprocess call (subscription backend).
+CLAUDE_CLI_TIMEOUT_SECONDS: int = int(os.environ.get("CLAUDE_CLI_TIMEOUT_SECONDS", "60"))
 
 LLM_TIMEOUT_SECONDS: int = int(os.environ.get("LLM_TIMEOUT_SECONDS", "30"))
 LLM_MIN_INTERVAL_SECONDS: int = int(os.environ.get("LLM_MIN_INTERVAL_SECONDS", "8"))
