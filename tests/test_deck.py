@@ -117,6 +117,35 @@ def test_clear_resets_to_empty_state():
 
 
 # ---------------------------------------------------------------------------
+# _deck_metrics — must never return None (crash regression)
+# ---------------------------------------------------------------------------
+
+def test_deck_metrics_builds_on_empty_picks():
+    """Regression: on a pack-opener (no picks yet), _deck_metrics() must build
+    real metrics, not return the uninitialized None cache. The old `[] != []`
+    memo guard skipped the first build, so every synergy read
+    (metrics.enabler_count, etc.) crashed with AttributeError on None."""
+    t = deck.DeckTracker()
+    m = t._deck_metrics()
+    assert m is not None
+    assert isinstance(m, deck.synergy.DeckMetrics)
+
+
+def test_adjusted_rating_on_empty_deck_does_not_crash(monkeypatch):
+    """best_pick/adjusted_rating over a fresh deck must not raise even when a
+    real (loaded) rating flows through the synergy pipeline with zero picks —
+    the exact path that crashed the live overlay on pack 1 pick 1."""
+    monkeypatch.setattr("draft_helper.ratings.is_loaded", lambda: True)
+    monkeypatch.setattr("draft_helper.ratings.get_winrate",
+                        lambda *a, **k: 55.0)
+    monkeypatch.setattr("draft_helper.ratings.get_colors", lambda name: ["G"])
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: ["Creature"])
+    t = deck.DeckTracker()
+    # Should return a card (not None) and not raise on the empty-deck synergy path.
+    assert t.best_pick(["Giant Growth", "Guerrilla Gorilla"]) is not None
+
+
+# ---------------------------------------------------------------------------
 # Color counting
 # ---------------------------------------------------------------------------
 

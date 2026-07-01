@@ -57,7 +57,12 @@ class DeckTracker:
         self.pack_number: int = 1
         self.pick_number: int = 1
         self._metrics_cache: synergy.DeckMetrics | None = None
-        self._metrics_picks_snapshot: list[str] = []
+        # None (not []) is the "never built" sentinel: an empty picks list must
+        # still trigger the first build, otherwise `[] != []` is False and
+        # _deck_metrics() returns the uninitialized None cache — which crashes
+        # every synergy function on a pack-opener (no picks yet). See
+        # _deck_metrics().
+        self._metrics_picks_snapshot: list[str] | None = None
 
     # ------------------------------------------------------------------
     # Picks
