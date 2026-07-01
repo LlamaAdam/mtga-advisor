@@ -90,6 +90,15 @@ def test_extract_set_code_returns_none_for_unrelated_content():
     assert scanner._extract_set_code(content) is None
 
 
+def test_extract_set_code_handles_resumed_premier_draft_via_internal_name():
+    """Regression: a RESUMED Premier Draft logs InternalEventName with
+    'PremierDraft_...', not 'BotDraft_...'. The fallback must not be gated
+    on the BotDraft string or the set (and thus ratings) never load."""
+    scanner = _scanner_with_no_log()
+    content = '[Course state dump] "InternalEventName":"PremierDraft_MSH_20260623"\n'
+    assert scanner._extract_set_code(content) == ("MSH", "PremierDraft")
+
+
 def test_extract_set_code_prefers_event_join_over_internal_name():
     """When both signals are present in the same log, EventJoin should
     win (it's more specific and timestamps the actual join)."""
@@ -181,3 +190,170 @@ def test_scanner_poll_no_op_when_log_missing():
     scanner = ArenaLogScanner(log_path="/tmp/definitely-not-a-real-path/Player.log")
     # Should not raise.
     scanner.poll()
+
+
+# ---------------------------------------------------------------------------
+# _handle_draft_notify — current MTGA draft pack format (inline JSON, CSV IDs)
+# ---------------------------------------------------------------------------
+
+def _stub_resolve(monkeypatch, mapping):
+    """Make card_db.resolve return names from `mapping` (id->name) without HTTP."""
+    monkeypatch.setattr(
+        "draft_helper.log_scanner.card_db.resolve",
+        lambda ids: {str(i): mapping.get(str(i), f"Unknown({i})") for i in ids},
+    )
+
+
+def test_handle_draft_notify_parses_inline_csv_packcards(monkeypatch):
+    """Regression: modern MTGA logs the pack as a Draft.Notify line with the
+    JSON INLINE (same line) and PackCards a comma-separated STRING of IDs —
+    not the next-line double-encoded list the old handler assumed."""
+    _stub_resolve(monkeypatch, {"105009": "Stolen Stark Tech",
+                                "104989": "Decoy Ploy",
+                                "104911": "Kree Commandos"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    packs = []
+    s.on_pack_update = packs.append
+    line = ('[UnityCrossThreadLogger]Draft.Notify '
+            '{"draftId":"abc","SelfPick":6,"SelfPack":2,'
+            '"PackCards":"105009,104989,104911"}')
+    s._handle_draft_notify(line)
+    assert s.state.pack_number == 2
+    assert s.state.pick_number == 6
+    assert s.state.current_pack == ["Stolen Stark Tech", "Decoy Ploy", "Kree Commandos"]
+    assert packs == [["Stolen Stark Tech", "Decoy Ploy", "Kree Commandos"]]
+
+
+def test_handle_draft_notify_ignores_line_without_packcards(monkeypatch):
+    _stub_resolve(monkeypatch, {})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    fired = []
+    s.on_pack_update = fired.append
+    s._handle_draft_notify('Draft.Notify {"draftId":"abc","SelfPick":1,"SelfPack":1}')
+    assert fired == []
+    assert s.state.current_pack == []
+
+
+def test_handle_draft_notify_infers_original_pack_size(monkeypatch):
+    """Original pack size = cards remaining + picks already made this pack."""
+    _stub_resolve(monkeypatch, {str(i): f"C{i}" for i in range(200)})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    ids = ",".join(str(100 + n) for n in range(10))  # 10 cards left
+    s._handle_draft_notify(
+        'Draft.Notify {"SelfPick":5,"SelfPack":1,"PackCards":"' + ids + '"}')
+    # pick 5 → 4 already taken this pack → original size 14
+    assert s.state.original_pack_size == 14
+
+
+# ---------------------------------------------------------------------------
+# _handle_make_pick — the card the player submitted
+# ---------------------------------------------------------------------------
+
+def test_handle_make_pick_extracts_grpid_and_fires_on_pick(monkeypatch):
+    _stub_resolve(monkeypatch, {"105119": "Super Suit"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    picks = []
+    s.on_pick = picks.append
+    line = ('[UnityCrossThreadLogger]==> EventPlayerDraftMakePick '
+            r'{"id":"x","request":"{\"DraftId\":\"d\",\"GrpIds\":[105119],'
+            r'\"Pack\":1,\"Pick\":11}"}')
+    s._handle_make_pick(line)
+    assert picks == ["Super Suit"]
+    assert s.state.picked_ids == ["105119"]
+    assert s.state.picked_cards == ["Super Suit"]
+
+
+def test_handle_make_pick_deduplicates_repeated_grpid(monkeypatch):
+    """The same pick line re-scanned (e.g. resync) must not double-count."""
+    _stub_resolve(monkeypatch, {"105119": "Super Suit"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    picks = []
+    s.on_pick = picks.append
+    line = (r'==> EventPlayerDraftMakePick {"request":"{\"GrpIds\":[105119],'
+            r'\"Pack\":1,\"Pick\":11}"}')
+    s._handle_make_pick(line)
+    s._handle_make_pick(line)
+    assert picks == ["Super Suit"]  # fired once, not twice
+
+
+# ---------------------------------------------------------------------------
+# _parse — end-to-end routing (the original bug was in routing, not just the
+# handlers, so exercise the full dispatch path)
+# ---------------------------------------------------------------------------
+
+def test_parse_routes_draft_notify_to_pack_update(monkeypatch):
+    """A Draft.Notify line fed through _parse must reach _handle_draft_notify
+    and fire on_pack_update — NOT the old _get_payload/_handle_premier_pack
+    path that read the wrong (next) line."""
+    _stub_resolve(monkeypatch, {"1": "Alpha", "2": "Beta"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    packs = []
+    s.on_pack_update = lambda c: packs.append(list(c))
+    content = '[UnityCrossThreadLogger]Draft.Notify {"SelfPick":1,"SelfPack":1,"PackCards":"1,2"}\n'
+    s._parse(content)
+    assert packs == [["Alpha", "Beta"]]
+
+
+def test_parse_routes_make_pick_to_on_pick(monkeypatch):
+    _stub_resolve(monkeypatch, {"105119": "Super Suit"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    picks = []
+    s.on_pick = picks.append
+    content = (r'==> EventPlayerDraftMakePick {"request":"{\"GrpIds\":[105119],'
+               r'\"Pack\":1,\"Pick\":1}"}' + '\n')
+    s._parse(content)
+    assert picks == ["Super Suit"]
+
+
+def test_parse_end_to_end_premier_draft_sequence(monkeypatch):
+    """Realistic resumed-Premier-Draft slice: InternalEventName sets the set,
+    a Draft.Notify shows the pack, a pick is submitted, then the next
+    Draft.Notify shows the reduced pack. State should reflect all of it."""
+    _stub_resolve(monkeypatch, {"1": "Alpha", "2": "Beta", "3": "Gamma"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    picks, packs = [], []
+    s.on_pick = picks.append
+    s.on_pack_update = lambda c: packs.append(list(c))
+    content = (
+        '"InternalEventName":"PremierDraft_MSH_20260623"\n'
+        '[UnityCrossThreadLogger]Draft.Notify {"SelfPick":1,"SelfPack":1,"PackCards":"1,2,3"}\n'
+        r'==> EventPlayerDraftMakePick {"request":"{\"GrpIds\":[1],\"Pack\":1,\"Pick\":1}"}'
+        + '\n'
+        '[UnityCrossThreadLogger]Draft.Notify {"SelfPick":2,"SelfPack":1,"PackCards":"2,3"}\n'
+    )
+    s._parse(content)
+    assert s.state.set_code == "MSH"
+    assert s.state.draft_format == "PremierDraft"
+    assert picks == ["Alpha"]
+    assert s.state.current_pack == ["Beta", "Gamma"]
+    assert s.state.pack_number == 1
+    assert s.state.pick_number == 2
+
+
+def test_parse_pack_transition_updates_pack_number(monkeypatch):
+    """Moving from pack 1 to pack 2 updates pack_number and re-infers the
+    original pack size for the new pack."""
+    _stub_resolve(monkeypatch, {str(i): f"C{i}" for i in range(300)})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    ids1 = ",".join(str(i) for i in range(10))          # pack1 pick5, 10 left
+    ids2 = ",".join(str(i) for i in range(100, 114))     # pack2 pick1, 14 cards
+    s._parse('Draft.Notify {"SelfPick":5,"SelfPack":1,"PackCards":"' + ids1 + '"}\n')
+    assert s.state.pack_number == 1
+    assert s.state.original_pack_size == 14              # 10 + 4 already taken
+    s._parse('Draft.Notify {"SelfPick":1,"SelfPack":2,"PackCards":"' + ids2 + '"}\n')
+    assert s.state.pack_number == 2
+    assert s.state.original_pack_size == 14
+
+
+def test_parse_make_pick_dedups_across_reparse(monkeypatch):
+    """The same pick line seen twice (e.g. overlapping reads) must fire
+    on_pick only once — guarded by picked_ids."""
+    _stub_resolve(monkeypatch, {"105119": "Super Suit"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    picks = []
+    s.on_pick = picks.append
+    line = (r'==> EventPlayerDraftMakePick {"request":"{\"GrpIds\":[105119],'
+            r'\"Pack\":1,\"Pick\":1}"}' + '\n')
+    s._parse(line)
+    s._parse(line)
+    assert picks == ["Super Suit"]

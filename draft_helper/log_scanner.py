@@ -200,8 +200,12 @@ class ArenaLogScanner:
                 if m:
                     result = (m.group(2), _fmt_map.get(m.group(1).split("_")[0], "PremierDraft"))
 
-            # Fallback: InternalEventName in Courses/state dump (resumed draft)
-            elif "InternalEventName" in line and "BotDraft" in line:
+            # Fallback: InternalEventName in Courses/state dump (resumed draft).
+            # Any draft format (PremierDraft/QuickDraft/BotDraft/TradDraft) —
+            # the regex validates the actual value; don't pre-filter on one
+            # format string (resumed Premier drafts carry PremierDraft here,
+            # not BotDraft).
+            elif "InternalEventName" in line and "Draft" in line:
                 m = _pattern.search(line)
                 if m:
                     candidate = (m.group(2), _fmt_map.get(m.group(1).split("_")[0], "PremierDraft"))
@@ -219,7 +223,7 @@ class ArenaLogScanner:
             # Draft join — detect set code and format
             # Also catches InternalEventName in Courses state dump (resumed drafts)
             if ("==> EventJoin" in line and "EventName" in line) or \
-               ("InternalEventName" in line and "BotDraft" in line):
+               ("InternalEventName" in line and "Draft" in line):
                 self._handle_event_join(line)
 
             # Bot/Quick Draft: pack shown at start of draft
@@ -234,9 +238,19 @@ class ArenaLogScanner:
                 if payload:
                     self._handle_bot_pack(payload)
 
-            # Premier Draft pack
+            # Premier / Quick Draft: current pack via Draft.Notify.
+            # The JSON is INLINE on this same line (not the next), and its
+            # PackCards field is a comma-separated string of Arena IDs — so
+            # it needs a dedicated handler, not _get_payload/_handle_premier_pack.
+            elif "Draft.Notify" in line:
+                self._handle_draft_notify(line)
+
+            # Premier / Quick Draft: the card the player just submitted.
+            elif "==> EventPlayerDraftMakePick" in line and "GrpIds" in line:
+                self._handle_make_pick(line)
+
+            # Legacy Premier Draft pack (older MTGA log format)
             elif line.startswith("<== Draft_CompleteDraft(") or \
-                 "Draft.Notify" in line or \
                  line.startswith("<== Draft_MakeHumanDraftPick("):
                 payload = self._get_payload(lines, i + 1)
                 if payload:
@@ -397,3 +411,71 @@ class ArenaLogScanner:
 
         if pack_names and self.on_pack_update:
             self.on_pack_update(pack_names)
+
+    def _handle_draft_notify(self, line: str):
+        """Handle the current MTGA draft pack event: ``Draft.Notify``.
+
+        Unlike the older ``<== Draft_...`` events, the JSON here is INLINE on
+        the same line (after the ``Draft.Notify`` marker), and its
+        ``PackCards`` field is a comma-separated STRING of Arena IDs — not a
+        JSON list. ``SelfPack`` / ``SelfPick`` are the 1-indexed pack/pick.
+        Example:
+          [UnityCrossThreadLogger]Draft.Notify {"draftId":"...","SelfPick":6,
+              "SelfPack":1,"PackCards":"105009,104989,104911,..."}
+        """
+        m = re.search(r"Draft\.Notify\s+(\{.*\})", line)
+        if not m:
+            return
+        try:
+            payload = json.loads(m.group(1))
+        except json.JSONDecodeError:
+            return
+
+        raw = payload.get("PackCards")
+        if not raw:
+            return
+        pack_ids = [x.strip() for x in str(raw).split(",") if x.strip()]
+        if not pack_ids:
+            return
+
+        pack_number = int(payload.get("SelfPack", 1))
+        pick_number = int(payload.get("SelfPick", 1))
+
+        id_map = card_db.resolve(pack_ids)
+        pack_names = [id_map.get(str(i), f"Unknown({i})") for i in pack_ids]
+
+        # Infer original pack size: current cards + picks already made this pack.
+        inferred_size = len(pack_ids) + (pick_number - 1)
+        if pack_number != self.state.pack_number:
+            self.state.original_pack_size = inferred_size
+        elif inferred_size > self.state.original_pack_size:
+            self.state.original_pack_size = inferred_size
+
+        self.state.pack_number  = pack_number
+        self.state.pick_number  = pick_number
+        self.state.current_pack = pack_names
+
+        if pack_names and self.on_pack_update:
+            self.on_pack_update(pack_names)
+
+    def _handle_make_pick(self, line: str):
+        """Track the card the player submitted via ``EventPlayerDraftMakePick``.
+
+        The raw log line embeds the pick as an escaped JSON string, e.g.
+          ==> EventPlayerDraftMakePick {"id":"...","request":"{\\"DraftId\\":
+              \\"...\\",\\"GrpIds\\":[105119],\\"Pack\\":1,\\"Pick\\":2}"}
+        so we pull the GrpId with a regex rather than parsing the outer JSON.
+        Feeds the deck-color tracker (drives the best-pick highlight).
+        """
+        m = re.search(r'GrpIds\\":\[(\d+)\]', line)
+        if not m:
+            return
+        gid = m.group(1)
+        if gid in self.state.picked_ids:
+            return
+        self.state.picked_ids.append(gid)
+        id_map = card_db.resolve([gid])
+        name = id_map.get(gid, f"Unknown({gid})")
+        self.state.picked_cards.append(name)
+        if self.on_pick:
+            self.on_pick(name)
