@@ -1,7 +1,7 @@
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent.parent))
-import card_db
+from draft_helper import card_db
 import pytest
 from game_state import BoardCard, GameState, Player, HandCard
 import decklist as _decklist
@@ -12,7 +12,7 @@ from llm_advisor import compress_state, _COT_SYSTEM_PROMPT, card_text_appendix
 def _disable_shared_store(monkeypatch):
     """Tests in this file control oracle data via card_db._oracle directly,
     so disable the shared-store lookup to keep the local cache in charge."""
-    monkeypatch.setattr("card_db._resolve_shared_cards_dir", lambda: None)
+    monkeypatch.setattr("draft_helper.card_db._resolve_shared_cards_dir", lambda: None)
     orig = card_db._oracle.copy()
     yield
     card_db._oracle.clear()

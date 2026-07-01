@@ -20,7 +20,7 @@ if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 if _GAME_ADVISOR_DIR not in sys.path:
     sys.path.insert(0, _GAME_ADVISOR_DIR)
-import card_db
+from draft_helper import card_db
 import config
 from game_state import BoardCard, GameState, HandCard, Player
 from card_helpers import get_colors, get_keywords

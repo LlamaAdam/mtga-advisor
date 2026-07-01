@@ -22,8 +22,8 @@ import os
 import re
 from typing import Optional
 
-import config
-import card_db
+from . import config
+from . import card_db
 
 
 class DraftState:

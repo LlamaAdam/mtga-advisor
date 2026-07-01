@@ -17,7 +17,7 @@ from typing import Any
 
 import pytest
 
-import api
+from draft_helper import api
 
 
 # ---------------------------------------------------------------------------
@@ -80,7 +80,7 @@ def test_fetch_available_sets_returns_expansions(monkeypatch):
         {"label": "Duskmourn", "value": "DSK"},
     ]}
     monkeypatch.setattr(
-        "api.requests.get", lambda *a, **kw: _FakeResp(payload),
+        "draft_helper.api.requests.get", lambda *a, **kw: _FakeResp(payload),
     )
     sets = api.fetch_available_sets()
     assert sets == payload["expansions"]
@@ -88,7 +88,7 @@ def test_fetch_available_sets_returns_expansions(monkeypatch):
 
 def test_fetch_available_sets_handles_empty_response(monkeypatch):
     monkeypatch.setattr(
-        "api.requests.get", lambda *a, **kw: _FakeResp({}),
+        "draft_helper.api.requests.get", lambda *a, **kw: _FakeResp({}),
     )
     assert api.fetch_available_sets() == []
 
@@ -105,7 +105,7 @@ def test_fetch_card_ratings_passes_set_and_format(monkeypatch):
         captured["params"] = params
         return _FakeResp([_card()])
 
-    monkeypatch.setattr("api.requests.get", fake_get)
+    monkeypatch.setattr("draft_helper.api.requests.get", fake_get)
     out = api.fetch_card_ratings(
         "BLB", draft_format="PremierDraft", start_date="2026-01-01",
     )
@@ -124,7 +124,7 @@ def test_fetch_card_ratings_omits_colors_when_empty(monkeypatch):
         captured["params"] = params
         return _FakeResp([])
 
-    monkeypatch.setattr("api.requests.get", fake_get)
+    monkeypatch.setattr("draft_helper.api.requests.get", fake_get)
     api.fetch_card_ratings("BLB", color_filter="")
     assert "colors" not in captured["params"]
 
@@ -136,7 +136,7 @@ def test_fetch_card_ratings_includes_colors_when_set(monkeypatch):
         captured["params"] = params
         return _FakeResp([])
 
-    monkeypatch.setattr("api.requests.get", fake_get)
+    monkeypatch.setattr("draft_helper.api.requests.get", fake_get)
     api.fetch_card_ratings("BLB", color_filter="WU")
     assert captured["params"]["colors"] == "WU"
 
@@ -188,15 +188,15 @@ def test_extract_types_finds_known_keywords():
 def test_fetch_all_ratings_merges_color_filters(monkeypatch):
     """One card surfaces across All Decks + WU; both should land in
     deck_colors."""
-    monkeypatch.setattr("api.time.sleep", lambda *a, **kw: None)
+    monkeypatch.setattr("draft_helper.api.time.sleep", lambda *a, **kw: None)
 
     def fake_get(url, params=None, headers=None, timeout=None):
         return _FakeResp([_card("Bear")])
 
-    monkeypatch.setattr("api.requests.get", fake_get)
-    monkeypatch.setattr("config.MIN_GAME_COUNT", 100, raising=False)
-    monkeypatch.setattr("config.BAYESIAN_ENABLED", False, raising=False)
-    monkeypatch.setattr("config.RATINGS_START_DATE", "2026-01-01", raising=False)
+    monkeypatch.setattr("draft_helper.api.requests.get", fake_get)
+    monkeypatch.setattr("draft_helper.config.MIN_GAME_COUNT", 100, raising=False)
+    monkeypatch.setattr("draft_helper.config.BAYESIAN_ENABLED", False, raising=False)
+    monkeypatch.setattr("draft_helper.config.RATINGS_START_DATE", "2026-01-01", raising=False)
 
     merged = api.fetch_all_ratings("BLB")
     assert "bear" in merged
@@ -211,13 +211,13 @@ def test_fetch_all_ratings_merges_color_filters(monkeypatch):
 
 
 def test_fetch_all_ratings_invokes_progress_callback(monkeypatch):
-    monkeypatch.setattr("api.time.sleep", lambda *a, **kw: None)
+    monkeypatch.setattr("draft_helper.api.time.sleep", lambda *a, **kw: None)
     monkeypatch.setattr(
-        "api.requests.get", lambda *a, **kw: _FakeResp([_card()]),
+        "draft_helper.api.requests.get", lambda *a, **kw: _FakeResp([_card()]),
     )
-    monkeypatch.setattr("config.MIN_GAME_COUNT", 100, raising=False)
-    monkeypatch.setattr("config.BAYESIAN_ENABLED", False, raising=False)
-    monkeypatch.setattr("config.RATINGS_START_DATE", "2026-01-01", raising=False)
+    monkeypatch.setattr("draft_helper.config.MIN_GAME_COUNT", 100, raising=False)
+    monkeypatch.setattr("draft_helper.config.BAYESIAN_ENABLED", False, raising=False)
+    monkeypatch.setattr("draft_helper.config.RATINGS_START_DATE", "2026-01-01", raising=False)
 
     calls: list[tuple[int, int, str]] = []
     api.fetch_all_ratings("BLB", progress_callback=lambda i, t, m: calls.append((i, t, m)))
@@ -229,10 +229,10 @@ def test_fetch_all_ratings_invokes_progress_callback(monkeypatch):
 
 def test_fetch_all_ratings_warns_on_filter_failure(monkeypatch, capsys):
     """One filter throws; others succeed → set still builds."""
-    monkeypatch.setattr("api.time.sleep", lambda *a, **kw: None)
-    monkeypatch.setattr("config.MIN_GAME_COUNT", 100, raising=False)
-    monkeypatch.setattr("config.BAYESIAN_ENABLED", False, raising=False)
-    monkeypatch.setattr("config.RATINGS_START_DATE", "2026-01-01", raising=False)
+    monkeypatch.setattr("draft_helper.api.time.sleep", lambda *a, **kw: None)
+    monkeypatch.setattr("draft_helper.config.MIN_GAME_COUNT", 100, raising=False)
+    monkeypatch.setattr("draft_helper.config.BAYESIAN_ENABLED", False, raising=False)
+    monkeypatch.setattr("draft_helper.config.RATINGS_START_DATE", "2026-01-01", raising=False)
 
     call_count = {"n": 0}
 
@@ -242,7 +242,7 @@ def test_fetch_all_ratings_warns_on_filter_failure(monkeypatch, capsys):
             raise RuntimeError("simulated network error")
         return _FakeResp([_card()])
 
-    monkeypatch.setattr("api.requests.get", fake_get)
+    monkeypatch.setattr("draft_helper.api.requests.get", fake_get)
     merged = api.fetch_all_ratings("BLB")
     captured = capsys.readouterr()
     assert "Warning" in captured.out
@@ -255,8 +255,8 @@ def test_fetch_all_ratings_warns_on_filter_failure(monkeypatch, capsys):
 # ---------------------------------------------------------------------------
 
 def test_attach_set_metrics_computes_mean_and_std(monkeypatch):
-    monkeypatch.setattr("config.MIN_GAME_COUNT", 100, raising=False)
-    monkeypatch.setattr("config.BAYESIAN_ENABLED", False, raising=False)
+    monkeypatch.setattr("draft_helper.config.MIN_GAME_COUNT", 100, raising=False)
+    monkeypatch.setattr("draft_helper.config.BAYESIAN_ENABLED", False, raising=False)
 
     cards = {
         "a": {"deck_colors": {"All Decks": {"GIHWR": 50.0, "GIH": 1000}}},
@@ -269,8 +269,8 @@ def test_attach_set_metrics_computes_mean_and_std(monkeypatch):
 
 
 def test_attach_set_metrics_falls_back_when_no_data(monkeypatch):
-    monkeypatch.setattr("config.MIN_GAME_COUNT", 100, raising=False)
-    monkeypatch.setattr("config.BAYESIAN_ENABLED", False, raising=False)
+    monkeypatch.setattr("draft_helper.config.MIN_GAME_COUNT", 100, raising=False)
+    monkeypatch.setattr("draft_helper.config.BAYESIAN_ENABLED", False, raising=False)
     cards: dict = {}
     api._attach_set_metrics(cards)
     assert cards["__meta__"]["mean"] == 50.0
@@ -280,8 +280,8 @@ def test_attach_set_metrics_falls_back_when_no_data(monkeypatch):
 def test_attach_set_metrics_filters_low_game_counts(monkeypatch):
     """Cards below MIN_GAME_COUNT shouldn't influence the mean
     when bayesian smoothing is off."""
-    monkeypatch.setattr("config.MIN_GAME_COUNT", 500, raising=False)
-    monkeypatch.setattr("config.BAYESIAN_ENABLED", False, raising=False)
+    monkeypatch.setattr("draft_helper.config.MIN_GAME_COUNT", 500, raising=False)
+    monkeypatch.setattr("draft_helper.config.BAYESIAN_ENABLED", False, raising=False)
     cards = {
         "real": {"deck_colors": {"All Decks": {"GIHWR": 60.0, "GIH": 1000}}},
         "noise": {"deck_colors": {"All Decks": {"GIHWR": 99.0, "GIH": 10}}},
@@ -322,9 +322,9 @@ def test_fetch_color_ratings_filters_low_game_combos(monkeypatch):
         {"color_name": "G",  "win_rate": 0.51, "games": 8000},
     ]
     monkeypatch.setattr(
-        "api.requests.get", lambda *a, **kw: _FakeResp(payload),
+        "draft_helper.api.requests.get", lambda *a, **kw: _FakeResp(payload),
     )
-    monkeypatch.setattr("config.RATINGS_START_DATE", "2026-01-01", raising=False)
+    monkeypatch.setattr("draft_helper.config.RATINGS_START_DATE", "2026-01-01", raising=False)
 
     out = api.fetch_color_ratings("BLB")
     assert "WU" in out
@@ -339,9 +339,9 @@ def test_fetch_color_ratings_ignores_entries_without_winrate(monkeypatch):
         {"color_name": "",   "win_rate": 0.55, "games": 10000},
     ]
     monkeypatch.setattr(
-        "api.requests.get", lambda *a, **kw: _FakeResp(payload),
+        "draft_helper.api.requests.get", lambda *a, **kw: _FakeResp(payload),
     )
-    monkeypatch.setattr("config.RATINGS_START_DATE", "2026-01-01", raising=False)
+    monkeypatch.setattr("draft_helper.config.RATINGS_START_DATE", "2026-01-01", raising=False)
     out = api.fetch_color_ratings("BLB")
     assert out == {}
 
@@ -352,7 +352,7 @@ def test_fetch_color_ratings_ignores_entries_without_winrate(monkeypatch):
 
 def test_save_and_load_cache_roundtrip(tmp_path, monkeypatch):
     cache_file = tmp_path / "ratings_cache.json"
-    monkeypatch.setattr("config.RATINGS_CACHE_FILE", str(cache_file), raising=False)
+    monkeypatch.setattr("draft_helper.config.RATINGS_CACHE_FILE", str(cache_file), raising=False)
     ratings = {"bear": {"name": "Bear", "GIHWR": 55.0}}
     api.save_cache("BLB", "PremierDraft", ratings)
     loaded = api.load_cache("BLB", "PremierDraft")
@@ -361,7 +361,7 @@ def test_save_and_load_cache_roundtrip(tmp_path, monkeypatch):
 
 def test_load_cache_miss_returns_none(tmp_path, monkeypatch):
     cache_file = tmp_path / "missing.json"
-    monkeypatch.setattr("config.RATINGS_CACHE_FILE", str(cache_file), raising=False)
+    monkeypatch.setattr("draft_helper.config.RATINGS_CACHE_FILE", str(cache_file), raising=False)
     assert api.load_cache("BLB", "PremierDraft") is None
 
 
@@ -375,20 +375,20 @@ def test_load_cache_stale_returns_none(tmp_path, monkeypatch):
             "ratings": {"bear": {"name": "Bear"}},
         },
     }))
-    monkeypatch.setattr("config.RATINGS_CACHE_FILE", str(cache_file), raising=False)
+    monkeypatch.setattr("draft_helper.config.RATINGS_CACHE_FILE", str(cache_file), raising=False)
     assert api.load_cache("BLB", "PremierDraft") is None
 
 
 def test_load_cache_corrupt_file_returns_none(tmp_path, monkeypatch):
     cache_file = tmp_path / "ratings_cache.json"
     cache_file.write_text("not valid json {")
-    monkeypatch.setattr("config.RATINGS_CACHE_FILE", str(cache_file), raising=False)
+    monkeypatch.setattr("draft_helper.config.RATINGS_CACHE_FILE", str(cache_file), raising=False)
     assert api.load_cache("BLB", "PremierDraft") is None
 
 
 def test_save_cache_overwrites_existing_entry(tmp_path, monkeypatch):
     cache_file = tmp_path / "ratings_cache.json"
-    monkeypatch.setattr("config.RATINGS_CACHE_FILE", str(cache_file), raising=False)
+    monkeypatch.setattr("draft_helper.config.RATINGS_CACHE_FILE", str(cache_file), raising=False)
     api.save_cache("BLB", "PremierDraft", {"old": "data"})
     api.save_cache("BLB", "PremierDraft", {"new": "data"})
     loaded = api.load_cache("BLB", "PremierDraft")

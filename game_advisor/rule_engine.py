@@ -7,7 +7,7 @@ import sys
 import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
-import card_db
+from draft_helper import card_db
 import decklist as _decklist
 from game_state import BoardCard, GameState, HandCard, RuleAlert
 from math_utils import hypergeometric_cdf_at_least, prob_draw_at_least_one

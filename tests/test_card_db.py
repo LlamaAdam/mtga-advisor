@@ -14,7 +14,7 @@ import json
 import pathlib
 import pytest
 
-import card_db
+from draft_helper import card_db
 
 
 _REAL_SAVE_CACHE = card_db._save_cache  # Captured before any test stubs it.
@@ -31,10 +31,10 @@ def isolate_card_db(monkeypatch, request):
       the test is marked ``real_save`` (used to exercise the atomic
       write path itself).
     """
-    monkeypatch.setattr("card_db._resolve_shared_cards_dir", lambda: None)
+    monkeypatch.setattr("draft_helper.card_db._resolve_shared_cards_dir", lambda: None)
     if "real_save" not in request.keywords:
-        monkeypatch.setattr("card_db._save_cache", lambda: None)
-    monkeypatch.setattr("card_db._load_cache", lambda: None)
+        monkeypatch.setattr("draft_helper.card_db._save_cache", lambda: None)
+    monkeypatch.setattr("draft_helper.card_db._load_cache", lambda: None)
     orig_cache = card_db._cache.copy()
     orig_oracle = card_db._oracle.copy()
     orig_cmc = card_db._cmc.copy()
@@ -173,7 +173,7 @@ def test_name_returns_cached_value(monkeypatch):
     """name() returns whatever resolve() puts at the requested key."""
     card_db._cache["123"] = "Lightning Bolt"
     monkeypatch.setattr(
-        "card_db.resolve", lambda ids: {str(ids[0]): card_db._cache[str(ids[0])]},
+        "draft_helper.card_db.resolve", lambda ids: {str(ids[0]): card_db._cache[str(ids[0])]},
     )
     assert card_db.name("123") == "Lightning Bolt"
     assert card_db.name(123) == "Lightning Bolt"  # int input also works
@@ -189,7 +189,7 @@ def test_preload_set_skips_already_loaded(monkeypatch, capsys):
     # Make any HTTP call fail loudly so we know we DIDN'T hit the network.
     def fail(*args, **kwargs):
         raise AssertionError(f"Should not have called HTTP: {args}")
-    monkeypatch.setattr("card_db.requests.get", fail)
+    monkeypatch.setattr("draft_helper.card_db.requests.get", fail)
     card_db.preload_set("DSK")
     captured = capsys.readouterr()
     assert "already preloaded" in captured.out
@@ -200,11 +200,75 @@ def test_preload_set_uppercases_set_code(monkeypatch):
     card_db._preloaded_sets.add("DSK")
     def fail(*args, **kwargs):
         raise AssertionError("Should not call HTTP for already-loaded set.")
-    monkeypatch.setattr("card_db.requests.get", fail)
+    monkeypatch.setattr("draft_helper.card_db.requests.get", fail)
     # All three should be a no-op since DSK is in _preloaded_sets.
     card_db.preload_set("dsk")
     card_db.preload_set("Dsk")
     card_db.preload_set("DSK")
+
+
+def _mock_scryfall_search_response(cards: list, has_more: bool = False) -> "MagicMock":
+    from unittest.mock import MagicMock
+    resp = MagicMock()
+    resp.status_code = 200
+    resp.json.return_value = {"data": cards, "has_more": has_more}
+    return resp
+
+
+def test_preload_set_sends_custom_user_agent(monkeypatch):
+    """Scryfall rejects the requests library's default User-Agent with a 400
+    (generic_user_agent). Every Scryfall call must send a custom one."""
+    card_db._preloaded_sets.discard("MOM")
+    captured = {}
+
+    def fake_get(url, params=None, headers=None, timeout=None):
+        captured["headers"] = headers
+        return _mock_scryfall_search_response([])
+
+    monkeypatch.setattr("draft_helper.card_db.requests.get", fake_get)
+    card_db.preload_set("MOM")
+    assert captured["headers"] is card_db._SCRYFALL_HEADERS
+    assert "User-Agent" in captured["headers"]
+    assert captured["headers"]["User-Agent"] != ""
+    card_db._preloaded_sets.discard("MOM")
+
+
+def test_preload_set_does_not_mark_preloaded_on_http_error(monkeypatch):
+    """Regression test: an early HTTP error (e.g. the User-Agent 400) must
+    NOT mark the set as preloaded, or it silently never retries again for
+    the life of the persisted cache file."""
+    card_db._preloaded_sets.discard("MSH")
+
+    def fake_get(url, params=None, headers=None, timeout=None):
+        from unittest.mock import MagicMock
+        resp = MagicMock()
+        resp.status_code = 400
+        return resp
+
+    monkeypatch.setattr("draft_helper.card_db.requests.get", fake_get)
+    card_db.preload_set("MSH")
+    assert "MSH" not in card_db._preloaded_sets
+    card_db._preloaded_sets.discard("MSH")
+
+
+def test_preload_set_marks_preloaded_when_cards_returned_without_arena_id(monkeypatch):
+    """A brand-new set's cards may not have arena_id populated on Scryfall
+    yet, even though oracle/cmc/type_line data is already available. The
+    set should still count as successfully preloaded in that case."""
+    card_db._preloaded_sets.discard("MSH")
+
+    def fake_get(url, params=None, headers=None, timeout=None):
+        return _mock_scryfall_search_response([
+            {"name": "Agent 13, Sharon Carter", "arena_id": None,
+             "oracle_text": "Investigate.", "cmc": 3.0,
+             "mana_cost": "{2}{W}", "type_line": "Legendary Creature — Human Spy Hero"},
+        ])
+
+    monkeypatch.setattr("draft_helper.card_db.requests.get", fake_get)
+    card_db.preload_set("MSH")
+    assert "MSH" in card_db._preloaded_sets
+    assert card_db._oracle["agent 13, sharon carter"] == "Investigate."
+    card_db._preloaded_sets.discard("MSH")
 
 
 # ---------------------------------------------------------------------------
@@ -218,18 +282,65 @@ def test_learn_name_records_mapping(monkeypatch):
         class FakeResp:
             status_code = 500  # force the Scryfall path to no-op
         return FakeResp()
-    monkeypatch.setattr("card_db.requests.get", fake_get)
+    monkeypatch.setattr("draft_helper.card_db.requests.get", fake_get)
     card_db.learn_name("999", "My Custom Card")
     assert card_db._cache["999"] == "My Custom Card"
 
 
 def test_learn_name_normalizes_int_id_to_string(monkeypatch):
     monkeypatch.setattr(
-        "card_db.requests.get",
+        "draft_helper.card_db.requests.get",
         lambda *a, **k: type("R", (), {"status_code": 500})(),
     )
     card_db.learn_name(12345, "Foo")
     assert card_db._cache["12345"] == "Foo"
+
+
+def test_learn_name_sends_custom_user_agent(monkeypatch):
+    captured = {}
+
+    def fake_get(url, params=None, headers=None, timeout=None):
+        captured["headers"] = headers
+        return type("R", (), {"status_code": 500})()
+
+    monkeypatch.setattr("draft_helper.card_db.requests.get", fake_get)
+    card_db.learn_name("1", "Some Card")
+    assert captured["headers"] is card_db._SCRYFALL_HEADERS
+
+
+# ---------------------------------------------------------------------------
+# _try_arena_endpoint — single-card fallback via /cards/arena/{id}
+# ---------------------------------------------------------------------------
+
+def test_try_arena_endpoint_sends_custom_user_agent(monkeypatch):
+    captured = {}
+
+    def fake_get(url, headers=None, timeout=None):
+        captured["headers"] = headers
+        return type("R", (), {"status_code": 404})()
+
+    monkeypatch.setattr("draft_helper.card_db.requests.get", fake_get)
+    monkeypatch.setattr("draft_helper.card_db._try_local_mtga_db", lambda arena_id: False)
+    card_db._try_arena_endpoint("42")
+    assert captured["headers"] is card_db._SCRYFALL_HEADERS
+
+
+# ---------------------------------------------------------------------------
+# _fetch_collection_chunk — batch fallback via POST /cards/collection
+# ---------------------------------------------------------------------------
+
+def test_fetch_collection_chunk_sends_custom_user_agent(monkeypatch):
+    captured = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        captured["headers"] = headers
+        resp = type("R", (), {"status_code": 200,
+                               "json": lambda self: {"data": [], "not_found": []}})()
+        return resp
+
+    monkeypatch.setattr("draft_helper.card_db.requests.post", fake_post)
+    card_db._fetch_collection_chunk(["1", "2"], chunk_size=75)
+    assert captured["headers"] is card_db._SCRYFALL_HEADERS
 
 
 # ---------------------------------------------------------------------------
@@ -242,7 +353,7 @@ def test_save_cache_uses_atomic_rename(tmp_path, monkeypatch):
     path. A crash mid-write must not leave the canonical file
     truncated."""
     cache_file = tmp_path / "arena_id_cache.json"
-    monkeypatch.setattr("card_db._CACHE_FILE", str(cache_file))
+    monkeypatch.setattr("draft_helper.card_db._CACHE_FILE", str(cache_file))
     card_db._cache["1"] = "Lightning Bolt"
     card_db._save_cache()
 
@@ -257,7 +368,7 @@ def test_save_cache_failure_is_swallowed(tmp_path, monkeypatch):
     """Cache writes are best-effort; an OS error from a missing
     parent dir must not propagate."""
     monkeypatch.setattr(
-        "card_db._CACHE_FILE",
+        "draft_helper.card_db._CACHE_FILE",
         str(tmp_path / "nonexistent_dir" / "cache.json"),
     )
     # Should not raise — parent dir doesn't exist.

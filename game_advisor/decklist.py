@@ -15,7 +15,7 @@ import sys
 import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
-import card_db
+from draft_helper import card_db
 
 # Module-level active decklist (set by main.py at startup)
 active_deck: dict[str, int] = {}

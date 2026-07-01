@@ -9,8 +9,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-import card_detector
-from card_detector import (
+from draft_helper import card_detector
+from draft_helper.card_detector import (
     _find_centers,
     _find_peaks,
     detect_card_centers,

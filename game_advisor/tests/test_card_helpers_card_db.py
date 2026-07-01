@@ -3,14 +3,14 @@ import sys
 import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent.parent))
-import card_db
+from draft_helper import card_db
 
 
 @pytest.fixture(autouse=True)
 def clean_type_line_cache(monkeypatch):
     """Restore _type_line after each test, AND disable shared-store lookup
     so synthetic test data takes effect."""
-    monkeypatch.setattr("card_db._resolve_shared_cards_dir", lambda: None)
+    monkeypatch.setattr("draft_helper.card_db._resolve_shared_cards_dir", lambda: None)
     original = card_db._type_line.copy()
     yield
     card_db._type_line.clear()

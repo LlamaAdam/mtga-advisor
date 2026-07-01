@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from log_scanner import ArenaLogScanner, DraftState
+from draft_helper.log_scanner import ArenaLogScanner, DraftState
 
 
 # ---------------------------------------------------------------------------

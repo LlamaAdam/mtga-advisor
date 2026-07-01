@@ -22,7 +22,7 @@ from typing import Callable
 # LLM client setup (mirrors game_advisor/llm_advisor.py backend logic)
 # ---------------------------------------------------------------------------
 
-_env_file = pathlib.Path(__file__).parent / "game_advisor" / ".env"
+_env_file = pathlib.Path(__file__).parent.parent / "game_advisor" / ".env"
 if _env_file.exists():
     try:
         from dotenv import load_dotenv

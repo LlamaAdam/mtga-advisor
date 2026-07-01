@@ -22,7 +22,7 @@ Grade thresholds (standard deviations from set mean):
 
 import difflib
 
-import config
+from . import config
 
 
 # Loaded ratings: {"lowercase card name": {...card data...}}
@@ -144,7 +144,7 @@ def get_colors(card_name: str) -> list[str]:
     if not colors:
         # Fall back to inferring colors from mana cost pips in Scryfall cache
         import re as _re
-        import card_db as _card_db
+        from . import card_db as _card_db
         mc = _card_db.get_mana_cost(card_name)
         if mc:
             colors = list(dict.fromkeys(_re.findall(r'\{([WUBRG])\}', mc)))
@@ -155,7 +155,7 @@ def get_cmc(card_name: str) -> int:
     card = _lookup(card_name)
     cmc = card.get("cmc", 0) if card else 0
     if not cmc:
-        import card_db
+        from . import card_db
         cmc = card_db.get_cmc(card_name)
     return cmc
 

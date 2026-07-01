@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-import mtga_local_db
+from draft_helper import mtga_local_db
 
 
 # ---------------------------------------------------------------------------

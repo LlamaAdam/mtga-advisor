@@ -17,7 +17,7 @@ import sys
 import pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 import config
-import card_db as _cdb
+from draft_helper import card_db as _cdb
 from game_state import GameState, RuleAlert
 
 _BG = "#1a1a2e"

@@ -17,9 +17,9 @@ echo [1] Calibrate card overlay positions:
 echo     - Open MTGA and navigate to a draft pick screen
 echo     - Run:  python calibrate.py
 echo     - Click the top-left corner of each card when prompted
-echo     - Copy the output into config.py
+echo     - Copy the output into draft_helper\config.py
 echo.
-echo [2] (Optional) Adjust config.py settings:
+echo [2] (Optional) Adjust draft_helper\config.py settings:
 echo     - RATINGS_START_DATE: set to the current set's release date
 echo     - OVERLAY_OPACITY: adjust overlay transparency
 echo     - ARENA_LOG_PATH: only needed if MTGA is in a non-default location

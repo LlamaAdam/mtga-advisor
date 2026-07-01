@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import pytest
 
-import config
-import ratings
+from draft_helper import config
+from draft_helper import ratings
 
 
 @pytest.fixture(autouse=True)

@@ -19,7 +19,7 @@ from typing import Any
 
 import requests
 
-import config
+from . import config
 
 # 17Lands JSON field -> our internal key
 _FIELD_MAP = {

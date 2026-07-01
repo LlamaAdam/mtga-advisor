@@ -8,10 +8,7 @@ import sys
 import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
-# sys.path is extended here because card_db lives in the parent folder
-# rather than inside game_advisor/. This is intentional — card_db is
-# shared with the draft helper and not yet a proper package.
-import card_db
+from draft_helper import card_db  # shared with the draft helper (FP-C)
 
 _COLOR_SYMBOLS = {"W", "U", "B", "R", "G"}
 

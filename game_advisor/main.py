@@ -24,36 +24,28 @@ import config
 import rule_engine
 import decklist
 import deck_manager
-import card_db
+from draft_helper import card_db  # shared with the draft helper (FP-C)
 from decision_log import DecisionLog
-
-# Each imported submodule calls sys.path.insert(0, root), displacing game_advisor/.
-# The root also has log_scanner.py and capture.py that shadow ours.
-# Re-assert game_advisor/ at [0] before each conflicting import.
-_here = str(pathlib.Path(__file__).parent)
-
-if sys.path[0] != _here:
-    sys.path.insert(0, _here)
-from log_scanner import GameLogScanner  # root has log_scanner.py (ArenaLogScanner)
-
-from llm_advisor import LLMAdvisor      # no root conflict
-from dashboard import AdvisorDashboard  # no root conflict
-
-if sys.path[0] != _here:               # log_scanner.py re-inserted root at [0]
-    sys.path.insert(0, _here)
-from capture import capture_opponent_cards, _CAPTURE_AVAILABLE  # root has capture.py
-
-from game_state import GameState        # no root conflict
+from log_scanner import GameLogScanner  # ours — draft_helper's is now namespaced, no shadowing
+from llm_advisor import LLMAdvisor
+from dashboard import AdvisorDashboard
+from capture import capture_opponent_cards, _CAPTURE_AVAILABLE  # ours — see above
+from game_state import GameState
 
 
 def main() -> None:
     _backend_label = {"ollama": "Ollama (local)", "openrouter": "OpenRouter",
-                      "openai": "GPT-4o"}.get(config.LLM_BACKEND, config.LLM_BACKEND)
+                      "openai": "GPT-4o",
+                      "claude": "Claude (subscription CLI)"}.get(config.LLM_BACKEND, config.LLM_BACKEND)
     print("=" * 55)
     print(f"  MTGA Game Advisor  |  {_backend_label} / {config.OPENAI_MODEL}")
     print("=" * 55)
     print(f"\n  Arena log: {config.ARENA_LOG_PATH}")
-    if config.LLM_BACKEND != "ollama" and not config.OPENAI_API_KEY:
+    if config.LLM_BACKEND == "claude":
+        from llm_advisor import _claude_cli_available
+        if not _claude_cli_available():
+            print("  WARNING: `claude` CLI not found on PATH — LLM advice disabled.")
+    elif config.LLM_BACKEND != "ollama" and not config.OPENAI_API_KEY:
         print("  WARNING: OPENAI_API_KEY not set — LLM advice disabled.")
     print()
 

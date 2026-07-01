@@ -15,7 +15,7 @@ import pytest
 
 
 def test_grid_centers_single_row(monkeypatch):
-    import config
+    from draft_helper import config
     monkeypatch.setattr(config, "DRAFT_ORIGIN", (100, 200), raising=False)
     monkeypatch.setattr(config, "CARD_STEP_X", 250, raising=False)
     monkeypatch.setattr(config, "CARD_STEP_Y", 400, raising=False)
@@ -24,7 +24,7 @@ def test_grid_centers_single_row(monkeypatch):
     monkeypatch.setattr(config, "OVERLAY_BADGE_SIZE", 60, raising=False)
     monkeypatch.setattr(config, "BADGE_Y_OFFSET", 50, raising=False)
 
-    from overlay import OverlayApp
+    from draft_helper.overlay import OverlayApp
     centers = OverlayApp.grid_centers(3)
     assert len(centers) == 3
     # All in the same row → same y.
@@ -38,7 +38,7 @@ def test_grid_centers_single_row(monkeypatch):
 
 def test_grid_centers_wraps_to_second_row(monkeypatch):
     """When card_count exceeds per_row, second row wraps below the first."""
-    import config
+    from draft_helper import config
     monkeypatch.setattr(config, "DRAFT_ORIGIN", (100, 200), raising=False)
     # CARD_STEP_X=400 → game_right(1843) - 100 = 1743 // 400 = 4 per row.
     monkeypatch.setattr(config, "CARD_STEP_X", 400, raising=False)
@@ -48,7 +48,7 @@ def test_grid_centers_wraps_to_second_row(monkeypatch):
     monkeypatch.setattr(config, "OVERLAY_BADGE_SIZE", 60, raising=False)
     monkeypatch.setattr(config, "BADGE_Y_OFFSET", 50, raising=False)
 
-    from overlay import OverlayApp
+    from draft_helper.overlay import OverlayApp
     centers = OverlayApp.grid_centers(6)  # 4 + 2
     assert len(centers) == 6
     # First four are top row, last two are second row.
@@ -60,7 +60,7 @@ def test_grid_centers_wraps_to_second_row(monkeypatch):
 
 
 def test_grid_centers_returns_empty_for_zero_cards(monkeypatch):
-    import config
+    from draft_helper import config
     monkeypatch.setattr(config, "DRAFT_ORIGIN", (100, 200), raising=False)
     monkeypatch.setattr(config, "CARD_STEP_X", 250, raising=False)
     monkeypatch.setattr(config, "CARD_STEP_Y", 400, raising=False)
@@ -69,14 +69,14 @@ def test_grid_centers_returns_empty_for_zero_cards(monkeypatch):
     monkeypatch.setattr(config, "OVERLAY_BADGE_SIZE", 60, raising=False)
     monkeypatch.setattr(config, "BADGE_Y_OFFSET", 50, raising=False)
 
-    from overlay import OverlayApp
+    from draft_helper.overlay import OverlayApp
     assert OverlayApp.grid_centers(0) == []
 
 
 def test_grid_centers_compresses_vertical_step_for_many_rows(monkeypatch):
     """When 3+ rows are needed, step_y should compress to keep all
     rows on-screen above the bottom margin."""
-    import config
+    from draft_helper import config
     monkeypatch.setattr(config, "DRAFT_ORIGIN", (100, 100), raising=False)
     # 400px step → game_right(1843) - 100 = 1743 // 400 = 4 per row.
     monkeypatch.setattr(config, "CARD_STEP_X", 400, raising=False)
@@ -86,7 +86,7 @@ def test_grid_centers_compresses_vertical_step_for_many_rows(monkeypatch):
     monkeypatch.setattr(config, "OVERLAY_BADGE_SIZE", 60, raising=False)
     monkeypatch.setattr(config, "BADGE_Y_OFFSET", 50, raising=False)
 
-    from overlay import OverlayApp
+    from draft_helper.overlay import OverlayApp
     # 12 cards / 4 per row → 3 rows.
     centers = OverlayApp.grid_centers(12)
     assert len(centers) == 12
@@ -99,7 +99,7 @@ def test_grid_centers_compresses_vertical_step_for_many_rows(monkeypatch):
 
 def test_grid_centers_per_row_clamped_to_at_least_one(monkeypatch):
     """If CARD_STEP_X is huge, per_row must clamp to 1 (not zero)."""
-    import config
+    from draft_helper import config
     monkeypatch.setattr(config, "DRAFT_ORIGIN", (100, 200), raising=False)
     # Huge step that exceeds the game-area width.
     monkeypatch.setattr(config, "CARD_STEP_X", 10000, raising=False)
@@ -109,7 +109,7 @@ def test_grid_centers_per_row_clamped_to_at_least_one(monkeypatch):
     monkeypatch.setattr(config, "OVERLAY_BADGE_SIZE", 60, raising=False)
     monkeypatch.setattr(config, "BADGE_Y_OFFSET", 50, raising=False)
 
-    from overlay import OverlayApp
+    from draft_helper.overlay import OverlayApp
     centers = OverlayApp.grid_centers(3)
     assert len(centers) == 3
     # 1-per-row → all 3 in different rows (different y).
@@ -119,7 +119,7 @@ def test_grid_centers_per_row_clamped_to_at_least_one(monkeypatch):
 
 def test_grid_centers_x_uses_step_plus_half_badge(monkeypatch):
     """The first card's x should be DRAFT_ORIGIN.x + badge_size//2."""
-    import config
+    from draft_helper import config
     monkeypatch.setattr(config, "DRAFT_ORIGIN", (200, 300), raising=False)
     monkeypatch.setattr(config, "CARD_STEP_X", 250, raising=False)
     monkeypatch.setattr(config, "CARD_STEP_Y", 400, raising=False)
@@ -128,6 +128,6 @@ def test_grid_centers_x_uses_step_plus_half_badge(monkeypatch):
     monkeypatch.setattr(config, "OVERLAY_BADGE_SIZE", 80, raising=False)
     monkeypatch.setattr(config, "BADGE_Y_OFFSET", 50, raising=False)
 
-    from overlay import OverlayApp
+    from draft_helper.overlay import OverlayApp
     centers = OverlayApp.grid_centers(1)
     assert centers == [(200 + 80 // 2, 300 + 50)]

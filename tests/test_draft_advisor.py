@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-import draft_advisor
+from draft_helper import draft_advisor
 
 
 # ---------------------------------------------------------------------------

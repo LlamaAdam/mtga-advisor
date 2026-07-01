@@ -8,63 +8,49 @@
 > [FUTURE_PLANS.md](FUTURE_PLANS.md). For one-time data hygiene see
 > [DATA_CLEANUP.md](DATA_CLEANUP.md).
 
-**Last updated**: 2026-04-27 (autonomous-improvement session)
-**Project shape**: dual-codebase — legacy draft helper (top-level)
-+ in-game advisor (`game_advisor/`)
+**Last updated**: 2026-06-30
+**Project shape**: two packages, one shared module — `draft_helper/`
+(draft-pick overlay) + `game_advisor/` (in-game advisor), sharing
+`draft_helper/card_db.py`
 
 ---
 
 ## Now
 
 ### Working on
-Nothing actively in flight. The 2026-04-27 session landed:
+Nothing actively in flight. The 2026-06-30 session landed:
 
-- **`FUTURE_PLANS.md`** — strategic roadmap (FP-A through FP-G) with
-  current take and unblock conditions on each.
-- **`DATA_CLEANUP.md`** — prioritized cleanup options with status
-  checkboxes. Option 1 (gitignore tightening) applied; Options 2 and
-  3 (`git rm --cached` and tracking launchers) await user approval.
-- **FP-A: shared `mtg_cards/` oracle store integration** — `card_db.py`
-  now consults `C:\dev\mtg_cards\oracle_snapshots\` first for oracle
-  text, cmc, type line, and mana cost. Falls back to local cache on
-  miss. 16 new tests in `game_advisor/tests/test_card_db_shared_store.py`.
-- **FP-B: oracle-text in LLM prompt** — `llm_advisor.card_text_appendix()`
-  adds current Oracle text for cards in hand + opponent's board to the
-  LLM prompt. The LLM now reads authoritative card text, not its
-  training-data memory of cards. 6 new tests.
-- **FP-D: legacy code test coverage** — **132 new tests** at top level
-  for `card_db.py` (23), `deck.py` (20), `ratings.py` (25),
-  `synergy.py` (29), `log_scanner.py` (17), and `mtga_local_db.py` (18).
-  Was 0 before. First-ever automated regression coverage for the
-  draft-helper code, including: Bayesian smoothing, fuzzy lookup,
-  grade-threshold arithmetic, mulligan/curve/colors scoring,
-  synergy-bonus rule firing, BREAD evasion+removal grading,
-  deck-skeleton penalties (curve-target deviation), enabler/payoff
-  gap rewards, removal-scarcity scaling, EventJoin /
-  InternalEventName parsing for resumed drafts, double-encoded JSON
-  payload extraction, MTGA-internal mana cost decoding (`o2oWoW` →
-  `{2}{W}{W}`), CMC arithmetic with X-as-zero, and type-line assembly.
-- **Bug fix in `card_db.get_subtypes`** — was reading `_type_line`
-  directly, bypassing the new shared-store fallback. Now goes through
-  `get_type_line()` so errata'd subtypes (Phyrexian / Demon-Devil
-  rebrandings) reach the result.
+- **FP-C: merged the legacy draft helper into a proper `draft_helper/`
+  package** — the 14 top-level files (`main.py`, `api.py`, `card_db.py`,
+  `deck.py`, `draft_advisor.py`, `log_scanner.py`, `mtga_local_db.py`,
+  `overlay.py`, `ratings.py`, `synergy.py`, `calibrate.py`, `capture.py`,
+  `card_detector.py`, `config.py`) now live under `draft_helper/` with
+  relative imports. Root `main.py`/`calibrate.py` are thin shims so
+  `python main.py` and the existing launchers work unchanged.
+  `game_advisor/` now imports the shared card_db as
+  `from draft_helper import card_db` instead of the old
+  sys.path-shadowing workaround. **`pytest tests/ game_advisor/tests/`
+  now runs both suites together (318 tests)** — previously blocked by
+  a bare-import collision. Full writeup in FUTURE_PLANS.md FP-C.
+- **Found + fixed a real cache-path bug during the move** —
+  `card_db._CACHE_FILE`, `config.RATINGS_CACHE_FILE`, and
+  `draft_advisor.py`'s `.env` lookup all derived from
+  `pathlib.Path(__file__).parent`, which would have silently pointed
+  them at `draft_helper/` instead of the repo root once the files
+  moved, orphaning the user's existing cache. Fixed to resolve from
+  the repo root.
+- **Refreshed FUTURE_PLANS.md's stale "Up next" list** — it claimed
+  `log_scanner.py`/`synergy.py`/`ratings.py` still needed tests; they
+  already had them (FP-D shipped 2026-04-28). Doc now matches reality.
 
 ### Up next
-Highest-leverage next work, ranked:
+Nothing urgent. Remaining roadmap items are correctly parked:
 
-1. **DATA_CLEANUP Option 2 + 3** — Need user approval to:
-   - `git rm --cached` the 10 `__pycache__/*.pyc` files, the two large
-     cache JSONs, the 4MB screenshot, and the per-user
-     `settings.local.json`.
-   - `git add` the launcher .vbs/.bat files and `draft_advisor.py`
-     (which is live code never committed — see DATA_CLEANUP.md).
-2. **More legacy tests (FP-D continuation)** — `log_scanner.py`,
-   `synergy.py`, `ratings.py` still have no top-level tests. Each is
-   ~3–5h to cover meaningfully.
-3. **FP-C (consolidate dual codebase)** — biggest architectural lift,
-   ~12–20h. Defer until concrete duplication-pain bites.
-4. **FP-E (SQLite for `arena_id_cache.json`)** — corruption-safety
-   refactor. Pre-emptive; defer until a corruption actually happens.
+1. **FP-F (decision-log → ML)** — blocked on data volume (200+ logged
+   games), not effort. Revisit once that volume accumulates.
+2. **FP-G (unified MTG app across the 3 sibling projects)** — blocked
+   on `commander_builder` shipping its Flask single-page app (FP-006)
+   first. Revisit once that lands.
 
 ### Cross-project context
 This project is one of three sibling MTG projects under `C:\dev\` (and
@@ -74,7 +60,7 @@ this folder under `C:\Users\pilot\OneDrive\Documents\Python Scripts\`):
 - `forge_py` — Python goldfish + (incoming) turn-by-turn engine
 - `mtg_cards/` — **shared card-data folder** (data substrate)
 
-This project's `card_db.py` now reads from `mtg_cards/oracle_snapshots/`
+This project's `card_db.py` reads from `mtg_cards/oracle_snapshots/`
 via the same `MTG_CARDS_DIR` env var the sister projects use. See
 [FUTURE_PLANS.md](FUTURE_PLANS.md) FP-G for the long-term unified
 application vision.
@@ -83,34 +69,30 @@ application vision.
 
 ## Recent (last 7 days)
 
-### 2026-04-27 (autonomous-improvement session)
-- Adopted shared `mtg_cards/` data folder (FP-A) — card_db's oracle
-  lookups now hit the shared store first for current Scryfall data.
-- Added oracle-text appendix to LLM prompt (FP-B) so the in-game
-  advisor reads authoritative card text post-errata.
-- Wrote first-ever top-level tests (FP-D) — 43 tests covering
-  `card_db.py` and `deck.py` (was 0 tests at top level before).
-- Tightened `.gitignore` to exclude cache JSONs, screenshots, runtime
-  logs, and per-user lockfiles. Option 2 (`git rm --cached`) deferred
-  for user approval.
-- Wrote FUTURE_PLANS.md (FP-A through FP-G) and DATA_CLEANUP.md so
-  future sessions can pick up state cold.
+### 2026-06-30
+- FP-C: consolidated `draft_helper/` package, fixed the cache-path
+  bug the move would have introduced, refreshed stale roadmap docs.
 
-### Earlier (recent commits)
-- Concede / quit detection via dual-source fallback (commits 07237dd, 36583da)
-- Post-loss LLM game analysis (72f2961)
-- Board count + empty placeholder in dashboard (b85a381)
-- SQLite thread-safety fix for read-only path (2b34098)
+### Earlier
+- FP-E (partial): `card_db._save_cache` uses atomic rename
+  (`.tmp` + `os.replace`) so a crash mid-write can't truncate
+  `arena_id_cache.json`.
+- FP-D: 196 tests across nine files at top level (now `tests/`),
+  covering `api`, `card_db`, `card_detector`, `deck`, `draft_advisor`,
+  `log_scanner`, `mtga_local_db`, `overlay`, `ratings`, `synergy`.
+- FP-A / FP-B (2026-04-27): shared `mtg_cards/` oracle store adopted;
+  oracle-text appendix added to the LLM prompt.
+- Concede / quit detection via dual-source fallback (commits 07237dd,
+  36583da); post-loss LLM game analysis (72f2961); board count +
+  empty placeholder in dashboard (b85a381); SQLite thread-safety fix
+  for read-only path (2b34098).
 
 ---
 
 ## Blocked
 
-Nothing currently blocked.
-
-DATA_CLEANUP Options 2 and 3 are *waiting on user sign-off*, not
-externally blocked — they're destructive enough to want explicit
-approval.
+Nothing currently blocked. FP-F and FP-G (see *Up next*) are parked on
+external conditions, not actively worked.
 
 ---
 
@@ -118,14 +100,17 @@ approval.
 
 | Project area | Modules | Tests | Notes |
 |---|---|---|---|
-| Top-level (legacy draft helper) | ~13 | **132 (NEW)** | Was 0; covers `card_db` (23) + `deck` (20) + `ratings` (25) + `synergy` (29) + `log_scanner` (17) + `mtga_local_db` (18) |
-| `game_advisor/` (in-game advisor) | ~13 | **122** | +22 this session |
-| **Total** | **~26** | **254** | |
+| `draft_helper/` (draft-pick overlay) | 14 | **196** | `api`, `card_db`, `card_detector`, `deck`, `draft_advisor`, `log_scanner`, `mtga_local_db`, `overlay`, `ratings`, `synergy` |
+| `game_advisor/` (in-game advisor) | ~13 | **122** | |
+| **Total** | **~27** | **318** | Runs together in one `pytest` invocation since FP-C |
 
-- Wall time: ~0.1s top-level + ~2s game_advisor.
-- CLI entry points: `python main.py` (draft helper),
-  `python game_advisor/main.py` (game advisor).
-- Launchers: 2× tracked, 2× untracked (per DATA_CLEANUP.md Option 3).
+- Wall time: ~1–3s for the combined suite.
+- CLI entry points: `python main.py` (draft helper, shim over
+  `draft_helper.main`), `python calibrate.py` (calibration, shim over
+  `draft_helper.calibrate`), `python game_advisor/main.py` (game
+  advisor).
+- Caches (repo root, gitignored): `arena_id_cache.json`,
+  `ratings_cache.json`.
 - Shared data: `C:\dev\mtg_cards\oracle_snapshots\` (~32k Scryfall
   card snapshots) via `MTG_CARDS_DIR` env var.
 

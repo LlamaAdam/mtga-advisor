@@ -11,18 +11,18 @@ from collections import Counter
 
 import pytest
 
-import card_db
-import deck
-import ratings
+from draft_helper import card_db
+from draft_helper import deck
+from draft_helper import ratings
 
 
 @pytest.fixture(autouse=True)
 def isolate_deck_module(monkeypatch):
     """Each test starts with a clean DeckTracker, no real I/O."""
     # Disable shared-store and disk persistence in card_db.
-    monkeypatch.setattr("card_db._resolve_shared_cards_dir", lambda: None)
-    monkeypatch.setattr("card_db._save_cache", lambda: None)
-    monkeypatch.setattr("card_db._load_cache", lambda: None)
+    monkeypatch.setattr("draft_helper.card_db._resolve_shared_cards_dir", lambda: None)
+    monkeypatch.setattr("draft_helper.card_db._save_cache", lambda: None)
+    monkeypatch.setattr("draft_helper.card_db._load_cache", lambda: None)
     # Snapshot card_db dicts to restore after each test.
     orig_oracle = card_db._oracle.copy()
     orig_mana = card_db._mana_cost.copy()
@@ -122,7 +122,7 @@ def test_clear_resets_to_empty_state():
 
 def test_color_counts_aggregates_picks(monkeypatch):
     monkeypatch.setattr(
-        "ratings.get_colors",
+        "draft_helper.ratings.get_colors",
         lambda name: {
             "Lightning Bolt": ["R"],
             "Counterspell": ["U", "U"],
@@ -140,7 +140,7 @@ def test_color_counts_aggregates_picks(monkeypatch):
 def test_main_colors_picks_top_two_when_second_meets_threshold(monkeypatch):
     """main_colors returns the top 2 only when the second color has ≥3 cards."""
     monkeypatch.setattr(
-        "ratings.get_colors",
+        "draft_helper.ratings.get_colors",
         lambda name: {
             "Bolt1": ["R"], "Bolt2": ["R"], "Bolt3": ["R"], "Bolt4": ["R"],
             "Negate1": ["U"], "Negate2": ["U"], "Negate3": ["U"],
@@ -160,7 +160,7 @@ def test_main_colors_picks_top_two_when_second_meets_threshold(monkeypatch):
 def test_main_colors_drops_second_color_below_threshold(monkeypatch):
     """If the second color only has 2 cards, it shouldn't make the cut."""
     monkeypatch.setattr(
-        "ratings.get_colors",
+        "draft_helper.ratings.get_colors",
         lambda name: {
             "Bolt1": ["R"], "Bolt2": ["R"], "Bolt3": ["R"],
             "Negate1": ["U"], "Negate2": ["U"],  # only 2 — below threshold

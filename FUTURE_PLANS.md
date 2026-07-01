@@ -12,23 +12,26 @@
 
 ---
 
-## Project shape (snapshot 2026-04-27)
+## Project shape (updated 2026-06-30 — FP-C landed)
 
-The codebase has **two independent halves** that share a working
-directory but very little code:
+The codebase has **two halves living in separate packages**
+(`draft_helper/` and `game_advisor/`) that share one module
+(`card_db.py`) and coexist as two entry points of one Arena program:
 
-### Half 1: Draft-pick overlay (legacy, top-level files)
+### Half 1: Draft-pick overlay (`draft_helper/` package)
 
-- Files: `main.py`, `api.py`, `card_db.py`, `deck.py`, `draft_advisor.py`,
-  `log_scanner.py`, `mtga_local_db.py`, `overlay.py`, `ratings.py`,
-  `synergy.py`, `calibrate.py`, `capture.py`, `card_detector.py`,
-  `config.py`
-- Entry: `main.py` — reads Arena Player.log, fetches 17lands GIH ratings,
-  shows letter-grade overlay on draft picks
-- Caches: `arena_id_cache.json` (1.6MB), `ratings_cache.json` (820KB)
-- **No automated tests** at the top level. Stable but untested.
+- Files: `draft_helper/main.py`, `api.py`, `card_db.py`, `deck.py`,
+  `draft_advisor.py`, `log_scanner.py`, `mtga_local_db.py`,
+  `overlay.py`, `ratings.py`, `synergy.py`, `calibrate.py`,
+  `capture.py`, `card_detector.py`, `config.py`
+- Entry: `python main.py` (thin repo-root shim over
+  `draft_helper.main.main()`) — reads Arena Player.log, fetches
+  17lands GIH ratings, shows letter-grade overlay on draft picks
+- Caches (repo root, gitignored): `arena_id_cache.json`,
+  `ratings_cache.json`
+- **196 tests** in `tests/` (was 0 before FP-D).
 
-### Half 2: In-game advisor (newer, `game_advisor/` subpackage)
+### Half 2: In-game advisor (`game_advisor/` package)
 
 - Files: `game_advisor/main.py`, `dashboard.py`, `decision_log.py`,
   `deck_manager.py`, `decklist.py`, `game_state.py`, `llm_advisor.py`,
@@ -37,9 +40,14 @@ directory but very little code:
 - Entry: `game_advisor/main.py` — reads Arena Player.log during matches,
   builds game state, LLM-driven decision advice (Ollama backend,
   Claude API optional)
-- **100 tests passing** across `game_advisor/tests/`
+- **122 tests passing** across `game_advisor/tests/`
 - Persistence: `game_advisor/saved_decks.json` (user decks),
   `game_advisor/logs/` (decision logs per game, currently empty)
+- Imports the shared `card_db.py` as `from draft_helper import card_db`
+  (FP-C) — no more sys.path-shadowing workarounds.
+
+`pytest tests/ game_advisor/tests/` runs both suites together
+(318 tests) in one invocation since FP-C.
 
 ### Sister projects (and how this project relates to them)
 
@@ -132,42 +140,63 @@ the accuracy gain on errata'd cards.
 
 ---
 
-## FP-C — Merge legacy draft helper into `game_advisor/` package
+## FP-C — Merge legacy draft helper into `game_advisor/` package ✅ DONE 2026-06-30
 
-**What.** The two halves of the codebase share concepts (Arena log
-scanning, deck objects, card lookups) but duplicate logic. Consolidate:
+**What landed.** The 14 top-level files (`main.py`, `api.py`,
+`card_db.py`, `card_detector.py`, `config.py`, `deck.py`,
+`draft_advisor.py`, `log_scanner.py`, `mtga_local_db.py`,
+`overlay.py`, `ratings.py`, `synergy.py`, `calibrate.py`,
+`capture.py`) moved into a proper `draft_helper/` package
+(`__init__.py` + relative imports between siblings). This turned out
+to be a much smaller lift than the original estimate — the
+"namespace collision" was never a real Python packaging problem
+(`game_advisor/` already ran as its own script directory with its
+own `config.py`/`log_scanner.py`/`capture.py`); it only became a
+*pytest* collision when both suites were collected in one invocation,
+because both used bare, unqualified imports. Once `draft_helper/` is
+a real package, `from draft_helper import card_db` is unambiguous
+and the collision disappears structurally — no file renames needed.
 
-- Move top-level `main.py` (draft helper) under `draft_helper/` as a
-  sibling of `game_advisor/`
-- Extract shared infrastructure (log scanning, MTGA DB, Scryfall
-  lookups) into `mtga_common/` or similar
-- Single `pyproject.toml` so both halves can be `pip install -e .`
-- Rename top-level `card_db.py` etc. to avoid the namespace collision
-  with `game_advisor/`'s files of the same name
+**What did NOT land (correctly deferred).** The "extract shared
+`mtga_common/` infrastructure" and "single `pyproject.toml`" parts of
+the original proposal were skipped — the two log scanners parse
+genuinely different log content for different purposes (draft-pick
+detection vs. live game state), so merging them would be speculative
+work, not real deduplication. `card_db.py` was already the one
+genuinely shared module and needed no extraction, just a cleaner
+import path.
 
-**Why it might matter.**
-
-- Tests today only cover `game_advisor/`. The top-level code is stable
-  but untested. Consolidating gives a clear path to add tests for the
-  draft helper too.
-- The two log scanners (top-level `log_scanner.py` and
-  `game_advisor/log_scanner.py`) are *different* implementations with
-  some shared parsing logic. One canonical scanner reduces drift.
-- Onboarding: the dual-package structure is confusing — every file
-  exists twice with different content.
-
-**Cost.** ~12–20h depending on how much shared code we want to
-extract. The naming-collision rename alone is ~3h; the extraction
-of `mtga_common` is the bulk.
-
-**What would unblock it.** A user willingness to take a regression-
-risk hit on the legacy code while it gets restructured. The draft
-helper has been stable for months; touching it carries risk.
-
-**Current take.** Tempting but risky. Defer until either (a) a real
-duplication-pain bug bites, or (b) the user is doing draft helper
-work AND game advisor work in the same session and feels the seam.
-For now the two halves coexist fine.
+**Concrete changes:**
+- Root `main.py` and `calibrate.py` are now thin shims
+  (`from draft_helper.main import main`) so `python main.py` /
+  `python calibrate.py` and the existing `.bat`/`.vbs` launchers work
+  unchanged.
+- `game_advisor/main.py`, `card_helpers.py`, `capture.py`,
+  `dashboard.py`, `decklist.py`, `log_scanner.py`, `rule_engine.py`,
+  `llm_advisor.py` now import the shared module as
+  `from draft_helper import card_db` instead of a fragile
+  sys.path-reinsertion dance that re-asserted `game_advisor/` at
+  `sys.path[0]` before every import that might get shadowed.
+  `llm_advisor.py`'s manual `importlib.util` load of its own
+  `config.py` (to dodge the same shadowing) was simplified back to a
+  plain `import config`.
+- **Real bug fix found along the way:** `card_db._CACHE_FILE` and
+  `config.RATINGS_CACHE_FILE` derived their paths from
+  `pathlib.Path(__file__).parent`, which — once the file moved into
+  `draft_helper/` — would have silently pointed cache reads/writes at
+  `draft_helper/arena_id_cache.json` instead of the existing
+  repo-root cache, orphaning the user's warm cache on next run. Fixed
+  to `.parent.parent` (repo root). Same class of bug in
+  `draft_advisor.py`'s `.env` file lookup (was resolving to
+  `draft_helper/game_advisor/.env` instead of `game_advisor/.env`).
+- All test imports (`tests/*.py` and 6 files in `game_advisor/tests/`
+  that reached into the shared `card_db`) updated to
+  `from draft_helper import ...` / `monkeypatch.setattr("draft_helper.card_db...")`.
+- **The doc'd blocker is resolved:** `pytest tests/ game_advisor/tests/`
+  now runs both suites together in one invocation — 318 tests pass.
+  Previously this required two separate invocations
+  (`pytest tests/` then `pytest game_advisor/tests/`) due to the
+  bare-import shadowing.
 
 ---
 
@@ -195,8 +224,8 @@ rename, so a crash mid-write left the 1.6MB arena_id_cache.json
 truncated and unreadable on next startup. Fixed via .tmp +
 os.replace pattern with regression tests.
 
-Run via `pytest tests/` (scope-locally; mixing with `game_advisor/
-tests/` triggers the documented `config.py` collision).
+Run via `pytest tests/`, or together with `game_advisor/tests/` in one
+invocation now that FP-C resolved the import-shadowing collision.
 
 ---
 

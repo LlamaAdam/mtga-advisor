@@ -4,9 +4,9 @@ Deck tracker - tracks cards picked so far and recommends the best pick.
 
 import re
 from collections import Counter, defaultdict
-import card_db
-import ratings
-import synergy
+from . import card_db
+from . import ratings
+from . import synergy
 
 
 # Color symbol → WUBRG letter

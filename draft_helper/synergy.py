@@ -25,7 +25,7 @@ Additional scoring layers (BREAD/KHEBA framework):
 """
 
 import re
-import card_db
+from . import card_db
 
 
 # ---------------------------------------------------------------------------
@@ -188,7 +188,7 @@ def build_metrics(card_names: list[str]) -> DeckMetrics:
     Build DeckMetrics by scanning oracle text of all cards already picked.
     Call once per resync/pack-update, not per card evaluation.
     """
-    import ratings as r
+    from . import ratings as r
     m = DeckMetrics()
     for name in card_names:
         text = card_db.get_oracle(name).lower()
@@ -370,7 +370,7 @@ def deck_skeleton_penalty(card_name: str, metrics: DeckMetrics,
     if total_picks < 6:
         return 0.0
 
-    import ratings as r
+    from . import ratings as r
     penalty = 0.0
     cmc         = r.get_cmc(card_name)
     types       = r.get_types(card_name)
@@ -436,7 +436,7 @@ def enabler_payoff_gap_bonus(card_name: str, metrics: DeckMetrics) -> float:
         return 0.0
     text = oracle.lower()
 
-    import ratings as r
+    from . import ratings as r
     types = r.get_types(card_name)
     cmc   = r.get_cmc(card_name)
 

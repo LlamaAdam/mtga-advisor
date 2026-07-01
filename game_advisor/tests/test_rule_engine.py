@@ -3,7 +3,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent.parent))
 from game_state import BoardCard, GameState, HandCard, Player, RuleAlert
 import rule_engine
-import card_db
+from draft_helper import card_db
 import pytest
 
 
@@ -13,7 +13,7 @@ def clean_card_db(monkeypatch):
     lookup so tests retain control via the local `_oracle` etc. dicts.
     Without this the new shared-store integration would override
     synthetic test data with real Scryfall snapshots."""
-    monkeypatch.setattr("card_db._resolve_shared_cards_dir", lambda: None)
+    monkeypatch.setattr("draft_helper.card_db._resolve_shared_cards_dir", lambda: None)
     orig_oracle = card_db._oracle.copy()
     orig_type_line = card_db._type_line.copy()
     orig_bad_ids = card_db._bad_ids.copy()

@@ -13,7 +13,7 @@ we return None and the overlay uses the calibration-based grid instead.
 import numpy as np
 import mss
 from PIL import Image
-import config
+from . import config
 
 # -----------------------------------------------------------------------
 # Tuning parameters

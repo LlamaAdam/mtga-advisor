@@ -15,9 +15,9 @@ import queue
 import threading
 import tkinter as tk
 
-import config
-import ratings as ratings_engine
-from deck import DeckTracker
+from . import config
+from . import ratings as ratings_engine
+from .deck import DeckTracker
 
 _TRANSPARENT = "#010101"   # Color key made invisible on Windows
 
@@ -175,7 +175,7 @@ class OverlayApp:
         Redraw all rating badges.
         Tries screen-based card detection first; falls back to calibration grid.
         """
-        import card_detector
+        from . import card_detector
 
         self.canvas.delete("badge")
         card_names = [n for n in card_names if n]

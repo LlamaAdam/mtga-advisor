@@ -5,10 +5,11 @@ MTGA Draft Helper - Configuration
 import os
 import pathlib
 
-# Absolute path to the directory containing this config file.
-# All relative cache paths are resolved from here so the program works
-# regardless of which directory the user launches it from.
-_BASE_DIR = pathlib.Path(__file__).parent
+# Absolute path to the repo root (one level up from this package). All
+# relative cache paths are resolved from here — cache files are runtime
+# state, not package code, so they stay at the repo root regardless of
+# which directory the user launches the program from.
+_BASE_DIR = pathlib.Path(__file__).parent.parent
 
 # --- Arena Player Log ---
 # Where MTGA writes its log file (used to detect draft events)

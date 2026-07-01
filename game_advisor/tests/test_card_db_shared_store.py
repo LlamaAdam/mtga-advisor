@@ -13,7 +13,7 @@ import sys
 import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent.parent))
-import card_db  # noqa: E402
+from draft_helper import card_db  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -71,7 +71,7 @@ def test_resolve_shared_cards_dir_returns_none_when_unset_and_canonical_missing(
 def test_shared_snapshot_path_returns_none_without_shared_dir(monkeypatch):
     monkeypatch.delenv("MTG_CARDS_DIR", raising=False)
     monkeypatch.setattr(
-        "card_db._resolve_shared_cards_dir", lambda: None,
+        "draft_helper.card_db._resolve_shared_cards_dir", lambda: None,
     )
     assert card_db._shared_snapshot_path("Sol Ring") is None
 
@@ -117,7 +117,7 @@ def test_get_oracle_returns_empty_when_neither_has_it(tmp_path, monkeypatch):
 
 def test_get_oracle_falls_back_when_shared_dir_unset(monkeypatch):
     monkeypatch.delenv("MTG_CARDS_DIR", raising=False)
-    monkeypatch.setattr("card_db._resolve_shared_cards_dir", lambda: None)
+    monkeypatch.setattr("draft_helper.card_db._resolve_shared_cards_dir", lambda: None)
     card_db._oracle["sol ring"] = "FROM LOCAL"
     assert card_db.get_oracle("Sol Ring") == "FROM LOCAL"
 

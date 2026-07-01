@@ -195,7 +195,7 @@ def preload_into_card_db() -> int:
     This should be called once at startup so every grpId has a name before Scryfall
     is ever needed — including cards from new sets that Scryfall hasn't mapped yet.
     """
-    import card_db  # imported here to avoid circular imports at module level
+    from . import card_db  # imported here to avoid circular imports at module level
 
     conn = _get_connection()
     if conn is None:

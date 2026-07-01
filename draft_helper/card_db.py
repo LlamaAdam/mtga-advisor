@@ -23,6 +23,15 @@ import threading
 import time
 import requests
 
+# Scryfall rejects requests using the requests library's default User-Agent
+# with a 400 "generic_user_agent" error (per their API guidelines: clients
+# must self-identify). 17lands' API doesn't enforce this, so only Scryfall
+# calls need this header.
+_SCRYFALL_HEADERS = {
+    "User-Agent": "mtga-draft-helper/1.0 (+https://github.com/LlamaAdam/mtga-advisor)",
+    "Accept": "application/json;q=0.9,*/*;q=0.8",
+}
+
 
 def _resolve_shared_cards_dir() -> pathlib.Path | None:
     """Resolve the shared `mtg_cards` folder, mirroring the resolvers in the
@@ -65,7 +74,7 @@ def _load_shared_snapshot(card_name: str) -> dict | None:
     except (OSError, ValueError):
         return None
 
-_CACHE_FILE = str(pathlib.Path(__file__).parent / "arena_id_cache.json")
+_CACHE_FILE = str(pathlib.Path(__file__).parent.parent / "arena_id_cache.json")
 _cache: dict[str, str] = {}          # str(arena_id) -> card name
 _oracle: dict[str, str] = {}         # card_name.lower() -> oracle text
 _cmc: dict[str, int] = {}            # card_name.lower() -> converted mana cost
@@ -236,6 +245,8 @@ def preload_set(set_code: str):
 
     print(f"[card_db] Preloading card names for set {key} from Scryfall...")
     count = 0
+    got_data = False  # True once any card object is actually returned —
+                       # independent of whether arena_id happened to resolve
 
     try:
         url = "https://api.scryfall.com/cards/search"
@@ -243,13 +254,14 @@ def preload_set(set_code: str):
         params: dict = {"q": f"set:{set_code.lower()} game:arena", "unique": "cards"}
 
         while url:
-            resp = requests.get(url, params=params, timeout=10)
+            resp = requests.get(url, params=params, headers=_SCRYFALL_HEADERS, timeout=10)
             if resp.status_code != 200:
                 print(f"[card_db] Scryfall search returned {resp.status_code} for {key}")
                 break
 
             data = resp.json()
             for card in data.get("data", []):
+                got_data = True
                 arena_id = card.get("arena_id")
                 name = card.get("name", "")
                 if arena_id and name:
@@ -276,7 +288,12 @@ def preload_set(set_code: str):
             else:
                 break
 
-        _preloaded_sets.add(key)
+        if got_data:
+            # Only mark as preloaded when we actually got card data back —
+            # an early HTTP error (e.g. a rejected request) would otherwise
+            # permanently skip this set for the life of the cache file,
+            # since _preloaded_sets is persisted to arena_id_cache.json.
+            _preloaded_sets.add(key)
         _save_cache()
         print(f"[card_db] Preloaded {count} cards for {key}. "
               f"Total cache size: {len(_cache)}.")
@@ -334,6 +351,7 @@ def learn_name(arena_id: str, card_name: str):
         resp = requests.get(
             "https://api.scryfall.com/cards/named",
             params={"exact": card_name},
+            headers=_SCRYFALL_HEADERS,
             timeout=10,
         )
         if resp.status_code == 200:
@@ -367,6 +385,7 @@ def _try_arena_endpoint(arena_id: str) -> bool:
     try:
         resp = requests.get(
             f"https://api.scryfall.com/cards/arena/{arena_id}",
+            headers=_SCRYFALL_HEADERS,
             timeout=10,
         )
         if resp.status_code == 404:
@@ -409,7 +428,7 @@ def _try_local_mtga_db(arena_id: str) -> bool:
     Returns True and populates _cache/_type_line/_cmc/_mana_cost if found.
     """
     try:
-        import mtga_local_db
+        from . import mtga_local_db
         result = mtga_local_db.lookup(arena_id)
         if not result:
             return False
@@ -447,6 +466,7 @@ def _fetch_collection_chunk(arena_ids: list[str], chunk_size: int):
             resp = requests.post(
                 "https://api.scryfall.com/cards/collection",
                 json={"identifiers": identifiers},
+                headers=_SCRYFALL_HEADERS,
                 timeout=20,
             )
             if resp.status_code == 400:

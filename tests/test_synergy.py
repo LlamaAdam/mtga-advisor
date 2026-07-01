@@ -13,16 +13,16 @@ from __future__ import annotations
 
 import pytest
 
-import card_db
-import synergy
+from draft_helper import card_db
+from draft_helper import synergy
 
 
 @pytest.fixture(autouse=True)
 def isolate(monkeypatch):
     """Disable shared-store lookups; restore card_db state per-test."""
-    monkeypatch.setattr("card_db._resolve_shared_cards_dir", lambda: None)
-    monkeypatch.setattr("card_db._save_cache", lambda: None)
-    monkeypatch.setattr("card_db._load_cache", lambda: None)
+    monkeypatch.setattr("draft_helper.card_db._resolve_shared_cards_dir", lambda: None)
+    monkeypatch.setattr("draft_helper.card_db._save_cache", lambda: None)
+    monkeypatch.setattr("draft_helper.card_db._load_cache", lambda: None)
     orig_oracle = card_db._oracle.copy()
     orig_type_line = card_db._type_line.copy()
     yield
@@ -160,12 +160,12 @@ def test_bread_bonus_first_removal_pattern_only():
 # ---------------------------------------------------------------------------
 
 def test_build_metrics_counts_creatures(monkeypatch):
-    monkeypatch.setattr("ratings.get_types", lambda name: {
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: {
         "goblin warrior": ["Creature"],
         "lightning bolt": ["Instant"],
     }.get(name.lower(), []))
-    monkeypatch.setattr("ratings.get_cmc", lambda name: 1)
-    monkeypatch.setattr("ratings.get_colors", lambda name: ["R"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: 1)
+    monkeypatch.setattr("draft_helper.ratings.get_colors", lambda name: ["R"])
     card_db._oracle["goblin warrior"] = "Haste."
     card_db._oracle["lightning bolt"] = "Lightning Bolt deals 3 damage."
 
@@ -177,9 +177,9 @@ def test_build_metrics_counts_creatures(monkeypatch):
 def test_build_metrics_counts_curve_buckets(monkeypatch):
     """Cards by cmc should land in the right bucket."""
     cmc_map = {"two-drop": 2, "four-drop": 4, "five-drop": 5, "six-drop": 7}
-    monkeypatch.setattr("ratings.get_types", lambda name: ["Creature"])
-    monkeypatch.setattr("ratings.get_cmc", lambda name: cmc_map.get(name.lower(), 0))
-    monkeypatch.setattr("ratings.get_colors", lambda name: [])
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: ["Creature"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: cmc_map.get(name.lower(), 0))
+    monkeypatch.setattr("draft_helper.ratings.get_colors", lambda name: [])
     for n in cmc_map:
         card_db._oracle[n] = "x"
     m = synergy.build_metrics(["two-drop", "four-drop", "five-drop", "six-drop"])
@@ -190,9 +190,9 @@ def test_build_metrics_counts_curve_buckets(monkeypatch):
 
 
 def test_build_metrics_counts_lifegain(monkeypatch):
-    monkeypatch.setattr("ratings.get_types", lambda name: ["Creature"])
-    monkeypatch.setattr("ratings.get_cmc", lambda name: 2)
-    monkeypatch.setattr("ratings.get_colors", lambda name: [])
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: ["Creature"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: 2)
+    monkeypatch.setattr("draft_helper.ratings.get_colors", lambda name: [])
     card_db._oracle["soul sister"] = (
         "Whenever another creature enters under your control, you gain 1 life."
     )
@@ -201,9 +201,9 @@ def test_build_metrics_counts_lifegain(monkeypatch):
 
 
 def test_build_metrics_counts_artifacts(monkeypatch):
-    monkeypatch.setattr("ratings.get_types", lambda name: ["Artifact"])
-    monkeypatch.setattr("ratings.get_cmc", lambda name: 2)
-    monkeypatch.setattr("ratings.get_colors", lambda name: [])
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: ["Artifact"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: 2)
+    monkeypatch.setattr("draft_helper.ratings.get_colors", lambda name: [])
     card_db._oracle["mind stone"] = "{T}: Add {C}."
     m = synergy.build_metrics(["Mind Stone"])
     assert m.artifacts == 1
@@ -215,8 +215,8 @@ def test_build_metrics_counts_artifacts(monkeypatch):
 
 def test_deck_skeleton_penalty_no_op_in_first_5_picks(monkeypatch):
     """Below 6 picks, the heuristic doesn't fire (too noisy to judge)."""
-    monkeypatch.setattr("ratings.get_cmc", lambda name: 5)
-    monkeypatch.setattr("ratings.get_types", lambda name: ["Creature"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: 5)
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: ["Creature"])
     m = synergy.DeckMetrics()
     m.two_drops = 0
     assert synergy.deck_skeleton_penalty("Big Threat", m, total_picks=3) == 0.0
@@ -224,8 +224,8 @@ def test_deck_skeleton_penalty_no_op_in_first_5_picks(monkeypatch):
 
 def test_deck_skeleton_penalty_rewards_two_drop_when_slot_empty(monkeypatch):
     """A two-drop creature gets a positive nudge when 2-drops is empty."""
-    monkeypatch.setattr("ratings.get_cmc", lambda name: 2)
-    monkeypatch.setattr("ratings.get_types", lambda name: ["Creature"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: 2)
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: ["Creature"])
     m = synergy.DeckMetrics()
     m.two_drops = 0
     nudge = synergy.deck_skeleton_penalty("Bear", m, total_picks=10)
@@ -234,8 +234,8 @@ def test_deck_skeleton_penalty_rewards_two_drop_when_slot_empty(monkeypatch):
 
 def test_deck_skeleton_penalty_penalizes_high_cmc_when_two_drops_thin(monkeypatch):
     """A 4-drop is penalized when 2-drops is below 2."""
-    monkeypatch.setattr("ratings.get_cmc", lambda name: 4)
-    monkeypatch.setattr("ratings.get_types", lambda name: ["Creature"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: 4)
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: ["Creature"])
     m = synergy.DeckMetrics()
     m.two_drops = 1
     penalty = synergy.deck_skeleton_penalty("Big Beast", m, total_picks=10)
@@ -244,8 +244,8 @@ def test_deck_skeleton_penalty_penalizes_high_cmc_when_two_drops_thin(monkeypatc
 
 def test_deck_skeleton_penalty_penalizes_six_plus_overload(monkeypatch):
     """A 6+ drop when there are already 2 in the deck → penalty."""
-    monkeypatch.setattr("ratings.get_cmc", lambda name: 7)
-    monkeypatch.setattr("ratings.get_types", lambda name: ["Creature"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: 7)
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: ["Creature"])
     m = synergy.DeckMetrics()
     m.six_plus_drops = 2
     m.two_drops = 4  # healthy 2-drop count to isolate the 6+ penalty
@@ -256,8 +256,8 @@ def test_deck_skeleton_penalty_penalizes_six_plus_overload(monkeypatch):
 def test_deck_skeleton_penalty_penalizes_noncreature_when_creature_starved(monkeypatch):
     """Picking yet another non-creature when creature density is far below
     target → penalty."""
-    monkeypatch.setattr("ratings.get_cmc", lambda name: 3)
-    monkeypatch.setattr("ratings.get_types", lambda name: ["Sorcery"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: 3)
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: ["Sorcery"])
     m = synergy.DeckMetrics()
     m.two_drops = 4  # healthy
     m.creatures = 1  # very low — total_picks=20 → target 8, deficit 7
@@ -271,8 +271,8 @@ def test_deck_skeleton_penalty_penalizes_noncreature_when_creature_starved(monke
 
 def test_enabler_payoff_gap_zero_for_balanced_deck(monkeypatch):
     """When enablers ≈ payoffs, no bonus."""
-    monkeypatch.setattr("ratings.get_types", lambda name: ["Creature"])
-    monkeypatch.setattr("ratings.get_cmc", lambda name: 4)
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: ["Creature"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: 4)
     card_db._oracle["card a"] = "Whenever you cast an instant or sorcery, draw a card."
     m = synergy.DeckMetrics()
     m.enabler_count = 5
@@ -283,8 +283,8 @@ def test_enabler_payoff_gap_zero_for_balanced_deck(monkeypatch):
 
 def test_enabler_payoff_gap_rewards_payoff_when_enabler_heavy(monkeypatch):
     """Many enablers, no payoffs → reward picking a payoff."""
-    monkeypatch.setattr("ratings.get_types", lambda name: ["Creature"])
-    monkeypatch.setattr("ratings.get_cmc", lambda name: 4)
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: ["Creature"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: 4)
     card_db._oracle["spell mage"] = "Whenever you cast an instant or sorcery, draw a card."
     m = synergy.DeckMetrics()
     m.enabler_count = 6
@@ -297,8 +297,8 @@ def test_enabler_payoff_gap_rewards_payoff_when_enabler_heavy(monkeypatch):
 def test_enabler_payoff_gap_zero_for_unrelated_card(monkeypatch):
     """A vanilla creature in an enabler-heavy deck gets nothing — it's
     not a payoff."""
-    monkeypatch.setattr("ratings.get_types", lambda name: ["Creature"])
-    monkeypatch.setattr("ratings.get_cmc", lambda name: 4)
+    monkeypatch.setattr("draft_helper.ratings.get_types", lambda name: ["Creature"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: 4)
     card_db._oracle["bear"] = "Vanilla 2/2."
     m = synergy.DeckMetrics()
     m.enabler_count = 6
