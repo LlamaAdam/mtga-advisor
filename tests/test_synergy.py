@@ -347,3 +347,90 @@ def test_removal_scarcity_zero_for_unknown_card():
     m = synergy.DeckMetrics()
     m.removal_count = 0
     assert synergy.removal_scarcity_bonus("Unknown Card", m) == 0.0
+
+
+# ---------------------------------------------------------------------------
+# card_themes — per-card synergy tagger
+# ---------------------------------------------------------------------------
+
+def _register(monkeypatch, cards: dict):
+    """cards: name -> (oracle, types, cmc, subtypes). Stub the lookups."""
+    types = {n.lower(): c[1] for n, c in cards.items()}
+    cmcs = {n.lower(): c[2] for n, c in cards.items()}
+    subs = {n.lower(): c[3] for n, c in cards.items()}
+    for n, c in cards.items():
+        card_db._oracle[n.lower()] = c[0]
+    monkeypatch.setattr("draft_helper.ratings.get_types",
+                        lambda name: types.get(name.lower(), []))
+    monkeypatch.setattr("draft_helper.ratings.get_cmc",
+                        lambda name: cmcs.get(name.lower(), 0))
+    monkeypatch.setattr("draft_helper.card_db.get_subtypes",
+                        lambda name: subs.get(name.lower(), []))
+
+
+def test_card_themes_detects_counters(monkeypatch):
+    _register(monkeypatch, {"Grower": ("Put a +1/+1 counter on target creature.",
+                                        ["Instant"], 2, [])})
+    assert "+1/+1 counters" in synergy.card_themes("Grower")
+
+
+def test_card_themes_detects_enabler_and_not_payoff(monkeypatch):
+    _register(monkeypatch, {"Cantrip": ("Draw a card.", ["Instant"], 1, [])})
+    tags = synergy.card_themes("Cantrip")
+    assert "enabler" in tags
+    assert "payoff" not in tags
+
+
+def test_card_themes_detects_payoff(monkeypatch):
+    _register(monkeypatch, {"Engine": ("Whenever you cast an instant, draw a card.",
+                                       ["Enchantment"], 3, [])})
+    assert "payoff" in synergy.card_themes("Engine")
+
+
+def test_card_themes_detects_tribe(monkeypatch):
+    _register(monkeypatch, {"Merlord": ("Other Merfolk you control get +1/+1.",
+                                        ["Creature"], 3, ["Merfolk"])})
+    assert "merfolk tribal" in synergy.card_themes("Merlord")
+
+
+def test_card_themes_vanilla_card_has_no_tags(monkeypatch):
+    _register(monkeypatch, {"Bear": ("", ["Creature"], 2, ["Bear"])})
+    assert synergy.card_themes("Bear") == set()
+
+
+# ---------------------------------------------------------------------------
+# assess_hand_synergy — opening-hand vs deck plan
+# ---------------------------------------------------------------------------
+
+def test_assess_hand_synergistic_when_hand_hits_payoff_theme(monkeypatch):
+    # Deck: 3+ counter cards -> counters is significant. Hand has one.
+    _register(monkeypatch, {
+        "A": ("Put a +1/+1 counter on it.", ["Instant"], 2, []),
+        "B": ("Put a +1/+1 counter on it.", ["Sorcery"], 3, []),
+        "C": ("Put a +1/+1 counter on it.", ["Creature"], 4, []),
+        "Land": ("", ["Land"], 0, []),
+    })
+    deck = ["A", "B", "C", "Land", "Land", "Land"]
+    result = synergy.assess_hand_synergy(deck, ["A", "Land", "Land"])
+    assert "+1/+1 counters" in result.deck_themes
+    assert result.verdict == "synergistic"
+
+
+def test_assess_hand_off_plan_when_no_theme_cards(monkeypatch):
+    _register(monkeypatch, {
+        "A": ("Put a +1/+1 counter on it.", ["Instant"], 2, []),
+        "B": ("Put a +1/+1 counter on it.", ["Sorcery"], 3, []),
+        "C": ("Put a +1/+1 counter on it.", ["Creature"], 4, []),
+        "Vanilla": ("", ["Creature"], 3, []),
+        "Land": ("", ["Land"], 0, []),
+    })
+    deck = ["A", "B", "C", "Vanilla", "Land", "Land"]
+    result = synergy.assess_hand_synergy(deck, ["Vanilla", "Land", "Land"])
+    assert result.verdict == "off-plan"
+
+
+def test_assess_hand_unknown_when_no_significant_theme(monkeypatch):
+    _register(monkeypatch, {"Vanilla": ("", ["Creature"], 3, []),
+                            "Land": ("", ["Land"], 0, [])})
+    result = synergy.assess_hand_synergy(["Vanilla", "Land"], ["Vanilla", "Land"])
+    assert result.verdict == "unknown"

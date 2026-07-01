@@ -317,3 +317,53 @@ def test_surveil_no_alert_when_no_surveil_card():
     state = _make_state(your_hand=your_hand)
     alerts = rule_engine.check_surveil(state)
     assert alerts == []
+
+
+# ---------------------------------------------------------------------------
+# Mulligan synergy read — does a keepable hand advance the deck's plan?
+# ---------------------------------------------------------------------------
+
+def _setup_counters_deck(monkeypatch):
+    """Active deck with a significant +1/+1 counters theme (3 counter spells)."""
+    _setup_lands("Forest")
+    for c in ["Grow One", "Grow Two", "Grow Three"]:
+        card_db._oracle[c.lower()] = "Put a +1/+1 counter on target creature."
+        card_db._type_line[c.lower()] = "Instant"
+    monkeypatch.setattr("draft_helper.ratings.get_types",
+                        lambda name: ["Land"] if "forest" in name.lower() else ["Instant"])
+    monkeypatch.setattr("draft_helper.ratings.get_cmc", lambda name: 2)
+    monkeypatch.setattr(rule_engine._decklist, "active_deck",
+                        {"Grow One": 1, "Grow Two": 1, "Grow Three": 1, "Forest": 17})
+
+
+def test_mulligan_synergy_flags_on_plan_hand(monkeypatch):
+    _setup_counters_deck(monkeypatch)
+    lands = [_make_hand_land("Forest") for _ in range(3)]
+    spells = ([_make_hand_card("Grow One", 2, ["G"])]
+              + [_make_hand_card("Bear", 2, ["G"]) for _ in range(3)])
+    state = _make_state(your_hand=lands + spells, turn=1)
+    alerts = rule_engine.check_mulligan(state)
+    assert any(a.severity == "INFO" and "keepable" in a.message.lower() for a in alerts)
+    assert any("synergy" in a.message.lower() and "on-plan" in a.message.lower()
+               for a in alerts)
+
+
+def test_mulligan_synergy_flags_off_plan_hand(monkeypatch):
+    _setup_counters_deck(monkeypatch)
+    lands = [_make_hand_land("Forest") for _ in range(3)]
+    spells = [_make_hand_card("Bear", 2, ["G"]) for _ in range(4)]  # no counter cards
+    state = _make_state(your_hand=lands + spells, turn=1)
+    alerts = rule_engine.check_mulligan(state)
+    assert any("synergy" in a.message.lower() and "generic" in a.message.lower()
+               for a in alerts)
+
+
+def test_mulligan_no_synergy_alert_without_active_deck(monkeypatch):
+    """No deck loaded → no synergy read (only the keepable INFO)."""
+    _setup_lands("Mountain")
+    monkeypatch.setattr(rule_engine._decklist, "active_deck", {})
+    lands = [_make_hand_land("Mountain") for _ in range(3)]
+    spells = [_make_hand_card("Shock", 1, ["R"]) for _ in range(4)]
+    state = _make_state(your_hand=lands + spells, turn=1)
+    alerts = rule_engine.check_mulligan(state)
+    assert not any("synergy" in a.message.lower() for a in alerts)

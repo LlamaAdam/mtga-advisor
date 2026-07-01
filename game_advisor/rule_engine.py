@@ -8,6 +8,7 @@ import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 from draft_helper import card_db
+from draft_helper import synergy
 import decklist as _decklist
 from game_state import BoardCard, GameState, HandCard, RuleAlert
 from math_utils import hypergeometric_cdf_at_least, prob_draw_at_least_one
@@ -236,6 +237,7 @@ def check_mulligan(state: GameState) -> list[RuleAlert]:
 
     # Hand passes all checks — recommend keeping, add probability context if decklist loaded
     prob_note = ""
+    synergy_alert: RuleAlert | None = None
     if _decklist.active_deck:
         deck = _decklist.active_deck
         deck_size = sum(deck.values())
@@ -256,10 +258,34 @@ def check_mulligan(state: GameState) -> list[RuleAlert]:
             else:
                 prob_note = " | already at 3+ lands"
 
-    return [RuleAlert(
+        # Synergy read: does this keepable hand actually advance the deck's plan?
+        # Purely additive context — the land checks above own the keep/mull call.
+        synergy_alert = _mulligan_synergy_alert(deck, spells)
+
+    alerts = [RuleAlert(
         severity="INFO",
         message=f"Hand looks keepable: {land_count} lands, {len(spells)} spells in {hand_size} cards{prob_note}",
     )]
+    if synergy_alert is not None:
+        alerts.append(synergy_alert)
+    return alerts
+
+
+def _mulligan_synergy_alert(deck: dict, spell_cards: list) -> "RuleAlert | None":
+    """Assess whether the (already keepable) opening hand's spells advance the
+    deck's synergy plan, and return a matching RuleAlert — or None when the
+    deck has no dominant theme to judge against.
+
+    A synergistic hand is reinforced (INFO 'on-plan'); an off-plan hand is
+    softly flagged (INFO) so the player knows it's a generic keep, never a
+    forced mulligan — the land/curve checks upstream own that decision.
+    """
+    deck_flat = [name for name, count in deck.items() for _ in range(count)]
+    hand_names = [c.name for c in spell_cards]
+    result = synergy.assess_hand_synergy(deck_flat, hand_names)
+    if result.verdict == "unknown":
+        return None
+    return RuleAlert(severity="INFO", message=f"Synergy: {result.reason}")
 
 
 def check_lethal_clock(state: GameState) -> list[RuleAlert]:

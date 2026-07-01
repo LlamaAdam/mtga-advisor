@@ -495,3 +495,125 @@ def removal_scarcity_bonus(card_name: str, metrics: DeckMetrics) -> float:
 
     bonus_table = {0: 2.0, 1: 1.25, 2: 0.5}
     return bonus_table.get(metrics.removal_count, 0.0)
+
+
+# ---------------------------------------------------------------------------
+# Per-card theme tagger + opening-hand synergy assessment
+#
+# card_themes() is the reusable "keyword grouping" primitive: it maps one
+# card to the set of synergy themes it participates in. assess_hand_synergy()
+# uses it to decide whether an opening hand actually advances the deck's plan
+# — consumed by the in-game advisor's mulligan check.
+# ---------------------------------------------------------------------------
+
+# A theme is "significant" for a deck once at least this many cards feed it.
+_SIGNIFICANT_THEME_MIN = 3
+# Themes that represent an actual gameplan/engine (vs. incidental keywords).
+# A hand hitting one of these reads as genuinely on-plan.
+_PAYOFF_THEMES = frozenset({"+1/+1 counters", "payoff", "artifacts", "lifegain"})
+
+
+def card_themes(card_name: str) -> set[str]:
+    """Return the set of synergy theme tags a single card participates in.
+
+    The per-card primitive behind both draft-pick synergy and the mulligan
+    hand-fit check. Themes: '+1/+1 counters', 'artifacts', 'lifegain',
+    'enabler', 'payoff', 'removal', and '<tribe> tribal'. Detection mirrors
+    build_metrics() so the deck profile and the hand read use the same rules.
+    """
+    oracle = card_db.get_oracle(card_name)
+    if not oracle:
+        return set()
+    text = oracle.lower()
+
+    from . import ratings as r
+    types = r.get_types(card_name)
+    cmc = r.get_cmc(card_name)
+
+    tags: set[str] = set()
+    if "+1/+1" in text:
+        tags.add("+1/+1 counters")
+    if "Artifact" in types:
+        tags.add("artifacts")
+    if "you gain" in text and "life" in text:
+        tags.add("lifegain")
+    if (cmc <= 2 and "Creature" not in types
+            and ("Instant" in types or "Sorcery" in types)):
+        tags.add("enabler")
+    if ("whenever you cast" in text
+            or ("for each" in text
+                and any(w in text for w in ("instant", "sorcery", "creature", "artifact")))):
+        tags.add("payoff")
+    if any(pat.search(oracle) for pat, _ in _COMPILED_REMOVAL):
+        tags.add("removal")
+    for subtype in card_db.get_subtypes(card_name):
+        if subtype in TRACKED_TRIBES:
+            tags.add(f"{subtype.lower()} tribal")
+    return tags
+
+
+class HandSynergy:
+    """Result of assessing an opening hand against its deck's synergy plan.
+
+    verdict is one of:
+      'synergistic' — hand hits a core payoff/engine theme of the deck
+      'functional'  — hand touches the deck's themes but not a payoff
+      'off-plan'    — hand advances none of the deck's significant themes
+      'unknown'     — deck too small / no themes detected (no signal)
+    """
+    __slots__ = ("deck_themes", "hand_hits", "verdict", "reason")
+
+    def __init__(self, deck_themes, hand_hits, verdict, reason):
+        self.deck_themes = deck_themes    # list[str] significant deck themes
+        self.hand_hits = hand_hits        # list[tuple[str, str]] (card, theme)
+        self.verdict = verdict            # str
+        self.reason = reason              # str, human-facing
+
+
+def assess_hand_synergy(deck_names: list[str], hand_names: list[str]) -> HandSynergy:
+    """Judge whether an opening hand advances the deck's synergy plan.
+
+    deck_names — every card in the deck (a flat list; duplicates included).
+    hand_names — the cards in the opening hand.
+
+    Detects the deck's *significant* themes (fed by >= _SIGNIFICANT_THEME_MIN
+    cards), then reports which of those themes the hand actually contains.
+    Purely additive context for the mulligan call — it never turns a
+    land-screwed hand into a keep; it explains whether a keepable hand is
+    on-plan.
+    """
+    from collections import Counter
+
+    theme_counts: Counter = Counter()
+    for name in deck_names:
+        for theme in card_themes(name):
+            theme_counts[theme] += 1
+
+    significant = sorted(t for t, c in theme_counts.items()
+                         if c >= _SIGNIFICANT_THEME_MIN)
+    if not significant:
+        return HandSynergy([], [], "unknown",
+                           "No dominant synergy theme detected in the deck.")
+
+    hand_hits = []
+    for name in hand_names:
+        for theme in card_themes(name):
+            if theme in significant:
+                hand_hits.append((name, theme))
+
+    hit_themes = {t for _, t in hand_hits}
+    if not hand_hits:
+        verdict = "off-plan"
+        reason = ("Hand advances none of your deck's themes "
+                  f"({', '.join(significant)}) — plays like a generic hand.")
+    elif hit_themes & _PAYOFF_THEMES or any("tribal" in t for t in hit_themes):
+        verdict = "synergistic"
+        cards = ", ".join(sorted({c for c, _ in hand_hits}))
+        reason = (f"Hand is on-plan: {cards} feed your "
+                  f"{', '.join(sorted(hit_themes))} gameplan.")
+    else:
+        verdict = "functional"
+        reason = (f"Hand touches your {', '.join(sorted(hit_themes))} theme "
+                  "but lacks a payoff — playable, not explosive.")
+
+    return HandSynergy(significant, hand_hits, verdict, reason)
