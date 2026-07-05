@@ -28,3 +28,36 @@ def test_run_benchmark_loads_ratings_then_scores(monkeypatch):
     report = runner.run_benchmark(rec, draft_format="PremierDraft")
     assert calls["loaded"] == ("MSH", "PremierDraft")
     assert report.agreement_rate == 1.0
+
+
+def test_ensure_ratings_reloads_when_a_different_set_is_loaded(monkeypatch):
+    """Benchmarking set B after set A in one process must reload ratings —
+    is_loaded() alone can't tell WHICH set is in the module."""
+    loads: list[tuple[str, str]] = []
+    monkeypatch.setattr(runner.api, "load_cache",
+                        lambda s, f: (loads.append((s, f)) or {"some card": {}}))
+    # Simulate: module already holds ratings, but for set "AAA".
+    monkeypatch.setattr(ratings_mod, "is_loaded", lambda: True)
+
+    real_load = ratings_mod.load
+    monkeypatch.setattr(ratings_mod, "load",
+                        lambda data, set_key=None: real_load(data, set_key=set_key))
+    ratings_mod.load({"old card": {}}, set_key="AAA_PremierDraft")
+    try:
+        runner._ensure_ratings_loaded("BBB", "PremierDraft")
+        assert loads == [("BBB", "PremierDraft")]        # cache consulted for BBB
+        assert ratings_mod.loaded_key() == "BBB_PremierDraft"
+    finally:
+        ratings_mod.load({}, set_key=None)               # reset module state
+
+
+def test_ensure_ratings_skips_reload_when_same_set_loaded(monkeypatch):
+    loads: list[tuple[str, str]] = []
+    monkeypatch.setattr(runner.api, "load_cache",
+                        lambda s, f: (loads.append((s, f)) or {"some card": {}}))
+    ratings_mod.load({"a card": {}}, set_key="MSH_PremierDraft")
+    try:
+        runner._ensure_ratings_loaded("MSH", "PremierDraft")
+        assert loads == []                               # no reload needed
+    finally:
+        ratings_mod.load({}, set_key=None)

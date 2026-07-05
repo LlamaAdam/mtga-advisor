@@ -29,28 +29,39 @@ from . import config
 _ratings: dict = {}
 _set_mean: float = 50.0
 _set_std:  float = 3.0
+# Identity of the loaded data (e.g. "MSH_PremierDraft"). None when the
+# caller didn't say — is_loaded() alone can't tell WHICH set is loaded.
+_loaded_key: str | None = None
 
 
 # ---------------------------------------------------------------------------
 # Loading
 # ---------------------------------------------------------------------------
 
-def load(ratings_data: dict):
+def load(ratings_data: dict, set_key: str | None = None):
     """
     Load ratings returned by api.fetch_all_ratings().
     Extracts set-level stats from __meta__ key.
+    set_key optionally records which set/format this data is for, so callers
+    that score multiple sets in one process can detect staleness.
     """
-    global _ratings, _set_mean, _set_std
+    global _ratings, _set_mean, _set_std, _loaded_key
     meta = ratings_data.get("__meta__", {})
     _set_mean = meta.get("mean", 50.0)
     _set_std  = meta.get("std_dev", 3.0)
     _ratings  = {k: v for k, v in ratings_data.items() if k != "__meta__"}
+    _loaded_key = set_key
     print(f"[ratings] Loaded {len(_ratings)} cards. "
           f"Set mean GIHWR: {_set_mean:.1f}% ± {_set_std:.1f}%")
 
 
 def is_loaded() -> bool:
     return bool(_ratings)
+
+
+def loaded_key() -> str | None:
+    """The set_key passed to load(), or None if the caller didn't record one."""
+    return _loaded_key
 
 
 # ---------------------------------------------------------------------------

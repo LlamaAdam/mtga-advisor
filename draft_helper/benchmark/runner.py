@@ -10,17 +10,20 @@ def _ensure_ratings_loaded(set_code: str, draft_format: str) -> None:
     """Load 17Lands ratings for the set into the ratings module if needed.
 
     Prefers the on-disk cache; falls back to a live fetch. Isolated in its own
-    function so tests can stub the network entirely.
+    function so tests can stub the network entirely. Reloads whenever the
+    module holds ratings for a DIFFERENT (or unknown) set/format — otherwise
+    back-to-back benchmarks of two sets would silently share one set's data.
     """
-    if ratings.is_loaded():
+    set_key = f"{set_code}_{draft_format}"
+    if ratings.is_loaded() and ratings.loaded_key() == set_key:
         return
     cached = api.load_cache(set_code, draft_format)
     if cached:
-        ratings.load(cached)
+        ratings.load(cached, set_key=set_key)
         return
     data = api.fetch_all_ratings(set_code, draft_format)
     api.save_cache(set_code, draft_format, data)
-    ratings.load(data)
+    ratings.load(data, set_key=set_key)
 
 
 def run_benchmark(record: DraftRecord,

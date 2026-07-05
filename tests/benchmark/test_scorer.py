@@ -107,6 +107,27 @@ def test_tied_ratings_rank_deterministically_in_pack_order(stub_engine):
     assert report2.results[0].agree is True
 
 
+def test_fully_unrated_pack_is_skipped_not_scored():
+    # No card in the pack has any rating -> the tool has no opinion.
+    # Production best_pick returns None here; the scorer must not fabricate
+    # a tool_pick from pack order and register a spurious agreement.
+    report = scorer.score_draft(_one_pick(["Mystery A", "Mystery B"], "Mystery A"))
+    r = report.results[0]
+    assert r.scored is False
+    assert r.tool_pick == ""
+    assert report.agreement_rate == 0.0
+
+
+def test_partially_unrated_pack_ranks_rated_cards_first(stub_engine):
+    # One rated card among unknowns: it must win, and the unknown human
+    # pick still gets a real (last) rank.
+    report = scorer.score_draft(_one_pick(["Mystery A", "Good"], "Mystery A"))
+    r = report.results[0]
+    assert r.scored is True
+    assert r.tool_pick == "Good"
+    assert r.human_rank == 2
+
+
 def test_deck_state_mirrors_human_prior_picks(monkeypatch):
     # Two picks: verify the tracker records the human's first pick before
     # scoring the second (the fairness rule). Assert via a spy on add_pick.

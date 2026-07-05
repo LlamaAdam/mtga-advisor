@@ -13,10 +13,11 @@ _MISS = -999.0
 
 
 def _rank_pack(tracker: DeckTracker, pack_cards: tuple[str, ...],
-               is_pack_opener: bool) -> list[str]:
-    """Return pack card names ordered best-first, mirroring best_pick's
-    criterion: raw 'All Decks' win rate for a pack-opener, otherwise the
-    tracker's colour/synergy-adjusted rating."""
+               is_pack_opener: bool) -> list[tuple[str, float]]:
+    """Return (card name, score) pairs ordered best-first, mirroring
+    best_pick's criterion: raw 'All Decks' win rate for a pack-opener,
+    otherwise the tracker's colour/synergy-adjusted rating. Unrated cards
+    carry the _MISS sentinel and sort last."""
     scored: list[tuple[str, float]] = []
     for name in pack_cards:
         if is_pack_opener:
@@ -25,7 +26,7 @@ def _rank_pack(tracker: DeckTracker, pack_cards: tuple[str, ...],
             wr, _ = tracker.adjusted_rating(name)
         scored.append((name, wr if wr is not None else _MISS))
     scored.sort(key=lambda pair: pair[1], reverse=True)
-    return [name for name, _ in scored]
+    return scored
 
 
 def score_draft(record: DraftRecord) -> BenchmarkReport:
@@ -36,14 +37,21 @@ def score_draft(record: DraftRecord) -> BenchmarkReport:
 
     for pe in record.picks:
         is_opener = pe.pick_number == 1 and pe.pack_number >= 2
-        ordering = _rank_pack(tracker, pe.pack_cards, is_opener)
+        ranked = _rank_pack(tracker, pe.pack_cards, is_opener)
+        ordering = [name for name, _ in ranked]
+        # A pack where nothing has a rating gives the tool no opinion at all
+        # (production best_pick returns None there) — treat it like a skip
+        # rather than crowning the first pack card by accident.
+        has_signal = bool(ranked) and ranked[0][1] > _MISS
 
-        if pe.human_pick not in ordering:
-            # Recognition gave a pick that isn't in the recognized pack — skip
-            # rather than fabricate a rank, and let coverage reflect it.
+        if pe.human_pick not in ordering or not has_signal:
+            # Recognition gave a pick that isn't in the recognized pack, or
+            # the tool has no data for this pack — skip rather than fabricate
+            # a rank, and let coverage reflect it.
             results.append(PickResult(
                 pack_number=pe.pack_number, pick_number=pe.pick_number,
-                human_pick=pe.human_pick, tool_pick=ordering[0] if ordering else "",
+                human_pick=pe.human_pick,
+                tool_pick=ordering[0] if has_signal else "",
                 agree=False, human_rank=0, pack_size=len(pe.pack_cards),
                 scored=False,
             ))
