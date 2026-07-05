@@ -160,6 +160,21 @@ def test_get_payload_returns_none_when_index_out_of_bounds():
     assert scanner._get_payload(["{}"], 99) is None
 
 
+def test_get_payload_survives_non_string_payload():
+    """A present-but-non-string Payload (e.g. a number) must be treated as
+    malformed and return None — not raise TypeError and kill the poll loop."""
+    scanner = _scanner_with_no_log()
+    assert scanner._get_payload(['{"Payload":123}'], 0) is None
+    assert scanner._get_payload(['{"Payload":[1,2]}'], 0) is None
+
+
+def test_get_payload_accepts_already_decoded_dict_payload():
+    """If a log variant ships Payload as a plain JSON object (not a
+    double-encoded string), use it directly."""
+    scanner = _scanner_with_no_log()
+    assert scanner._get_payload(['{"Payload":{"x":1}}'], 0) == {"x": 1}
+
+
 def test_get_payload_strips_whitespace():
     """Leading/trailing whitespace shouldn't break JSON detection."""
     scanner = _scanner_with_no_log()
@@ -245,6 +260,40 @@ def test_handle_draft_notify_infers_original_pack_size(monkeypatch):
     assert s.state.original_pack_size == 14
 
 
+def test_handle_draft_notify_accepts_json_list_packcards(monkeypatch):
+    """If MTGA ever emits PackCards as a JSON array instead of a CSV string,
+    the ids must resolve cleanly — not be mangled through str(list) repr
+    into garbage like 'C[105009'."""
+    _stub_resolve(monkeypatch, {"105009": "Stolen Stark Tech",
+                                "104989": "Decoy Ploy"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    s._handle_draft_notify(
+        'Draft.Notify {"SelfPick":1,"SelfPack":1,"PackCards":[105009,104989]}')
+    assert s.state.current_pack == ["Stolen Stark Tech", "Decoy Ploy"]
+
+
+def test_handle_draft_notify_skips_non_numeric_tokens(monkeypatch):
+    """Garbage tokens in the CSV must be dropped, not fed to card_db.resolve
+    as fake Arena ids."""
+    _stub_resolve(monkeypatch, {"1": "Alpha", "2": "Beta"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    s._handle_draft_notify(
+        'Draft.Notify {"SelfPick":1,"SelfPack":1,"PackCards":"1,ABC,null,2"}')
+    assert s.state.current_pack == ["Alpha", "Beta"]
+
+
+def test_handle_draft_notify_tolerates_trailing_brace_content(monkeypatch):
+    """The payload JSON must be extracted by brace balance, not a greedy
+    match to the LAST '}' on the line — trailing diagnostics with braces
+    would otherwise silently break every pack."""
+    _stub_resolve(monkeypatch, {"1": "Alpha", "2": "Beta"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    s._handle_draft_notify(
+        'Draft.Notify {"SelfPick":1,"SelfPack":1,"PackCards":"1,2"}'
+        ' (took 12ms) {"debug":1}')
+    assert s.state.current_pack == ["Alpha", "Beta"]
+
+
 # ---------------------------------------------------------------------------
 # _handle_make_pick — the card the player submitted
 # ---------------------------------------------------------------------------
@@ -274,6 +323,35 @@ def test_handle_make_pick_deduplicates_repeated_grpid(monkeypatch):
     s._handle_make_pick(line)
     s._handle_make_pick(line)
     assert picks == ["Super Suit"]  # fired once, not twice
+
+
+def test_handle_make_pick_ignores_decoy_grpids_in_other_field(monkeypatch):
+    """A string field elsewhere in the outer JSON whose VALUE happens to
+    contain 'GrpIds\\":[999]' must not win over the real request.GrpIds."""
+    _stub_resolve(monkeypatch, {"105119": "Super Suit"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    picks = []
+    s.on_pick = picks.append
+    line = ('==> EventPlayerDraftMakePick '
+            r'{"id":"GrpIds\":[999]","request":"{\"GrpIds\":[105119],'
+            r'\"Pack\":1,\"Pick\":1}"}')
+    s._handle_make_pick(line)
+    assert picks == ["Super Suit"]
+    assert s.state.picked_ids == ["105119"]
+
+
+def test_handle_make_pick_handles_multi_card_grpids(monkeypatch):
+    """A multi-card pick (GrpIds with several ids) must record every card,
+    not silently drop the whole event."""
+    _stub_resolve(monkeypatch, {"105119": "Super Suit", "200000": "Bonus Card"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    picks = []
+    s.on_pick = picks.append
+    line = (r'==> EventPlayerDraftMakePick {"request":"{\"GrpIds\":'
+            r'[105119,200000],\"Pack\":1,\"Pick\":1}"}')
+    s._handle_make_pick(line)
+    assert picks == ["Super Suit", "Bonus Card"]
+    assert s.state.picked_ids == ["105119", "200000"]
 
 
 # ---------------------------------------------------------------------------
@@ -343,6 +421,45 @@ def test_parse_pack_transition_updates_pack_number(monkeypatch):
     s._parse('Draft.Notify {"SelfPick":1,"SelfPack":2,"PackCards":"' + ids2 + '"}\n')
     assert s.state.pack_number == 2
     assert s.state.original_pack_size == 14
+
+
+def test_parse_stale_internal_event_does_not_reset_active_draft(monkeypatch):
+    """A stale course name in a state dump (InternalEventName for an OLD
+    draft) arriving while a draft is already active must NOT reset state,
+    wipe the current pack, or re-fire on_draft_start for the wrong set."""
+    _stub_resolve(monkeypatch, {"1": "Alpha", "2": "Beta"})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    starts = []
+    s.on_draft_start = lambda code, fmt: starts.append((code, fmt))
+    content = (
+        '==> EventJoin {"EventName":"QuickDraft_DSK_20260101"}\n'
+        '[UnityCrossThreadLogger]Draft.Notify {"SelfPick":1,"SelfPack":1,"PackCards":"1,2"}\n'
+        '[Courses dump] "InternalEventName":"PremierDraft_OLD_20250101"\n'
+    )
+    s._parse(content)
+    assert starts == [("DSK", "QuickDraft")]      # no second draft-start
+    assert s.state.set_code == "DSK"              # stale course ignored
+    assert s.state.current_pack == ["Alpha", "Beta"]  # pack not wiped
+
+
+def test_parse_internal_event_still_recovers_inactive_draft(monkeypatch):
+    """The InternalEventName fallback must still work for its real purpose:
+    recovering a resumed draft when nothing is active yet."""
+    _stub_resolve(monkeypatch, {})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    starts = []
+    s.on_draft_start = lambda code, fmt: starts.append((code, fmt))
+    s._parse('"InternalEventName":"PremierDraft_MSH_20260623"\n')
+    assert starts == [("MSH", "PremierDraft")]
+    assert s.state.active is True
+
+
+def test_parse_survives_non_string_payload_line(monkeypatch):
+    """A malformed next-line payload must be skipped, not crash the parse
+    loop (regression: TypeError from json.loads(non-str) was uncaught)."""
+    _stub_resolve(monkeypatch, {})
+    s = ArenaLogScanner(log_path="/tmp/fake")
+    s._parse('<== BotDraftDraftStatus(abc)\n{"Payload":123}\n')  # must not raise
 
 
 def test_parse_make_pick_dedups_across_reparse(monkeypatch):

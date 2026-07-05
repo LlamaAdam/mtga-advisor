@@ -221,10 +221,14 @@ class ArenaLogScanner:
             line = lines[i]
 
             # Draft join — detect set code and format
-            # Also catches InternalEventName in Courses state dump (resumed drafts)
-            if ("==> EventJoin" in line and "EventName" in line) or \
-               ("InternalEventName" in line and "Draft" in line):
+            if "==> EventJoin" in line and "EventName" in line:
                 self._handle_event_join(line)
+
+            # InternalEventName in a Courses/state dump (resumed drafts).
+            # Fallback signal only: a state dump can list OLD completed
+            # courses, so it must never override an already-active draft.
+            elif "InternalEventName" in line and "Draft" in line:
+                self._handle_event_join(line, fallback=True)
 
             # Bot/Quick Draft: pack shown at start of draft
             elif line.startswith("<== BotDraftDraftStatus("):
@@ -271,19 +275,35 @@ class ArenaLogScanner:
         try:
             outer = json.loads(raw_line)
             payload_str = outer.get("Payload", "")
-            if payload_str:
+            if isinstance(payload_str, dict):
+                # Already-decoded object — some log variants skip the
+                # double encoding.
+                return payload_str
+            if isinstance(payload_str, str) and payload_str:
                 return json.loads(payload_str)
+            if payload_str:
+                # Present but neither string nor object (number, list…) —
+                # malformed; skip rather than crash the poll loop.
+                return None
             # Some events have the data directly in the outer object
             return outer
-        except (json.JSONDecodeError, KeyError):
+        except (json.JSONDecodeError, KeyError, TypeError):
             return None
 
     # ------------------------------------------------------------------
     # Event handlers
     # ------------------------------------------------------------------
 
-    def _handle_event_join(self, line: str):
-        """Detect draft start from EventJoin or InternalEventName (resumed draft)."""
+    def _handle_event_join(self, line: str, fallback: bool = False):
+        """Detect draft start from EventJoin or InternalEventName (resumed draft).
+
+        fallback=True marks the InternalEventName path: it exists to recover
+        a resumed draft when nothing is active, but a Courses/state dump can
+        also list old, completed courses — so it must never displace a draft
+        that is already active.
+        """
+        if fallback and self.state.active:
+            return
         match = re.search(
             r'"(?:EventName|InternalEventName)"\s*:\s*"'
             r'((?:QuickDraft|PremierDraft|TradDraft|BotDraft)_([A-Z0-9]{2,5})_\d+)"',
@@ -423,18 +443,31 @@ class ArenaLogScanner:
           [UnityCrossThreadLogger]Draft.Notify {"draftId":"...","SelfPick":6,
               "SelfPack":1,"PackCards":"105009,104989,104911,..."}
         """
-        m = re.search(r"Draft\.Notify\s+(\{.*\})", line)
-        if not m:
+        # Extract the payload by brace balance (raw_decode), not a greedy
+        # regex to the LAST '}' — trailing diagnostics containing braces
+        # would otherwise corrupt the capture and drop every pack.
+        marker = line.find("Draft.Notify")
+        if marker == -1:
+            return
+        brace = line.find("{", marker)
+        if brace == -1:
             return
         try:
-            payload = json.loads(m.group(1))
+            payload, _ = json.JSONDecoder().raw_decode(line[brace:])
         except json.JSONDecodeError:
+            return
+        if not isinstance(payload, dict):
             return
 
         raw = payload.get("PackCards")
         if not raw:
             return
-        pack_ids = [x.strip() for x in str(raw).split(",") if x.strip()]
+        # CSV string is the normal shape; tolerate a JSON list too. Only
+        # numeric tokens are real Arena ids — drop garbage instead of
+        # feeding it to card_db.resolve.
+        tokens = ([str(x) for x in raw] if isinstance(raw, list)
+                  else str(raw).split(","))
+        pack_ids = [t.strip() for t in tokens if t.strip().isdigit()]
         if not pack_ids:
             return
 
@@ -464,18 +497,44 @@ class ArenaLogScanner:
         The raw log line embeds the pick as an escaped JSON string, e.g.
           ==> EventPlayerDraftMakePick {"id":"...","request":"{\\"DraftId\\":
               \\"...\\",\\"GrpIds\\":[105119],\\"Pack\\":1,\\"Pick\\":2}"}
-        so we pull the GrpId with a regex rather than parsing the outer JSON.
+        Parse both JSON layers properly (a raw-line regex can be fooled by a
+        'GrpIds' lookalike inside another string field, and misses multi-card
+        picks); fall back to a regex only if the JSON doesn't decode.
         Feeds the deck-color tracker (drives the best-pick highlight).
         """
-        m = re.search(r'GrpIds\\":\[(\d+)\]', line)
+        gids = self._extract_grpids(line)
+        new_gids = [g for g in gids if g not in self.state.picked_ids]
+        if not new_gids:
+            return
+        id_map = card_db.resolve(new_gids)
+        for gid in new_gids:
+            self.state.picked_ids.append(gid)
+            name = id_map.get(gid, f"Unknown({gid})")
+            self.state.picked_cards.append(name)
+            if self.on_pick:
+                self.on_pick(name)
+
+    @staticmethod
+    def _extract_grpids(line: str) -> list[str]:
+        """Pull the GrpIds list from an EventPlayerDraftMakePick line."""
+        brace = line.find("{")
+        if brace != -1:
+            try:
+                outer, _ = json.JSONDecoder().raw_decode(line[brace:])
+                request = outer.get("request") if isinstance(outer, dict) else None
+                if isinstance(request, str) and request:
+                    request = json.loads(request)
+                if isinstance(request, dict):
+                    raw = request.get("GrpIds")
+                    if isinstance(raw, list):
+                        gids = [str(g) for g in raw if str(g).isdigit()]
+                        if gids:
+                            return gids
+            except (json.JSONDecodeError, TypeError, ValueError):
+                pass
+        # Fallback for lines whose JSON doesn't decode (truncated writes,
+        # unforeseen format drift). Accepts multi-id arrays.
+        m = re.search(r'GrpIds\\?":\[([\d,\s]+)\]', line)
         if not m:
-            return
-        gid = m.group(1)
-        if gid in self.state.picked_ids:
-            return
-        self.state.picked_ids.append(gid)
-        id_map = card_db.resolve([gid])
-        name = id_map.get(gid, f"Unknown({gid})")
-        self.state.picked_cards.append(name)
-        if self.on_pick:
-            self.on_pick(name)
+            return []
+        return [t.strip() for t in m.group(1).split(",") if t.strip().isdigit()]
