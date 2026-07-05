@@ -17,14 +17,16 @@
 | Scryfall `_SCRYFALL_HEADERS` | ✅ all four call sites in `card_db.py` (lines 257, 351, 386, 466) send headers; `api.py`'s three `requests.get` are 17Lands, not Scryfall |
 
 ## 1. URGENT — the "scrubbed" OpenRouter key is still in public history
+### ✅ RESOLVED 2026-07-04 (same day)
 
-The handoff states the history rewrite scrubbed the fake-but-real-shaped key and a full-history scan came back clean. **That is not the case.** Commit `2de3774` — on `master`, **`origin/master` (public)**, and both local benchmark branches — still contains the full `sk-or-v1-7c84…dda0` string in `game_advisor/.env.example`. The placeholder fix only landed in the *next* commit (`214cb3b`); the rewrite missed the commit where the key first appeared.
+The handoff stated the history rewrite scrubbed the fake-but-real-shaped key and a full-history scan came back clean. **That was not the case.** Commit `2de3774` (pre-rewrite SHA) — on `master`, `origin/master` (public), and both local benchmark branches — still contained the full `sk-or-v1-7c84…dda0` string in `game_advisor/.env.example`; the placeholder fix only landed in the *next* commit, and the earlier rewrite missed the commit where the key first appeared.
 
-Verified with: `git grep -l <key> $(git rev-list origin/master)` → 1 commit (`2de3774`).
+**Resolution:**
+1. **Key confirmed dead** — a read-only `GET /api/v1/auth/key` against OpenRouter returned HTTP 401 (invalid/disabled), consistent with the "fake-but-real-shaped" description. No live credential was exposed; nothing to revoke.
+2. **History rewritten** with `git filter-repo --replace-text` (key string → placeholder) across **all refs**; verified `git grep <key> $(git rev-list --all)` → 0 commits. Full suite re-run on the rewritten history: 397 passed.
+3. `master` force-pushed to `LlamaAdam/mtga-advisor`.
 
-**Recommended actions (operator decision — I did not rewrite public history):**
-1. If that key was ever real, revoke it at openrouter.ai now — treat it as burned either way.
-2. Rewrite history again (`git filter-repo`/BFG targeting `2de3774`'s blob of `game_advisor/.env.example`) and force-push **all** branches, or accept the exposure if the key is confirmed fabricated.
+**Note:** all commit SHAs in this document predate the rewrite and no longer resolve — they are kept for the narrative only.
 
 ## 2. Benchmark engine (primary deliverable) — findings
 
@@ -94,8 +96,9 @@ All code findings above were fixed test-first in four commits (suite 374 → **3
 | `c57b001` | §5 case-insensitive env scrub; `CLAUDE_CLI_TIMEOUT_SECONDS` wired as the claude backend's default timeout. |
 | `6382cbf` | §4 shared `synergy.is_removal_text()` (rule_engine marker list deleted), enabler tag exclusivity in `card_themes`, counter-removal cost clauses excluded from +1/+1 detection (card_themes and build_metrics). |
 
-**Still open (operator decisions):**
-- §1 key exposure — revoke and/or history rewrite + force-push.
-- Removal in `_PAYOFF_THEMES` (design call; current "functional" behavior pinned by test).
-- `build_metrics.enabler_count` exclusivity (would rebalance `enabler_payoff_gap_bonus` draft scoring).
-- §2 fuzzy-matching near-miss human picks (Phase B improvement).
+**All three operator decisions resolved 2026-07-04 (delegated: "do what you think is best"):**
+- §1 key exposure — key verified dead (401), history rewritten with filter-repo, master force-pushed. See §1.
+- Removal verdict boundary — utility-plan decks (no payoff theme at all) now reach "synergistic"; "functional" is reserved for hands that miss a payoff engine the deck actually has. Suite 397.
+- `build_metrics.enabler_count` exclusivity — deliberately NOT applied: cheap removal instants genuinely trigger "whenever you cast an instant or sorcery" payoffs, so the gap economics need them counted. Documented in code.
+
+**Still open (future work):** §2 fuzzy-matching near-miss human picks (Phase B improvement).
