@@ -64,6 +64,49 @@ def test_pack_opener_uses_raw_winrate(monkeypatch):
     assert report.results[0].tool_pick == "Bomb"  # from raw win rate
 
 
+def test_mid_draft_skip_excluded_from_metrics_but_still_mirrored(monkeypatch):
+    # A skipped pick (human pick not in the recognized pack) must be excluded
+    # from agreement_rate, yet the human's card must still enter the tracker
+    # so every later pick is judged from the human's true deck.
+    seen: list[str] = []
+    original = deck_mod.DeckTracker.add_pick
+
+    def spy(self, name):
+        seen.append(name)
+        return original(self, name)
+
+    monkeypatch.setattr(deck_mod.DeckTracker, "add_pick", spy)
+    rec = DraftRecord(set_code="MSH", source="t", picks=(
+        PickEvent(1, 1, ("Bomb", "Good"), "Bomb"),          # agree
+        PickEvent(1, 2, ("Filler", "Good"), "Mystery Card"), # skip: not in pack
+        PickEvent(1, 3, ("Filler", "Splash"), "Filler"),     # disagree
+    ))
+    report = scorer.score_draft(rec)
+
+    assert seen == ["Bomb", "Mystery Card", "Filler"]  # mirroring advanced
+    assert report.scored_count == 2
+    assert report.skipped_count == 1
+    assert report.agreement_rate == 0.5  # 1 agree of 2 scored — skip excluded
+    assert report.results[1].scored is False
+
+
+def test_tied_ratings_rank_deterministically_in_pack_order(stub_engine):
+    # Stable sort: equal ratings keep pack order, so the tool pick and the
+    # human rank are deterministic run-to-run.
+    stub_engine["TieB"] = 55.0
+    stub_engine["TieA"] = 55.0
+
+    report = scorer.score_draft(_one_pick(["TieB", "TieA"], "TieA"))
+    r = report.results[0]
+    assert r.tool_pick == "TieB"   # first in pack order wins the tie
+    assert r.human_rank == 2       # the other tied card ranks second
+    assert r.agree is False
+
+    # Same tie, human takes the pack-order leader -> agreement.
+    report2 = scorer.score_draft(_one_pick(["TieB", "TieA"], "TieB"))
+    assert report2.results[0].agree is True
+
+
 def test_deck_state_mirrors_human_prior_picks(monkeypatch):
     # Two picks: verify the tracker records the human's first pick before
     # scoring the second (the fairness rule). Assert via a spy on add_pick.

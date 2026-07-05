@@ -429,6 +429,23 @@ def test_assess_hand_off_plan_when_no_theme_cards(monkeypatch):
     assert result.verdict == "off-plan"
 
 
+def test_assess_hand_removal_deck_is_functional_not_synergistic(monkeypatch):
+    # A deck whose dominant theme is removal (not a payoff theme): a hand full
+    # of removal is on-plan but must read "functional" — removal is a utility
+    # theme, not an engine, so it never earns the "synergistic" verdict.
+    _register(monkeypatch, {
+        "Murder": ("Destroy target creature.", ["Sorcery"], 3, []),
+        "Zap": ("Destroy target creature.", ["Sorcery"], 3, []),
+        "Smite": ("Destroy target creature.", ["Sorcery"], 3, []),
+        "Land": ("", ["Land"], 0, []),
+    })
+    deck = ["Murder", "Zap", "Smite", "Land", "Land", "Land"]
+    result = synergy.assess_hand_synergy(deck, ["Murder", "Zap", "Land"])
+    assert "removal" in result.deck_themes
+    assert result.verdict == "functional"
+    assert "lacks a payoff" in result.reason
+
+
 def test_assess_hand_unknown_when_no_significant_theme(monkeypatch):
     _register(monkeypatch, {"Vanilla": ("", ["Creature"], 3, []),
                             "Land": ("", ["Land"], 0, [])})

@@ -32,6 +32,24 @@ def test_markdown_lists_biggest_disagreements():
     assert "Disagreement" in md or "disagreement" in md
 
 
+def test_zero_scored_picks_render_without_dividing_by_zero():
+    report = BenchmarkReport(
+        set_code="MSH", source="bad-recognition.mp4",
+        results=(
+            PickResult(1, 1, "Ghost A", "Bomb", False, 0, 15, False),
+            PickResult(1, 2, "Ghost B", "Good", False, 0, 14, False),
+        ),
+    )
+    assert report.agreement_rate == 0.0
+    assert report.mean_human_rank == 0.0
+    md = report_mod.render_markdown(report)
+    assert "0/2" in md                       # coverage line reflects reality
+    assert "Biggest disagreements" not in md  # skips are not disagreements
+    data = json.loads(report_mod.render_json(report))
+    assert data["scored_count"] == 0
+    assert data["skipped_count"] == 2
+
+
 def test_json_roundtrips_metrics():
     data = json.loads(report_mod.render_json(_report()))
     assert data["set_code"] == "MSH"
