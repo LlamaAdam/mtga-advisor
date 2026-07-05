@@ -57,9 +57,11 @@ def _complete_via_claude_cli(system: str, user_msg: str, *, timeout: int = 60) -
                             "LLM_BACKEND=claude)")
 
     prompt = f"{system}\n\n---\n\n{user_msg}"
+    # Compare on the upper-cased name: Windows env vars are case-insensitive,
+    # and a programmatically-set lowercase variant must not slip through.
     env = {k: v for k, v in os.environ.items()
-           if not k.startswith("ANTHROPIC_")
-           and k not in _CLAUDE_CLI_BILLING_REDIRECT_VARS}
+           if not k.upper().startswith("ANTHROPIC_")
+           and k.upper() not in _CLAUDE_CLI_BILLING_REDIRECT_VARS}
     cmd = [claude, "-p", "--output-format", "json"]
 
     last_err = ""
@@ -106,11 +108,16 @@ class LLMAdvisor:
         self,
         api_key: str = config.OPENAI_API_KEY,
         model: str = config.OPENAI_MODEL,
-        timeout: int = config.LLM_TIMEOUT_SECONDS,
+        timeout: int | None = None,
         min_interval_seconds: int = config.LLM_MIN_INTERVAL_SECONDS,
         backend: str = config.LLM_BACKEND,
     ):
         self._backend = backend
+        if timeout is None:
+            # The claude backend forks a whole CLI subprocess — it gets its
+            # own, longer default than the HTTP backends.
+            timeout = (config.CLAUDE_CLI_TIMEOUT_SECONDS if backend == "claude"
+                       else config.LLM_TIMEOUT_SECONDS)
         if backend == "claude":
             # Subscription CLI backend — no OpenAI-compatible client needed.
             self._client = None

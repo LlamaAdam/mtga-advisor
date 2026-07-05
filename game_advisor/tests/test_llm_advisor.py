@@ -143,6 +143,35 @@ def test_complete_via_claude_cli_scrubs_anthropic_env_vars(monkeypatch):
         assert "CLAUDE_CODE_USE_BEDROCK" not in passed_env
 
 
+def test_complete_via_claude_cli_scrub_is_case_insensitive():
+    """Env var names are case-insensitive on Windows (and can be set in any
+    case programmatically) — the scrub must not be fooled by casing."""
+    fake_env = {"PATH": "/usr/bin", "anthropic_api_key": "sk-leak",
+                "Claude_Code_Use_Bedrock": "1", "SAFE_VAR": "ok"}
+    with patch("llm_advisor.os.environ", fake_env), \
+         patch("llm_advisor.shutil.which", return_value="/usr/bin/claude"), \
+         patch("llm_advisor.subprocess.run", return_value=_mock_cli_proc(result="ok")) as mock_run:
+        _complete_via_claude_cli("sys", "user", timeout=10)
+        passed_env = mock_run.call_args.kwargs["env"]
+        assert "anthropic_api_key" not in passed_env
+        assert "Claude_Code_Use_Bedrock" not in passed_env
+        assert passed_env.get("SAFE_VAR") == "ok"
+
+
+def test_llm_advisor_claude_backend_uses_cli_timeout():
+    """The claude backend forks a subprocess and gets its own (longer)
+    timeout — CLAUDE_CLI_TIMEOUT_SECONDS, not the HTTP-oriented
+    LLM_TIMEOUT_SECONDS."""
+    import config as ga_config
+    state = _make_state()
+    with patch("llm_advisor.shutil.which", return_value="/usr/bin/claude"), \
+         patch("llm_advisor.subprocess.run", return_value=_mock_cli_proc(result="ok")) as mock_run:
+        advisor = LLMAdvisor(backend="claude")
+        advisor._call_api(state)
+        assert (mock_run.call_args.kwargs["timeout"]
+                == ga_config.CLAUDE_CLI_TIMEOUT_SECONDS)
+
+
 def test_complete_via_claude_cli_raises_when_cli_missing():
     with patch("llm_advisor.shutil.which", return_value=None):
         try:
