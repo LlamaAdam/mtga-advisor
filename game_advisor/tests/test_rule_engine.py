@@ -174,6 +174,27 @@ def test_flying_creature_can_block_ground_attacker():
     assert any("Ground 2/2" in a.message for a in alerts)
 
 
+def test_removal_alert_fires_for_counterspell():
+    """check_removal must share synergy's removal definition — counterspells
+    were invisible to the old marker list."""
+    your_hand = [_make_hand_card("Cancel", cmc=3, colors=["U"], castable=True)]
+    opp_board = [_make_creature("Warden", 2, 2)]
+    state = _make_state(your_hand=your_hand, opp_board=opp_board)
+    card_db._oracle["cancel"] = "Counter target spell."
+    alerts = rule_engine.check_removal(state)
+    assert any("Cancel" in a.message for a in alerts)
+
+
+def test_removal_alert_fires_for_minus_x_effect():
+    """-X/-X effects are removal too; the old marker list missed them."""
+    your_hand = [_make_hand_card("Grasp", cmc=2, colors=["B"], castable=True)]
+    opp_board = [_make_creature("Warden", 2, 2)]
+    state = _make_state(your_hand=your_hand, opp_board=opp_board)
+    card_db._oracle["grasp"] = "Target creature gets -3/-3 until end of turn."
+    alerts = rule_engine.check_removal(state)
+    assert any("Grasp" in a.message for a in alerts)
+
+
 def test_no_removal_alert_when_hand_is_empty():
     state = _make_state(your_hand=[], opp_board=[_make_creature("X", 3, 3)])
     alerts = rule_engine.check_removal(state)

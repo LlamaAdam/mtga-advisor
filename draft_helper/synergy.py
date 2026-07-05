@@ -204,7 +204,7 @@ def build_metrics(card_names: list[str]) -> DeckMetrics:
         if "Artifact" in types:
             m.artifacts += 1
 
-        if "+1/+1" in text:
+        if _mentions_counters_synergy(text):
             m.plus_one_counters += 1
         if "kicker" in text:
             m.kicker_spells += 1
@@ -320,6 +320,29 @@ _COMPILED_REMOVAL: list[tuple[re.Pattern, float]] = [
     (re.compile(pat, re.IGNORECASE), pts)
     for pat, pts in _REMOVAL_PATTERNS
 ]
+
+# "remove a +1/+1 counter …" is a cost/downside, not counters synergy.
+_REMOVE_COUNTER_RE = re.compile(r"remove[^.]*\+1/\+1 counter", re.IGNORECASE)
+
+
+def is_removal_text(oracle: str) -> bool:
+    """True when the oracle text reads as removal/interaction.
+
+    THE shared removal definition: used by the draft-side theme tags,
+    removal counting, and the in-game advisor's check_removal — keep them
+    on one list so draft assist and game assist never disagree about
+    whether a card answers a threat.
+    """
+    if not oracle:
+        return False
+    return any(pat.search(oracle) for pat, _ in _COMPILED_REMOVAL)
+
+
+def _mentions_counters_synergy(text: str) -> bool:
+    """'+1/+1' counts as counters synergy only outside 'remove a +1/+1
+    counter' clauses — a card that only pays counters away isn't advancing
+    a counters gameplan."""
+    return "+1/+1" in _REMOVE_COUNTER_RE.sub("", text)
 
 
 def bread_bonus(oracle: str) -> float:
@@ -531,21 +554,25 @@ def card_themes(card_name: str) -> set[str]:
     cmc = r.get_cmc(card_name)
 
     tags: set[str] = set()
-    if "+1/+1" in text:
+    if _mentions_counters_synergy(text):
         tags.add("+1/+1 counters")
     if "Artifact" in types:
         tags.add("artifacts")
     if "you gain" in text and "life" in text:
         tags.add("lifegain")
-    if (cmc <= 2 and "Creature" not in types
-            and ("Instant" in types or "Sorcery" in types)):
-        tags.add("enabler")
     if ("whenever you cast" in text
             or ("for each" in text
                 and any(w in text for w in ("instant", "sorcery", "creature", "artifact")))):
         tags.add("payoff")
-    if any(pat.search(oracle) for pat, _ in _COMPILED_REMOVAL):
+    if is_removal_text(oracle):
         tags.add("removal")
+    # Enabler = cheap fuel spell. A card that is already removal or a payoff
+    # has a real role — double-tagging it as 'enabler' would let any cheap
+    # removal shell read as an "enabler deck".
+    if (cmc <= 2 and "Creature" not in types
+            and ("Instant" in types or "Sorcery" in types)
+            and "removal" not in tags and "payoff" not in tags):
+        tags.add("enabler")
     for subtype in card_db.get_subtypes(card_name):
         if subtype in TRACKED_TRIBES:
             tags.add(f"{subtype.lower()} tribal")

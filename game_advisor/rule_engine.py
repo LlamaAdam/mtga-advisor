@@ -26,11 +26,6 @@ _KEYWORD_MULTIPLIERS: dict[str, float] = {
     "vigilance": 1.1,
 }
 
-_REMOVAL_ORACLE_MARKERS = [
-    "deals damage", "damage to any target", "damage to target creature",
-    "destroy target", "exile target",
-]
-
 _BASIC_LAND_COLORS: dict[str, list[str]] = {
     "plains": ["W"], "island": ["U"], "swamp": ["B"],
     "mountain": ["R"], "forest": ["G"],
@@ -125,8 +120,9 @@ def check_removal(state: GameState) -> list[RuleAlert]:
         oracle = card_db.get_oracle(card.name).lower()
         if not oracle:
             continue
-        is_removal = any(marker in oracle for marker in _REMOVAL_ORACLE_MARKERS)
-        if is_removal:
+        # Shared removal definition (synergy._REMOVAL_PATTERNS) so the
+        # in-game alert and the draft-side removal logic never disagree.
+        if synergy.is_removal_text(oracle):
             alerts.append(RuleAlert(
                 severity="INFO",
                 message=f"{card.name} can remove top threat {top_threat.name} ({top_threat.power}/{top_threat.toughness})",

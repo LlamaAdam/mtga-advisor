@@ -393,6 +393,47 @@ def test_card_themes_detects_tribe(monkeypatch):
     assert "merfolk tribal" in synergy.card_themes("Merlord")
 
 
+def test_card_themes_cheap_removal_is_not_an_enabler(monkeypatch):
+    """The enabler tag is for cheap fuel spells — a card that is already
+    removal (or a payoff) must not double-tag as 'enabler' and pollute the
+    deck's significant-theme detection."""
+    _register(monkeypatch, {"Bolt": ("Bolt deals 3 damage to any target.",
+                                     ["Instant"], 1, [])})
+    tags = synergy.card_themes("Bolt")
+    assert "removal" in tags
+    assert "enabler" not in tags
+
+
+def test_card_themes_cheap_payoff_is_not_an_enabler(monkeypatch):
+    _register(monkeypatch, {"Cheap Engine":
+                            ("Whenever you cast an instant, draw a card.",
+                             ["Instant"], 2, [])})
+    tags = synergy.card_themes("Cheap Engine")
+    assert "payoff" in tags
+    assert "enabler" not in tags
+
+
+def test_card_themes_counter_removal_cost_is_not_counters_theme(monkeypatch):
+    """A card that only REMOVES +1/+1 counters (an upkeep cost/downside)
+    doesn't advance a counters gameplan."""
+    _register(monkeypatch, {"Shrinking Hydra":
+                            ("At the beginning of your upkeep, remove a "
+                             "+1/+1 counter from Shrinking Hydra.",
+                             ["Creature"], 3, ["Hydra"])})
+    assert "+1/+1 counters" not in synergy.card_themes("Shrinking Hydra")
+
+
+def test_card_themes_counter_placer_still_detected(monkeypatch):
+    """Cards that PLACE counters (even alongside a remove clause) keep the
+    theme tag."""
+    _register(monkeypatch, {"Grower Hydra":
+                            ("Grower Hydra enters with two +1/+1 counters. "
+                             "At the beginning of your upkeep, remove a "
+                             "+1/+1 counter from it.",
+                             ["Creature"], 3, ["Hydra"])})
+    assert "+1/+1 counters" in synergy.card_themes("Grower Hydra")
+
+
 def test_card_themes_vanilla_card_has_no_tags(monkeypatch):
     _register(monkeypatch, {"Bear": ("", ["Creature"], 2, ["Bear"])})
     assert synergy.card_themes("Bear") == set()
