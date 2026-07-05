@@ -82,3 +82,20 @@ Reviewer verified each of these by execution:
 3. Runner cross-set staleness (matters as soon as Phase B benchmarks multiple sets).
 4. Env-scrub case-insensitivity (one-line fix + regression test).
 5. Synergy tagger refinements + removal-list unification (behavioral tuning, needs your call on the removal-verdict design question).
+
+## 8. Fix status (same day, follow-up session)
+
+All code findings above were fixed test-first in four commits (suite 374 → **396 passed**):
+
+| Commit | Fixes |
+|---|---|
+| `6ccaebe` | §3 log scanner: Payload TypeError crash, stale-course reset, GrpIds decoy + multi-card drop, PackCards validation/list shape, greedy brace capture. Monotonicity guard deliberately NOT added — `_full_scan` replays history and same-set redrafts would trip it. |
+| `982bb36` | §2 runner cross-set staleness (`ratings.loaded_key()`), scorer unrated-pack skip. |
+| `c57b001` | §5 case-insensitive env scrub; `CLAUDE_CLI_TIMEOUT_SECONDS` wired as the claude backend's default timeout. |
+| `6382cbf` | §4 shared `synergy.is_removal_text()` (rule_engine marker list deleted), enabler tag exclusivity in `card_themes`, counter-removal cost clauses excluded from +1/+1 detection (card_themes and build_metrics). |
+
+**Still open (operator decisions):**
+- §1 key exposure — revoke and/or history rewrite + force-push.
+- Removal in `_PAYOFF_THEMES` (design call; current "functional" behavior pinned by test).
+- `build_metrics.enabler_count` exclusivity (would rebalance `enabler_payoff_gap_bonus` draft scoring).
+- §2 fuzzy-matching near-miss human picks (Phase B improvement).
