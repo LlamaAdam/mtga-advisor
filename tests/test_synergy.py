@@ -470,10 +470,11 @@ def test_assess_hand_off_plan_when_no_theme_cards(monkeypatch):
     assert result.verdict == "off-plan"
 
 
-def test_assess_hand_removal_deck_is_functional_not_synergistic(monkeypatch):
-    # A deck whose dominant theme is removal (not a payoff theme): a hand full
-    # of removal is on-plan but must read "functional" — removal is a utility
-    # theme, not an engine, so it never earns the "synergistic" verdict.
+def test_assess_hand_removal_deck_hand_full_of_removal_is_on_plan(monkeypatch):
+    # A deck whose PLAN is utility (removal — no payoff/engine theme at all):
+    # a hand advancing that plan is genuinely on-plan and reads
+    # "synergistic". The deck can't be penalized for not having an engine
+    # it was never drafted to have.
     _register(monkeypatch, {
         "Murder": ("Destroy target creature.", ["Sorcery"], 3, []),
         "Zap": ("Destroy target creature.", ["Sorcery"], 3, []),
@@ -483,6 +484,23 @@ def test_assess_hand_removal_deck_is_functional_not_synergistic(monkeypatch):
     deck = ["Murder", "Zap", "Smite", "Land", "Land", "Land"]
     result = synergy.assess_hand_synergy(deck, ["Murder", "Zap", "Land"])
     assert "removal" in result.deck_themes
+    assert result.verdict == "synergistic"
+
+
+def test_assess_hand_functional_when_deck_has_payoff_but_hand_misses_it(monkeypatch):
+    # Deck has a real payoff plan (counters) AND heavy removal; a hand that
+    # only touches removal is playable but misses the engine → "functional".
+    _register(monkeypatch, {
+        "A": ("Put a +1/+1 counter on it.", ["Instant"], 2, []),
+        "B": ("Put a +1/+1 counter on it.", ["Sorcery"], 3, []),
+        "C": ("Put a +1/+1 counter on it.", ["Creature"], 4, []),
+        "Murder": ("Destroy target creature.", ["Sorcery"], 3, []),
+        "Zap": ("Destroy target creature.", ["Sorcery"], 3, []),
+        "Smite": ("Destroy target creature.", ["Sorcery"], 3, []),
+        "Land": ("", ["Land"], 0, []),
+    })
+    deck = ["A", "B", "C", "Murder", "Zap", "Smite", "Land", "Land"]
+    result = synergy.assess_hand_synergy(deck, ["Murder", "Zap", "Land"])
     assert result.verdict == "functional"
     assert "lacks a payoff" in result.reason
 

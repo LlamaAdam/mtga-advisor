@@ -231,7 +231,11 @@ def build_metrics(card_names: list[str]) -> DeckMetrics:
         if "treasure" in text or ("add" in text and "any color" in text):
             m.mana_fixing += 1
 
-        # Enablers: cheap non-creature spells that fuel synergy engines
+        # Enablers: cheap non-creature spells that fuel synergy engines.
+        # Deliberately NOT exclusive with removal/payoff (unlike the
+        # card_themes() 'enabler' tag): this count feeds the enabler/payoff
+        # GAP economics, and a cheap removal instant genuinely triggers
+        # "whenever you cast an instant or sorcery" payoffs.
         if (cmc <= 2
                 and "Creature" not in types
                 and ("Instant" in types or "Sorcery" in types)):
@@ -583,8 +587,10 @@ class HandSynergy:
     """Result of assessing an opening hand against its deck's synergy plan.
 
     verdict is one of:
-      'synergistic' — hand hits a core payoff/engine theme of the deck
-      'functional'  — hand touches the deck's themes but not a payoff
+      'synergistic' — hand hits a core payoff/engine theme of the deck, OR
+                      advances a utility-plan deck (one with no payoff theme
+                      to hit, e.g. a removal shell)
+      'functional'  — hand touches the deck's themes but misses its payoff
       'off-plan'    — hand advances none of the deck's significant themes
       'unknown'     — deck too small / no themes detected (no signal)
     """
@@ -629,11 +635,18 @@ def assess_hand_synergy(deck_names: list[str], hand_names: list[str]) -> HandSyn
                 hand_hits.append((name, theme))
 
     hit_themes = {t for _, t in hand_hits}
+    # A deck with no payoff/engine theme at all (e.g. a removal shell) has a
+    # UTILITY plan — a hand advancing its themes is genuinely on-plan, and
+    # "functional" would unfairly cap decks never drafted around an engine.
+    deck_has_payoff_plan = any(
+        t in _PAYOFF_THEMES or "tribal" in t for t in significant)
     if not hand_hits:
         verdict = "off-plan"
         reason = ("Hand advances none of your deck's themes "
                   f"({', '.join(significant)}) — plays like a generic hand.")
-    elif hit_themes & _PAYOFF_THEMES or any("tribal" in t for t in hit_themes):
+    elif (hit_themes & _PAYOFF_THEMES
+          or any("tribal" in t for t in hit_themes)
+          or not deck_has_payoff_plan):
         verdict = "synergistic"
         cards = ", ".join(sorted({c for c, _ in hand_hits}))
         reason = (f"Hand is on-plan: {cards} feed your "
