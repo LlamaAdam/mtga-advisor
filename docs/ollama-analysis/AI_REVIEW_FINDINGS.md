@@ -391,3 +391,108 @@ preflight), or delete the stubs and the docs' claims. If building:
 see MODEL_GUIDE.md — `qwen3:14b` / `gpt-oss:20b` class models for
 verdict/proposal, not `llama3.2:3b`, and never the 706-line browser
 prompt.
+
+---
+
+# Round 2 (2026-08-16)
+
+Round 1's five roadmap fixes landed on `commander-builder` PR #82
+(CI green). Round 2 aimed two fresh analysts at what round 1 skipped,
+plus an adversarial verification of the round-1 fixes themselves.
+
+## Part 4 — Round-2 code review
+
+**Round-1 fix verification: all five commits core-sound.** The binomial
+math, temp-dir/Name= handling, land-band import, EDHREC cache guards,
+free-mulligan model, and path-traversal/SQLite concerns were each
+checked and held up. Secondary issues found:
+
+### Medium
+
+1. **`_sim_coverage` rebuilds the ~32k-card Forge DFC index on every
+   dashboard request** (`routes_dashboard.py:185-238` +
+   `forge_cards_loader.py:222-253`): the `CardsLoader` is constructed
+   per request, and any MDFC front-face or unsupported card misses the
+   direct slug and triggers a full corpus scan — 1-2s+ stall per
+   dashboard load on exactly the decks the feature flags. Fix: memoize
+   a supported-slug set at blueprint level, keyed on corpus mtime.
+2. **`PUT /api/deck_text` skips the `Name=` restamp every other writer
+   applies, and writes non-atomically** (`routes_decks.py:198-214`):
+   pasting deck A's text into deck B's editor makes future sims
+   misattribute wins — the exact bug class `dck_meta.py` exists to
+   prevent. Fix: `rewrite_name(text, path.stem)` + temp-file +
+   `os.replace`.
+
+### Low
+
+3. Web `save_iteration` stores `margin=0` (not NULL) for payloads with
+   no head-to-head wins — fabricated ties; and pre-fix web rows still
+   carry absolute margins (no backfill shipped).
+4. `_materialize_proposed_deck` doesn't copy basic-land padding
+   (`padded_count`/`dropped_*`) into the manifest on short source
+   decks — the manifest↔diff invariant breaks exactly where the fix
+   promised it.
+5. `propose_then_iterate` sims a no-op (deck vs itself, 10+ games) when
+   the applier drops every proposed pair.
+6. EDHREC JSON-first double-sleeps on fallback and probes JSON twins
+   for arbitrary pasted average-deck URLs.
+7. `_EXTRA_TURN_CHAIN_ENABLERS` includes generic recursion (Eternal
+   Witness, Regrowth) — 2 extra turns + Eternal Witness hard-floors a
+   deck to B4, arguably the over-flagging class round 1 fixed for
+   combos.
+
+## Part 5 — Round-2 MTG domain analysis
+
+**Round-1 fix domain verification:** chainability rule defensible
+(errs conservative), triome/surveil tiers match 2026 consensus, free
+mulligan correct, Game Changers fallback verified current through the
+June 29 2026 B&R (no Commander changes; next window Oct 12 2026).
+**One real bug found in round-1's own area**: the combo speed rule
+prices two-card combos by summed mana value, so reanimator pairs
+(Worldgorger Dragon 9 + Animate Dead 2 = 11) read as "late-game
+B3-legal" when the real assembly cost is ~3 mana. Fix: use the
+reanimation spell's cost when one half is a reanimation effect.
+
+### New findings
+
+1. **HIGH — the archetype classifier is a de facto no-op**: the
+   name-regex content scan needs ≥3 hits against tiny keyword lists,
+   so ~70-85% of real decks default to "midrange". Consequences: pool
+   archetype-diversity always "violates" and ships the default
+   arrangement, and the bracket estimator's combo/stax weights almost
+   never fire. The fix needs no LLM: derive archetype from oracle
+   signals the pipeline already computes (`_detect_game_ending_combos`
+   + tutor density → combo; `interaction.classify_interaction` →
+   control; a new ~10-pattern stax table — zero stax-text detection
+   exists today; `detect_tribal_type` + curve → aggro).
+2. **MED-HIGH — `meta_test` is significance-blind**: it prints "the
+   references BEAT your deck" on any losing record including 1-2, with
+   a CLI default of 2 games per reference — violating the repo's own
+   new binomial standard.
+3. **MED-HIGH — the role classifier misses evergreen shapes**:
+   restricted counterspells (Negate, Swan Song), impulse draw,
+   fight/bite removal, edicts, X-damage wipes, Treasure plurals, ward
+   — all feeding wrong role deficits/saturation and health grades.
+4. **MED — stats-honesty gaps**: web tooltips compute noise on total
+   pod games instead of decisive games (real ±0.11 at 40 games, not
+   ±0.08); two verdict floors coexist (8 vs 20 decisive); the
+   `_proposer_sim` docstring says 26-14 clears at n=40 but the true
+   boundary is 27-13; no minimum-detectable-effect display anywhere.
+5. **MED — popularity-bias contradiction**: `[PREMADE]` decks are
+   excluded from pools/fillers for popularity bias while `[REF]`
+   (Moxfield top-likes — the same bias) are deliberately kept and
+   filler-eligible.
+6. **MED — pool "tournament" ranks on ~9 games/deck** (SE ±0.17);
+   `INFLATED_WIN_RATE_THRESHOLD` tags but never acts. Rank on Wilson
+   lower bound.
+7. **MED — the Game Changers live scrape is known-broken** (the code
+   says so itself); Scryfall now publishes an official `game_changer`
+   boolean in bulk data the repo already snapshots. Replace the scrape
+   with a bulk-field read; keep the fallback and trust gate.
+8. Promotions now that prerequisites landed: the **sim-invisible
+   politics guard** (goad/monarch/vote/tempting-offer/Rhystic-tax
+   oracle tag, `Protect=`-equivalent in every margin-driven cut path)
+   and **corpus-scaled ROLE_TARGETS** (via `corpus_themes` medians;
+   raise draw saturation to 12). Keep topdeck.gg deferred; gate the
+   Forge 2.0.14 upgrade on a stdout regression corpus plus the new
+   coverage metric crossing ~2%.
