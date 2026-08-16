@@ -496,3 +496,98 @@ reanimation spell's cost when one half is a reanimation effect.
    raise draw saturation to 12). Keep topdeck.gg deferred; gate the
    Forge 2.0.14 upgrade on a stdout regression corpus plus the new
    coverage metric crossing ~2%.
+
+## Part 6 — Round-2 cross-examination and joint verdict
+
+### Corrections that survived the crossfire
+
+- **The chain-enabler fix splits on the wrong axis** (domain analyst
+  correcting the code reviewer): calibrate by *repeatability*, not
+  genericness. Time Warp → Eternal Witness → rebuy is the textbook
+  casual chain, so a one-shot rebuy genuinely chains — but official B3
+  language targets what breaks the ~6-turn game-length expectation:
+  hard-floor loop-capable enablers (buyback, Mystic Sanctuary +
+  fetches, blink-Archaeomancer), weight one-shot rebuys (Regrowth,
+  Eternal Witness, Twincast). The reviewer's proposed
+  "dedicated-copy-pieces → floor" bucket would floor Twincast
+  (one-shot) while weighting Mystic Sanctuary (repeatable) — backwards.
+- **The reanimator mis-pricing amends round 1's own verdict** (code
+  reviewer, after checking): the pre-fix count-only B4 floor *masked*
+  the summed-MV error; the round-1 speed-rule deferral made the
+  estimator inherit it — more permissive for reanimator decks. "Sound
+  in structure, but the deferred floor inherits a speed-rule error the
+  old strict floor masked."
+- **Empirical verification of the role gaps**: executing
+  `classify_role` against near-verbatim oracle text confirmed Negate,
+  Swan Song, Light Up the Stage, Prey Upon, Diabolic Edict, and
+  Earthquake all classify `other` today — while disproving two claims
+  (Blasphemous Act already → wipe; Big Score already → draw).
+- **Exact tails computed**: p(26-14 of 40) = 0.081 (not significant);
+  the true n=40 boundary is 27-13 — the new code's own docstring is
+  wrong by one game.
+- **Any margin backfill must fence at knowledge-log id ≥ 314** (the
+  seat-attribution fix): recomputing signed margins for older rows
+  would launder pre-fix measurement artifacts into clean-looking data.
+
+### New failure modes surfaced by the crossfire
+
+1. **Structural anti-new-card bias**: unsupported cards are mostly
+   *new* cards (vendored Forge trails by two sets); a proposal adding
+   a new staple sims as a 98-card deck, loses the A/B, and the loop
+   "learns" to cut new cards. The coverage gate must also filter the
+   advisor's add-candidates, not just warn before sims.
+2. **Web deck edits can poison bracket-tagged pools**: pasting a
+   stronger list into a `[B3]`-named file keeps the filename bracket
+   tag the pool curator keys on — a hand-edit seats a de facto B4 deck
+   as a B3 filler with no estimator check.
+3. **No-op sims corrupt the bandit**: in `--search-budget` runs, a
+   never-applied arm books a genuine-looking null reward, deflating its
+   estimate and misdirecting budget.
+
+### Contested and resolved
+
+- [REF]-vs-[PREMADE] popularity asymmetry: severity lowered — a
+  documented policy call at 10× scale difference, not a bug.
+- Wilson-bound pool ranking: correct but only changes outcomes where
+  per-deck game counts diverge; the material win is finally *acting*
+  on `suspected_inflated`.
+- "GC scrape known-broken" was overstated (it's trust-gated, not
+  dead); the Scryfall `game_changer` bulk-field migration is still the
+  right move, with field-absent → "unknown, fall back", never "not a
+  GC".
+- Corpus-scaled ROLE_TARGETS: **not promoted** — the repo's own
+  backlog gates corpus-norms steering behind an unrun A/B; building on
+  it now would invert the project's own discipline.
+
+### Joint round-2 top-5 roadmap (player value per engineering hour)
+
+1. **Statistical-honesty batch** (S): significance-gate meta_test's
+   "references BEAT your deck" copy; decisive-basis tooltips
+   (±0.22/±0.11/±0.07); align the 8-vs-20 decisive floors; fix the
+   26-14→27-13 docstring; NULL margin when decisive==0 plus the legacy
+   web-row backfill (fenced at id ≥ 314).
+2. **Web-layer integrity batch** (S): cache the Forge supported-card
+   index (kills the per-click 1-2s corpus rescan) + `Name=` restamp
+   and atomic write on `PUT /api/deck_text` (closes the last
+   win-misattribution hole; consider a bracket-estimate check on web
+   edits to protect pool tags).
+3. **Bracket-floor correctness pass** (S-M): reanimation-aware combo
+   speed costing + chainability calibration over the on-disk B3/B4
+   pools, splitting enablers by repeatability; demote one-shot rebuys
+   to a weight if the calibration shows non-trivial false floors.
+4. **Archetype v2 from oracle signals** (M): combo := game-ending
+   combos + tutor density; control := interaction report; stax := new
+   ~10-pattern oracle table; aggro := tribal + curve. Un-no-ops pool
+   diversity and the estimator's archetype weights; fold in Wilson
+   ranking + acting on `suspected_inflated` in the same pool_curator
+   pass. Cache-only, no LLM.
+5. **Role-classifier evergreen gaps** (S-M): the six confirmed misses
+   (restricted counterspells, impulse draw, fight/bite, edicts,
+   X-wipes, ward) with verbatim-oracle fixtures and one calibration
+   pass over the library.
+
+Below the line: GC bulk-field migration (next `game_changers` touch),
+auto-propose polish (no-op guard + padding in manifest — with the
+bandit-integrity note), politics guard (real gap, opt-in value),
+[REF] policy call (coordinator decision), corpus-scaled targets
+(blocked on the repo's own pending A/B).
