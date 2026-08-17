@@ -1,89 +1,127 @@
-# Decisions that need your call (joint review list)
+# Product decisions — DECIDED 2026-08-17
 
-Collected from three review rounds + negative mode. Everything
-engineering-only is being fixed without you; these change product
-behavior, cost, or scope, so they wait for you. Each has a
-recommendation to react to.
+Sixteen decisions collected from three review rounds plus negative mode,
+reviewed with the owner on 2026-08-17. Every one is now settled; this
+file is the record of what was chosen and why, and the work queue that
+follows from it.
 
-## A. The big product-thesis questions (negative mode P01/P02/P04/P05/P06)
+Status key: **[done]** landed · **[queued]** agreed, not yet built ·
+**[parked]** deliberately not doing now.
 
-1. **What is the Forge sim for?** The shipped verdict gate detects a
-   true +5pp swap ~5% of the time; a real answer costs ~1,570 pod games
-   per swap; and the project's own FP-002 experiment measured curation
-   as net-neutral. Options: (a) keep sim as the per-swap arbiter and
-   accept screening-level evidence (rename verdicts "screen-positive"),
-   (b) reposition sim as an occasional deep-dive instrument and make
-   the deterministic advisor+consistency+legality path the headline
-   product, (c) fund real power for a few decisions you care about.
-   **Recommendation: (b), with (c) on demand.**
-2. **Replication before advancing?** Should the improve loop require a
-   second independent A/B confirming direction before it permanently
-   advances the base deck? Costs 2x sim time per accepted swap; kills
-   the noise-ratchet. **Recommendation: yes for unattended runs, off
-   for interactive ones.**
-3. **The ML moonshot (FP-013)**: the 1,000-row gate reads 0 after ~6
-   months and the log spans three incompatible measurement eras. Keep
-   the infra and start era-stamping rows (cheap), or park the whole
-   premise? **Recommendation: era-stamp (landing regardless), park the
-   eval harness, revisit at 100 gate-quality rows.**
-4. **Bot-meta caveat**: a "kept" verdict certifies "better against
-   Forge's AI (which loops ~25% of games)", not "better at your
-   table." Accept and document, or is this a dealbreaker for how you
-   use verdicts? **Recommendation: accept + document in README.**
-5. **`--run-sim` default (5 games)** can only ever record inconclusive
-   rows. Raise the default to 40 (real cost per audit) with `--smoke 5`
-   opt-out, or keep cheap-by-default? **Recommendation: raise, with
-   the cost printed before running.**
+---
 
-## B. UX restructuring (negative mode P10/P11/P13)
+## A. Product thesis
 
-6. **One `commander` umbrella command** replacing/aliasing the 27
-   entry points? Additive and safe, but touches every doc/workflow.
-   **Recommendation: yes.**
-7. **A guided `commander-init`** sequencing bootstrap → oracle bulk →
-   harvest → pool curation with cost warnings (the current first-run
-   is hours of unsequenced steps)? **Recommendation: yes.**
-8. **Invest in JS smoke tests + a weekly real-Forge canary?** The
-   4,308-line app.js has zero automated tests; the compensating
-   control is the production error sink. Needs adding node/Playwright
-   tooling to the repo. **Recommendation: yes, minimal Playwright
-   smoke of verdict/save/SSE paths.**
+### A1. The Forge sim is a deep-dive instrument, not the per-swap arbiter — [queued]
 
-## C. Policy calls from rounds 1-2
+The verdict gate detects a true +5pp improvement ~5% of the time at
+shipped settings, and FP-002 measured curation as net-neutral over
+37,120 games. Rather than pretend otherwise, the fast deterministic
+tools — legality, Karsten manabase math, consistency, the advisor,
+the dashboard — become the headline product; the sim stays available
+for questions worth real game counts.
 
-9. **[REF] vs [PREMADE] popularity policy**: top-liked Moxfield
-   reference decks are eligible sim fillers while premades are
-   excluded for exactly that popularity bias. Exclude [REF] too, or
-   document the asymmetry? **Recommendation: exclude from fillers,
-   keep as pool candidates.**
-10. **Sim-invisible politics guard**: exempt goad/monarch/vote/
-    Rhystic-tax cards from sim-driven cuts (Forge's AI can't value
-    them). Changes what the loop is allowed to cut — playstyle call.
-    **Recommendation: on by default, per-deck opt-out.**
-11. **Ollama path: build or delete?** Round 1 found it dead code with
-    misfit prompts. Build the thin local-model router (archetype/role
-    tagging first, per MODEL_GUIDE.md hardware tiers), or delete the
-    stubs and doc claims? **Recommendation: build the small-task
-    router only if you actually run Ollama locally; otherwise delete.**
-12. **Data-source risk appetite**: most acquisition rides Moxfield's
-    private API + scrapes (one ToS change strands it). Promote
-    Archidekt (public API) to co-primary where substitutable?
-    **Recommendation: yes, as fallback lane.**
-13. **Change-budget validation**: the 30+30 rebuild escalation is
-    gated on the unvalidated health score. Fund a small pre-registered
-    check, accept as-is, or make rebuild-tier manual-only?
-    **Recommendation: manual-only until validated.**
-14. **Corpus-scaled ROLE_TARGETS** stays blocked on the corpus-norms
-    A/B the repo itself queued. Run that A/B (sim cost), or leave the
-    static template? **Recommendation: run it once, decide on data.**
+Follows: reposition README and STATUS framing; keep the honest
+inconclusive/neutral machinery; stop implying per-swap proof.
+
+### A2. Unattended runs require replication before advancing a deck — [queued]
+
+A second independent A/B must confirm direction before the improve
+loop permanently advances the base. Doubles sim cost per accepted
+swap and kills the noise-ratchet (~5% of single-A/B accepts are false
+positives against a ~0 true effect rate). Interactive runs stay
+single-shot so the user isn't left waiting.
+
+### A3. `--run-sim` defaults to the verdict floor — [queued]
+
+Default rises from 5 games (which can only ever record "inconclusive")
+to 40, printing the estimated time before it runs. `--smoke 5` keeps
+the cheap sanity check.
+
+### A4. Build the local-model router for small tasks — [queued]
+
+The Ollama path — where this whole investigation started — becomes
+real for the tasks local models are actually good at: archetype and
+role tagging, cheap classification. Purpose-written schema-first
+prompts (never the 706-line browser prompt), a preflight that the
+configured model is actually pulled, and the hardware tiers from
+MODEL_GUIDE.md. Verdicts and proposals stay on Claude.
+
+### A5. Knowledge log: era-stamp rows, park the ML harness — [queued]
+
+Every row gets a measurement-era/schema stamp so future analysis can
+tell the three incompatible eras apart (pre-attribution-fix,
+pre-decisive-convention, pre-significance-verdicts). The FP-013 eval
+harness and the 0/1,000 gate line are parked until 100 gate-quality
+rows exist.
+
+### A6. Document the bot-meta caveat — [queued]
+
+README states plainly where it makes the ground-truth claim: a "kept"
+verdict certifies "better against Forge's AI, which loops ~25% of
+games", not "better at your table."
+
+---
+
+## B. UX — all four approved
+
+- **B1. `commander` umbrella command** — [queued] one multiplexer with
+  subcommands, aliasing the 27 existing entry points so nothing breaks.
+- **B2. Guided `commander-init`** — [queued] sequences bootstrap →
+  oracle bulk → harvest → pool curation with cost/time warnings.
+- **B3. JS smoke tests (Playwright)** — [queued] cover the
+  verdict/save/SSE paths in the 4,308-line `app.js` that currently has
+  zero automated tests.
+- **B4. Weekly real-Forge canary** — [queued] a scheduled one-pod real
+  JVM run so Forge-side regressions surface on their own.
+
+---
+
+## C. Policy
+
+- **C1. `[REF]` decks excluded from filler seats** — [queued] they stay
+  pool *candidates* (real playable builds worth ranking), but stop
+  being seeded as fillers, matching the `[PREMADE]` popularity rule.
+- **C2. Politics guard on by default** — [queued] goad / monarch /
+  vote / tempting-offer / Rhystic-style tax cards are tagged and
+  shielded from margin-driven cuts (same mechanism as `Protect=`),
+  with an annotation that the sim can't judge them. Per-deck opt-out.
+- **C3. Archidekt promoted to a fallback lane** — [queued] plus a
+  documented risk tier per source, so a Moxfield ToS/CDN change
+  doesn't strand imports, harvest, peers and meta-test refs at once.
+- **C4. Rebuild tier is manual-only until validated** — [queued] the
+  30+30 escalation is a 6× cost multiplier gated on the never-validated
+  health score; it now requires explicit opt-in.
+- **C5. Corpus-norms A/B** — [parked] not funded now; corpus-scaled
+  ROLE_TARGETS stays blocked behind it, as the repo's own discipline
+  requires.
+- **C6. Pre-registered change-budget check** — [parked] not funded now;
+  superseded in practice by C4 making the tier opt-in.
+
+---
 
 ## D. Small approvals
 
-15. **Margin backfill script** (`scripts/backfill_web_margins.py`,
-    landing in the current fix wave): recomputes legacy web-saved
-    margins from stored sim reports, fenced to id ≥ 314, dry-run by
-    default. OK to run `--apply` on your live knowledge log?
-16. **Web `PUT /api/config` etc. Host-header check** (round-1 finding,
-    unfixed): add localhost-only Host validation? Tiny change,
-    recommended, but it touches how you access the UI if you ever use
-    a non-localhost hostname.
+- **D1. Margin backfill: dry-run only** — [queued] I run
+  `scripts/backfill_web_margins.py` in dry-run and show the
+  before/after table; the owner runs `--apply` themselves after
+  reviewing, since the knowledge log is the only copy of that history.
+- **D2. Host-header validation** — [queued] reject requests whose Host
+  isn't `127.0.0.1`/`localhost` in the existing `before_request` hook,
+  closing the DNS-rebinding path to deck reads and `PUT /api/config`.
+
+---
+
+## Implementation order
+
+Cheap correctness and honesty first, then the structural UX work:
+
+1. D2 host check, C1 `[REF]` fillers, A6 README caveat, C4 rebuild
+   opt-in, A5 era stamp (all small, no new surface).
+2. A3 sim default + A2 replication (same code path).
+3. C2 politics guard, C3 Archidekt lane.
+4. A4 local-model router.
+5. B1 umbrella CLI + B2 `commander-init` (docs-heavy, touches every
+   workflow).
+6. B3 Playwright smokes + B4 Forge canary (new tooling in the repo).
+7. D1 backfill dry-run report for the owner.
