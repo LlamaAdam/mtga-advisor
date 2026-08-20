@@ -137,9 +137,11 @@ need no call. Nothing below is settled; each is a product, policy or
 owner-data judgment that the cross-examination explicitly declined to
 make on the owner's behalf.
 
-Status: all **[open]** — awaiting review.
+Status: all six **decided with the owner, 2026-08-20**. Each entry
+below keeps its original framing; the decision and rationale are
+appended per item.
 
-### R2-D1. What is `--strategy bandit`'s relationship to the knowledge log? — [open]
+### R2-D1. What is `--strategy bandit`'s relationship to the knowledge log? — [decided: log every accepted pull]
 
 `--strategy bandit` writes zero knowledge_log rows while running full
 45-game A/B sims and permanently advancing the deck on disk: no
@@ -162,7 +164,14 @@ The decision is what "one iteration" means for a bandit pull:
 Either way the false CLI comment gets fixed. Affects schema semantics
 and the FP-013 denominator.
 
-### R2-D2. Does the unattended loop stay default-ON at its shipped power? — [open]
+**DECIDED 2026-08-20 — log it.** One knowledge-log row per accepted
+pull: manifest = the single swap, snapshot = the candidate deck text.
+Restores revert, lineage and FP-013 counting; the schema now treats a
+single-swap pull as an iteration alongside full curate cycles. The
+false 'every improve run grows this number' CLI copy gets fixed as
+part of the implementation. — [queued]
+
+### R2-D2. Does the unattended loop stay default-ON at its shipped power? — [decided: reposition + document]
 
 The A2 replication gate works as designed on false positives, but the
 corrected arithmetic (45 games, 20-decisive gate, exact two-sided
@@ -187,7 +196,15 @@ Separately, and independently of the above: should the docs be required
 to state true-positive throughput beside the 1-in-1,600 figure wherever
 that number appears?
 
-### R2-D3. Label policy for a confirmation that could not run — [open]
+**DECIDED 2026-08-20 — reposition and document, no behavior change.**
+The loop is reframed in docs and CLI copy as a false-positive-proof
+screen where 'no advance' is the expected overnight outcome, and the
+true-positive throughput (~1.3% per 10-round run at +5pp) is printed
+beside the 1-in-1,600 false-positive figure so the trade is visible.
+Raising per-round games was declined — honest power costs real hours,
+and A1 already repositioned the sim as a deep-dive instrument. — [queued]
+
+### R2-D3. Label policy for a confirmation that could not run — [decided: inconclusive]
 
 When the replication sim fails to *run*, the writer rewrites a COMPLETED
 run-1 row to `verdict='pending'` — but the vocabulary defines 'pending'
@@ -206,7 +223,12 @@ Options:
 
 Whichever is chosen, the vocabulary doc should say so explicitly.
 
-### R2-D4. Replication reward policy on the bandit path — [open]
+**DECIDED 2026-08-20 — 'inconclusive'.** A completed run 1 whose
+confirmation could not RUN gets 'inconclusive': evidence exists but
+the discipline's second half never executed, so no verdict. Consistent
+with how sub-threshold runs already read; the notes keep the detail. — [queued]
+
+### R2-D4. Replication reward policy on the bandit path — [decided: keep run-1-only]
 
 On the bandit path, replication keeps run 1's reward in the arm mean and
 discards run 2's — on both the confirming and the disagreeing branch.
@@ -223,7 +245,12 @@ Options:
   replace the reward with the pooled estimate, and count the pull budget
   honestly.
 
-### R2-D5. Should the 2026-08-14 era boundary be a hard date cut? — [open]
+**DECIDED 2026-08-20 — keep run-1-only.** The existing documented
+rationale stands: folding the confirm sim into the arm's statistics
+would double-weight arms that reached the gate. The asymmetry stays
+acknowledged in the docs. No code change. — [done]
+
+### R2-D5. Should the 2026-08-14 era boundary be a hard date cut? — [decided: dry-run first]
 
 Era boundaries are handled asymmetrically: the 2026-05-21/22 session and
 the 2026-07-19 window are NULLed because the fix landed mid-session, but
@@ -239,7 +266,13 @@ the log written on 2026-08-14 before that commit?**
   — which relabels live rows in the only copy of that history, so it
   follows the D1 precedent: dry-run report first, owner applies.
 
-### R2-D6. Should skip-retirement distinguish transient from structural failures? — [open]
+**DECIDED 2026-08-20 — dry-run it.** The owner doesn't know offhand
+whether sims ran on the morning of 2026-08-14. The backfill script
+gains a dry-run check that lists any Aug-14 rows with timestamps and
+what would change; the owner reviews on their machine and applies (or
+not) themselves. No data touched until then. — [queued]
+
+### R2-D6. Should skip-retirement distinguish transient from structural failures? — [decided: split transient vs structural]
 
 `run_bandit` retires an arm permanently after a single skip. The policy
 is deliberate and documented — but its stated premise, that failures are
@@ -256,3 +289,9 @@ Options:
 - **Split the classes** — retire on `apply_failed` / `swap_dropped`
   only, allow N retries for the `sim_*` classes. Changes run behavior
   and run length, so it is a policy change rather than a fix.
+
+**DECIDED 2026-08-20 — split them.** Structural skips (swap illegal
+in this deck) retire the arm immediately — it can never work; transient
+skips (sim crash, zero decisive games) stop counting toward retirement.
+A small behavior change in the sensible direction. — [queued]
+
