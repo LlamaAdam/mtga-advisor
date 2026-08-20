@@ -125,3 +125,134 @@ Cheap correctness and honesty first, then the structural UX work:
    workflow).
 6. B3 Playwright smokes + B4 Forge canary (new tooling in the repo).
 7. D1 backfill dry-run report for the owner.
+
+---
+
+# Round-2 decisions (2026-08-20) — open
+
+Six decisions surfaced by the round-2 negative-mode pass over branch
+`claude/ollama-code-analysis-ak77i1` (see `NEGATIVE_MODE_ROUND2.md`).
+The other nineteen findings from that round are engineering fixes and
+need no call. Nothing below is settled; each is a product, policy or
+owner-data judgment that the cross-examination explicitly declined to
+make on the owner's behalf.
+
+Status: all **[open]** — awaiting review.
+
+### R2-D1. What is `--strategy bandit`'s relationship to the knowledge log? — [open]
+
+`--strategy bandit` writes zero knowledge_log rows while running full
+45-game A/B sims and permanently advancing the deck on disk: no
+iteration row, no snapshot, no lineage, no revert path, invisible to
+FP-013 — and the CLI copy claims "every improve run grows this number"
+(R2-P02, major). The README's "every cycle is one row in
+knowledge_log.sqlite" is currently false for one of three shipped
+strategies.
+
+The decision is what "one iteration" means for a bandit pull:
+
+- **Log it** — record a row per accepted pull, with manifest = the
+  single swap and snapshot = the candidate deck text. Restores revert,
+  lineage and FP-013 counting, but commits the schema to treating a
+  single-swap pull as an iteration alongside full curate cycles.
+- **Declare it off-log** — leave the path as-is and state loudly in
+  `--strategy` help and the README that bandit runs are unlogged and
+  unrevertable, correcting the "every run" copy.
+
+Either way the false CLI comment gets fixed. Affects schema semantics
+and the FP-013 denominator.
+
+### R2-D2. Does the unattended loop stay default-ON at its shipped power? — [open]
+
+The A2 replication gate works as designed on false positives, but the
+corrected arithmetic (45 games, 20-decisive gate, exact two-sided
+α = 0.05) says a genuine +5pp swap advances with probability 0.13% per
+round — **~1.3% over a 10-round overnight run** — while each round
+spends 45 pod games, doubled on any gate trigger. The likelihood ratio
+of an advance rises only 3.0 → 9.2, so advances remain majority-noise
+unless the curator's true-hit rate exceeds ~10%; FP-002 measured
+curation net-neutral (R2-P21, major). The docstring sells 1-in-1,600
+false advances without stating either consequence.
+
+The decision is spend and positioning, not code:
+
+- **Ship as-is**, accepting that the expected outcome of an overnight
+  unattended run is "nothing happened".
+- **Raise per-round games** to buy power, at proportional JVM cost.
+- **Reposition the flag** — the same move A1 made for the sim overall,
+  applied to A2: an instrument for questions worth real game counts,
+  not a background improver.
+
+Separately, and independently of the above: should the docs be required
+to state true-positive throughput beside the 1-in-1,600 figure wherever
+that number appears?
+
+### R2-D3. Label policy for a confirmation that could not run — [open]
+
+When the replication sim fails to *run*, the writer rewrites a COMPLETED
+run-1 row to `verdict='pending'` — but the vocabulary defines 'pending'
+as "the sim didn't complete", and the row carries a done sim_report with
+win rates. The row contradicts itself, and any consumer re-deriving
+state from the verdict alone misreads it (R2-P05, minor).
+
+Options:
+
+- **`'pending'`** — current behavior; self-contradictory but signals
+  "not confirmed" to the advance logic.
+- **`'inconclusive'`** — consistent with the row's own sim_report, and
+  already means "measured, not decided".
+- **Leave run 1's verdict alone** and record the non-advance in notes
+  only, keeping the verdict a statement about the sim that actually ran.
+
+Whichever is chosen, the vocabulary doc should say so explicitly.
+
+### R2-D4. Replication reward policy on the bandit path — [open]
+
+On the bandit path, replication keeps run 1's reward in the arm mean and
+discards run 2's — on both the confirming and the disagreeing branch.
+The written rationale is that folding in a second sim would double-weight
+the arms that reached the gate. Statistically this preserves rather than
+corrects the winner's curse: run 1 triggered the gate by being extreme,
+so run 2 is the unbiased draw (R2-P03, minor; non-default path).
+
+Options:
+
+- **Keep run-1-only** — the owner wrote the current rationale
+  deliberately; overriding it is a judgment call, not a bug fix.
+- **Fold run 2 in as a second observation** (`update_arm` twice), or
+  replace the reward with the pooled estimate, and count the pull budget
+  honestly.
+
+### R2-D5. Should the 2026-08-14 era boundary be a hard date cut? — [open]
+
+Era boundaries are handled asymmetrically: the 2026-05-21/22 session and
+the 2026-07-19 window are NULLed because the fix landed mid-session, but
+the era-3/4 boundary is a bare date cut, so rows written on 2026-08-14
+*before* the significance commit are stamped era 4 and admitted to the
+FP-013 training floor with margin-threshold labels (R2-P13, minor).
+
+This one needs owner data, not a code opinion: **are there any rows in
+the log written on 2026-08-14 before that commit?**
+
+- If none, document that the window is empty and leave the constant.
+- If some exist, NULL (or era-3) the date and start era 4 on 2026-08-15
+  — which relabels live rows in the only copy of that history, so it
+  follows the D1 precedent: dry-run report first, owner applies.
+
+### R2-D6. Should skip-retirement distinguish transient from structural failures? — [open]
+
+`run_bandit` retires an arm permanently after a single skip. The policy
+is deliberate and documented — but its stated premise, that failures are
+"typically structural", is false for two of the four skip classes:
+`sim_failed` is a transient JVM crash and `zero_decisive_games` is
+sampling luck. One transient event permanently removes an arm from a run
+whose whole purpose is repeated measurement, on an event uncorrelated
+with swap quality (R2-P08, minor, restated by cross-exam as a false
+premise rather than broken code).
+
+Options:
+
+- **Keep the policy**, and correct the docstring's premise.
+- **Split the classes** — retire on `apply_failed` / `swap_dropped`
+  only, allow N retries for the `sim_*` classes. Changes run behavior
+  and run length, so it is a policy change rather than a fix.
