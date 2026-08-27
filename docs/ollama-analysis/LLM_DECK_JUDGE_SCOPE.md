@@ -159,6 +159,33 @@ The judge is abandoned if, over the first 50 pairings:
   recommends Rhystic Study to everyone, it has added nothing that
   EDHREC inclusion% did not already provide for free.
 
+  *Made computable 2026-08-27* (zero paired rows existed when these
+  numbers were fixed — they are pre-registered, not fitted). Each
+  judged swap is labeled from its **added** cards:
+  `staple_ward | intent_ward | mixed | neither | unknown`, where
+  staple = membership in `staples.UNIVERSAL_STAPLES_LC` ∪ the offline
+  Game Changers list, and intent = theme-slug / tribal / key-wincon
+  match against the deck's `Intent`. Labeling thresholds:
+  `SWAP_LABEL_DOMINANCE = 0.60` (a bucket needs ≥60% of classifiable
+  added cards and must beat the other), `SWAP_LABEL_MIN_CARDS = 2`
+  (fewer → `unknown`); `intent=None` → `unknown`, never `staple_ward`
+  (otherwise every unlabeled swap would fabricate the very bias being
+  tested). The statistic:
+
+  > P(judge says `kept` | staple-ward swap) −
+  > P(judge says `kept` | intent-ward swap) > **0.20**
+  > (`G3_STAPLE_EXCESS_MAX`), read only once each arm has
+  > ≥ **10** labeled pairings (`G3_MIN_PER_ARM`).
+
+  A *difference*, not a level — the claim is comparative, and an
+  absolute staple-ward approval rate cannot separate consensus-chasing
+  from a run of genuinely good staple-ward swaps (a judge approving
+  everything trips G2, not G3). Thin arms report NOT COMPUTED naming
+  the short arm, never "passing". Honest limit: staple-ward here is
+  membership in two shipped lists, a coarse proxy for EDHREC
+  inclusion% (unavailable offline) — G3 is an alarm, not a measurement
+  of inclusion%. The judge is never shown the label (test-pinned).
+
 Failing any of the three parks it, and the note gets an honest
 postmortem the way FP-002 and FP-015 did.
 
