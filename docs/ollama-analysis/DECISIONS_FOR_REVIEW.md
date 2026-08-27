@@ -1,9 +1,11 @@
 # Product decisions — DECIDED 2026-08-17
 
 Sixteen decisions collected from three review rounds plus negative mode,
-reviewed with the owner on 2026-08-17. Every one is now settled; this
-file is the record of what was chosen and why, and the work queue that
-follows from it.
+reviewed with the owner on 2026-08-17. Every one is settled, and as of
+2026-08-27 every non-parked item below is LANDED on commander-builder
+master (PR #82, merged). Statuses refreshed accordingly: [queued] means
+only the owner-side step remains (their machine); [parked] is unchanged
+deliberate non-work.
 
 Status key: **[done]** landed · **[queued]** agreed, not yet built ·
 **[parked]** deliberately not doing now.
@@ -12,7 +14,7 @@ Status key: **[done]** landed · **[queued]** agreed, not yet built ·
 
 ## A. Product thesis
 
-### A1. The Forge sim is a deep-dive instrument, not the per-swap arbiter — [queued]
+### A1. The Forge sim is a deep-dive instrument, not the per-swap arbiter — [done]
 
 The verdict gate detects a true +5pp improvement ~5% of the time at
 shipped settings, and FP-002 measured curation as net-neutral over
@@ -24,7 +26,7 @@ for questions worth real game counts.
 Follows: reposition README and STATUS framing; keep the honest
 inconclusive/neutral machinery; stop implying per-swap proof.
 
-### A2. Unattended runs require replication before advancing a deck — [queued]
+### A2. Unattended runs require replication before advancing a deck — [done]
 
 A second independent A/B must confirm direction before the improve
 loop permanently advances the base. Doubles sim cost per accepted
@@ -32,13 +34,13 @@ swap and kills the noise-ratchet (~5% of single-A/B accepts are false
 positives against a ~0 true effect rate). Interactive runs stay
 single-shot so the user isn't left waiting.
 
-### A3. `--run-sim` defaults to the verdict floor — [queued]
+### A3. `--run-sim` defaults to the verdict floor — [done]
 
 Default rises from 5 games (which can only ever record "inconclusive")
 to 40, printing the estimated time before it runs. `--smoke 5` keeps
 the cheap sanity check.
 
-### A4. Build the local-model router for small tasks — [queued]
+### A4. Build the local-model router for small tasks — [done]
 
 The Ollama path — where this whole investigation started — becomes
 real for the tasks local models are actually good at: archetype and
@@ -47,7 +49,7 @@ prompts (never the 706-line browser prompt), a preflight that the
 configured model is actually pulled, and the hardware tiers from
 MODEL_GUIDE.md. Verdicts and proposals stay on Claude.
 
-### A5. Knowledge log: era-stamp rows, park the ML harness — [queued]
+### A5. Knowledge log: era-stamp rows, park the ML harness — [done]
 
 Every row gets a measurement-era/schema stamp so future analysis can
 tell the three incompatible eras apart (pre-attribution-fix,
@@ -55,7 +57,7 @@ pre-decisive-convention, pre-significance-verdicts). The FP-013 eval
 harness and the 0/1,000 gate line are parked until 100 gate-quality
 rows exist.
 
-### A6. Document the bot-meta caveat — [queued]
+### A6. Document the bot-meta caveat — [done]
 
 README states plainly where it makes the ground-truth claim: a "kept"
 verdict certifies "better against Forge's AI, which loops ~25% of
@@ -65,31 +67,31 @@ games", not "better at your table."
 
 ## B. UX — all four approved
 
-- **B1. `commander` umbrella command** — [queued] one multiplexer with
+- **B1. `commander` umbrella command** — [done] one multiplexer with
   subcommands, aliasing the 27 existing entry points so nothing breaks.
-- **B2. Guided `commander-init`** — [queued] sequences bootstrap →
+- **B2. Guided `commander-init`** — [done] sequences bootstrap →
   oracle bulk → harvest → pool curation with cost/time warnings.
-- **B3. JS smoke tests (Playwright)** — [queued] cover the
+- **B3. JS smoke tests (Playwright)** — [done] cover the
   verdict/save/SSE paths in the 4,308-line `app.js` that currently has
   zero automated tests.
-- **B4. Weekly real-Forge canary** — [queued] a scheduled one-pod real
+- **B4. Weekly real-Forge canary** — [done] a scheduled one-pod real
   JVM run so Forge-side regressions surface on their own.
 
 ---
 
 ## C. Policy
 
-- **C1. `[REF]` decks excluded from filler seats** — [queued] they stay
+- **C1. `[REF]` decks excluded from filler seats** — [done] they stay
   pool *candidates* (real playable builds worth ranking), but stop
   being seeded as fillers, matching the `[PREMADE]` popularity rule.
-- **C2. Politics guard on by default** — [queued] goad / monarch /
+- **C2. Politics guard on by default** — [done] goad / monarch /
   vote / tempting-offer / Rhystic-style tax cards are tagged and
   shielded from margin-driven cuts (same mechanism as `Protect=`),
   with an annotation that the sim can't judge them. Per-deck opt-out.
-- **C3. Archidekt promoted to a fallback lane** — [queued] plus a
+- **C3. Archidekt promoted to a fallback lane** — [done] plus a
   documented risk tier per source, so a Moxfield ToS/CDN change
   doesn't strand imports, harvest, peers and meta-test refs at once.
-- **C4. Rebuild tier is manual-only until validated** — [queued] the
+- **C4. Rebuild tier is manual-only until validated** — [done] the
   30+30 escalation is a 6× cost multiplier gated on the never-validated
   health score; it now requires explicit opt-in.
 - **C5. Corpus-norms A/B** — [parked] not funded now; corpus-scaled
@@ -102,11 +104,11 @@ games", not "better at your table."
 
 ## D. Small approvals
 
-- **D1. Margin backfill: dry-run only** — [queued] I run
+- **D1. Margin backfill: dry-run only** — [queued: owner runs it locally] I run
   `scripts/backfill_web_margins.py` in dry-run and show the
   before/after table; the owner runs `--apply` themselves after
   reviewing, since the knowledge log is the only copy of that history.
-- **D2. Host-header validation** — [queued] reject requests whose Host
+- **D2. Host-header validation** — [done] reject requests whose Host
   isn't `127.0.0.1`/`localhost` in the existing `before_request` hook,
   closing the DNS-rebinding path to deck reads and `PUT /api/config`.
 
@@ -169,7 +171,7 @@ pull: manifest = the single swap, snapshot = the candidate deck text.
 Restores revert, lineage and FP-013 counting; the schema now treats a
 single-swap pull as an iteration alongside full curate cycles. The
 false 'every improve run grows this number' CLI copy gets fixed as
-part of the implementation. — [queued]
+part of the implementation. — [done]
 
 ### R2-D2. Does the unattended loop stay default-ON at its shipped power? — [decided: reposition + document]
 
