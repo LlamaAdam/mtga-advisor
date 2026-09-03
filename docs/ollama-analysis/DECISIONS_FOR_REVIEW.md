@@ -297,3 +297,83 @@ in this deck) retire the arm immediately — it can never work; transient
 skips (sim crash, zero decisive games) stop counting toward retirement.
 A small behavior change in the sensible direction. — [queued]
 
+
+---
+
+## Round-3 decisions (2026-09-03)
+
+Raised by the round-3 negative-mode review (`NEGATIVE_MODE_ROUND3.md`),
+which covered master `0b944ef` plus the two open pull requests written
+by a different assistant (#85 `feat/fp-019-primer-heuristics`, #84
+`codex/windows-desktop-lock-diagnostics`). These three are product or
+policy calls that the engineering fixes cannot make for you.
+
+### R3-D1. Does the FP-018 auto-Protect reversal in PR #85 stand? — [open]
+
+Master's `commander adopt` auto-protected every card the primer's
+card-link embeds name (`future-plans.md` FP-018 table "Don't touch the
+identity"; CHANGELOG 2026-08-27; `architecture.md` adopt row). PR #85
+removes it: primer links become "references only", the only lock is a
+hand-written `Protect=` line, and the pinning test is inverted so a
+linked card *is* suggested as a cut. The commit's rationale — "treating a
+link as consent to prevent a cut made ordinary primer references
+sticky" — is legitimate engineering, which is exactly why it is a
+product trade rather than a bug fix; `DECISIONS_FOR_REVIEW.md` had no
+FP-018 item, the PR body's "approved primer hardening" has no referent,
+and #85 carries zero GitHub reviews (PR-06, major).
+
+Options:
+
+- **Keep master's behavior** (auto-Protect stays; reject that part of
+  #85) — adopt keeps an identity guarantee for imported decks without
+  the pilot writing metadata; over-protects when authors link cards
+  casually.
+- **Accept the reversal** — adopt never locks anything the pilot did
+  not lock; the "small modifications, not an overhaul" promise then
+  rests on the polish cap alone.
+- **Middle: opt-in `--trust-primer-links`** (cross-examiner's
+  suggestion) — links protect only when the pilot asks, and the report
+  says which cards would have been protected.
+
+Note either way F-02 (DFC names: card-links carry `Front // Back`, the
+`.dck` carries the front face, so every linked DFC is reported "NOT in
+the list") must be fixed before links can be trusted for anything.
+
+### R3-D2. Can the FP-019 primer knowledge base ship without reproducible provenance? — [open]
+
+`data/primer_kb.json` (1,700 lines of structured claims about 40 decks)
+and the heuristics wired into consistency floors, quotas, card-score
+penalties, nonbo lint and the advisor/judge prompts all cite
+`primer_harvest/deckbuilding_heuristics.md` §1–§16 and two harvest
+JSONs that exist in no tree, branch or commit. 35 of the 40 decks have
+no list or prose anywhere in the repo; the five that overlap the CI
+captures deleted on 2026-08-27 were recovered from git history and
+match the KB's presence flags 54/55. The code is not wrong *because* the
+files are absent — the question is whether a data asset whose
+derivation cannot be re-run, and prompt text "distilled from 40
+community primers", is acceptable in the package (PR-05 B3; the
+cross-examiner separated this from the two code defects in the same
+finding, which are routed to #85 regardless).
+
+Options:
+
+- **Require the harvest + heuristics document to be committed** before
+  #85 merges (or regenerate the KB through the capture lane so every
+  record carries `_provenance`).
+- **Ship as an author-machine artifact**, labeled unreproducible in
+  the KB `meta` and with the § citations removed from code.
+- **Do not ship the KB**; keep #85's import/legality/test fixes only.
+
+### R3-D3. Which "Change commander" contract survives, #84's or #85's? — [open]
+
+Both PRs add `/api/deck_commander` with different request/response
+contracts, different validation and duplicated top-level `let`s in
+`app.js` (a SyntaxError for the whole bundle if both land); a
+merge-tree of the two conflicts in 7 files / 18 hunks. Each is
+`mergeable_state: clean` on its own, so GitHub gives no warning
+(PR-08, major). The cross-examiner's recommendation: keep #85's
+superset contract and drop commit `d8207d0` from #84 — but #85's
+version has its own confirmed defects (PR-12: accepts `"2 Krenko"` as a
+name, demotes a `Protect=`-locked card without touching the lock;
+PR-13: rewrites every card line on a change). Whichever you pick, the
+other PR needs a rebase before it can merge second.
