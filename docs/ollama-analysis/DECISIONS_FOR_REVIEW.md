@@ -377,3 +377,55 @@ version has its own confirmed defects (PR-12: accepts `"2 Krenko"` as a
 name, demotes a `Protect=`-locked card without touching the lock;
 PR-13: rewrites every card line on a change). Whichever you pick, the
 other PR needs a rebase before it can merge second.
+
+## FP-020 decisions (2026-09-26) — win routes
+
+Context: `WINCON_RESEARCH.md` + `WIN_ROUTES_SCOPE.md`. All five are
+design calls the research cannot settle; each has a recommended
+default so a "go with your defaults" answer is enough.
+
+### FP20-D1. Does a resource loop without a recognised outlet count as a route? — [open]
+
+Lumra (31 landfall/land-token loops, no haste or overrun the prototype
+recognises) and Henzie (a Protean Hulk pile) are the live cases.
+Options: (a) `thin` — engine present, kill not recognised, the tile
+says so; (b) `none` — only kills count. **Recommended: (a)**, because
+(b) would tell a pilot with a working Hulk line that they cannot win,
+and the honest state is "the tool cannot see the last step".
+
+### FP20-D2. What is the redundancy bar for `present`? — [open]
+
+The research found every tuned deck carries a backup. Options: (a) one
+global rule, `strength ≥ 2`; (b) per-route bars taken from the
+prototype table (voltron ≥ 8 gear, poison ≥ 5, drain ≥ 3, combo ≥ 1
+kill + 1 other route or second kill). **Recommended: (b)** — the routes
+are not commensurable, and (a) would call a single Craterhoof + 30
+tokens `thin`.
+
+### FP20-D3. May `improve` add a route on its own? — [open]
+
+Phase 3 proposes a route-add when the verdict is `none`. Options:
+(a) propose and let the sim judge, like any swap; (b) flag only —
+print "no closer detected; candidates: …" and never auto-add.
+**Recommended: (b) until G2 passes on your own decks**, then (a).
+Adding a wincon is the largest identity change a deck can take.
+
+### FP20-D4. Ship a trimmed combos file? — [open]
+
+`data/` is gitignored; the sandbox, CI and a fresh install see only the
+20-entry fallback, so Phase 1 tests and any fresh user get no combo
+routes. Options: (a) commit `data/combos_top1500.json` (363 KB,
+Spellbook popularity order, `_provenance` stamped, refreshed through
+the capture lane); (b) keep owner-machine-only via `--refresh`.
+**Recommended: (a)** — the capture already exists and the lane can
+refresh it; Spellbook's terms permit redistribution of the data with
+attribution (verify on your side before merging).
+
+### FP20-D5. Is a stax lock a route? — [open]
+
+Heliod's primer: "You believe silence is a valid win condition." The
+deck still runs Ballista/Triskelion. Options: (a) a tenth route,
+`lock`, from the 103 Spellbook "Lock" features + stax density; (b) not
+a route — a lock needs one of the nine to end the game, so it changes
+nothing in the verdict. **Recommended: (b)**; a lock deck with no
+closer is exactly the deck the owner's premise wants flagged.
