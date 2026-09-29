@@ -1,10 +1,10 @@
 """Command line entry point.
 
-    python -m window_advisor preview    # decide and print; touches no state
-    python -m window_advisor check      # decide, record, alert once per night
-    python -m window_advisor resolve    # confirm the NWS grid for the location
-    python -m window_advisor report     # the history record
-    python -m window_advisor doctor     # is this thing actually set up?
+    python -m weather_advice preview    # decide and print; touches no state
+    python -m weather_advice check      # decide, record, alert once per night
+    python -m weather_advice resolve    # confirm the NWS grid for the location
+    python -m weather_advice report     # the history record
+    python -m weather_advice doctor     # is this thing actually set up?
 
 `preview` reads and writes nothing, so it is safe to run repeatedly -- the same
 affordance the deal tracker's `preview` provides, and for the same reason: the
@@ -30,7 +30,7 @@ from .notify import Notifier
 from .weather import NWSClient, WeatherError
 from .windows import evaluate
 
-log = logging.getLogger("window_advisor")
+log = logging.getLogger("weather_advice")
 
 
 def _now(settings: Settings, grid_tz: str = "") -> datetime:
@@ -67,6 +67,7 @@ def _fetch(settings: Settings, use_cache: bool = True):
 
 def cmd_resolve(settings: Settings, args) -> int:
     client, grid, _hours = _fetch(settings, use_cache=False)
+    pinned = settings.location.station
     print(f"ZIP in config    : {settings.location.zip_code}")
     print(f"coordinate used  : {grid.lat:.4f}, {grid.lon:.4f}"
           + ("   (approximate -- see below)" if settings.location.approximate else ""))
@@ -74,6 +75,28 @@ def cmd_resolve(settings: Settings, args) -> int:
     print(f"grid cell        : {grid.grid_id} {grid.grid_x},{grid.grid_y}")
     print(f"time zone        : {grid.time_zone}")
     print(f"cached to        : {settings.grid_cache}")
+
+    # Confirm the pinned station is one NWS serves for this cell. A typo'd
+    # identifier is otherwise indistinguishable from a station that is down:
+    # both just produce no observations, quietly, for as long as it takes
+    # someone to notice the accuracy table is empty.
+    if pinned:
+        nearby = client.nearby_stations(grid)
+        if not nearby:
+            print(f"station          : {pinned}  (could not verify -- "
+                  "station list unavailable)")
+        elif pinned in nearby:
+            rank = nearby.index(pinned) + 1
+            print(f"station          : {pinned}  (ok, #{rank} nearest)")
+        else:
+            print(f"station          : {pinned}  ** NOT in this grid's "
+                  "station list **")
+            print(f"  nearest are    : {', '.join(nearby[:5])}")
+            print("  Fix location.station in the config, or blank it to use")
+            print("  the nearest available.")
+    else:
+        print("station          : not pinned -- accuracy history may mix "
+              "stations")
     if settings.location.approximate:
         print()
         print("The coordinate is an approximate centroid for the ZIP. If the")
@@ -126,7 +149,7 @@ def cmd_check(settings: Settings, args) -> int:
 
         now = _now(settings, grid.time_zone)
         history.record_forecast(hours, fetched_at=now)
-        obs = client.latest_observation(grid)
+        obs = client.latest_observation(grid, station=settings.location.station)
         if obs:
             history.record_observation(obs)
 
@@ -209,6 +232,9 @@ def cmd_doctor(settings: Settings, args) -> int:
     print(f"location      : ZIP {settings.location.zip_code} -> "
           f"{settings.location.lat:.4f},{settings.location.lon:.4f}"
           + ("  (approximate)" if settings.location.approximate else ""))
+    print(f"station       : {settings.location.station or 'nearest available'}"
+          + ("" if settings.location.station
+             else "   (unpinned -- accuracy history may mix stations)"))
     t = settings.thresholds
     print(f"open below    : {t.max_temp_f:.0f}F"
           + (f", floor {t.min_temp_f:.0f}F" if t.min_temp_f is not None
@@ -226,7 +252,7 @@ def cmd_doctor(settings: Settings, args) -> int:
         ok = False
         print()
         print("NOT CONFIGURED TO ALERT. Set SMTP_HOST, SMTP_USER,")
-        print("SMTP_PASSWORD and WINDOW_ALERT_EMAIL_TO in the secrets file.")
+        print("SMTP_PASSWORD and WEATHER_ALERT_EMAIL_TO in the secrets file.")
     for w in n.configured_warnings():
         ok = False
         print()
@@ -238,7 +264,7 @@ def cmd_doctor(settings: Settings, args) -> int:
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(
-        prog="window_advisor",
+        prog="weather_advice",
         description="Tell me when to open the windows for the night.")
     p.add_argument("--verbose", "-v", action="store_true")
     p.add_argument("--config", type=str, default=None)

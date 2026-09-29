@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from window_advisor.db import History
-from window_advisor.models import Decision, HourForecast, Observation
+from weather_advice.db import History
+from weather_advice.models import Decision, HourForecast, Observation
 
 BASE = datetime(2026, 10, 5, 20, 0)
 

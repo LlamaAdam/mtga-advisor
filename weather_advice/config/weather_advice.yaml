@@ -4,14 +4,24 @@
 
 location:
   zip: "75287"
-  # Approximate centroid for 75287 (far north Dallas). Run
-  #   python -m window_advisor resolve
-  # to confirm: it prints the city NWS matched, so a wrong coordinate shows up
-  # instead of quietly forecasting the next town over. Once you are happy,
-  # paste exact values here and set approximate: false.
-  lat: 32.9968
-  lon: -96.8400
-  approximate: true
+  # Dallas/Addison Airport (KADS) -- the nearest reporting station, so this is
+  # a real point rather than a guessed ZIP centroid. Run
+  #   python -m weather_advice resolve
+  # to confirm: it prints the city NWS matched and checks the station below is
+  # one NWS actually associates with this grid cell.
+  lat: 32.97
+  lon: -96.83
+  approximate: false
+  # Pin the observation station used for the accuracy record.
+  #
+  # This matters more than it looks. Accuracy is a comparison across time, and
+  # a comparison only means something if the thing being compared holds still.
+  # Left blank, the client takes whichever nearby station answers first -- so a
+  # KADS outage silently swaps in an airport miles away and "forecast error"
+  # quietly starts measuring the distance between two stations instead of the
+  # quality of the forecast. A pinned station deliberately does NOT fall back:
+  # missing a few rows is recoverable, a history that mixes sources is not.
+  station: KADS
 
 schedule:
   # Windows must be open BY bedtime -- after this nobody is up to do it.

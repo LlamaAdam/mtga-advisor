@@ -10,13 +10,13 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from conftest import COOL_NIGHT, hours_from
-from window_advisor import __main__ as cli
-from window_advisor.config import Location, Settings
-from window_advisor.db import History
-from window_advisor.notify import Notifier
-from window_advisor.schedule import SleepSchedule
-from window_advisor.weather import Grid
-from window_advisor.windows import Thresholds
+from weather_advice import __main__ as cli
+from weather_advice.config import Location, Settings
+from weather_advice.db import History
+from weather_advice.notify import Notifier
+from weather_advice.schedule import SleepSchedule
+from weather_advice.weather import Grid
+from weather_advice.windows import Thresholds
 
 CHICAGO = ZoneInfo("America/Chicago")
 EVENING = datetime(2026, 10, 5, 20, 30, tzinfo=CHICAGO)
@@ -53,7 +53,8 @@ def settings(tmp_path):
 
 def _stub(monkeypatch, hours, now=EVENING):
     class FakeClient:
-        def latest_observation(self, grid):
+        def latest_observation(self, grid, station=None):
+            FakeClient.asked_for = station
             return None
     monkeypatch.setattr(cli, "_fetch", lambda s, use_cache=True:
                         (FakeClient(), GRID, hours))
@@ -125,7 +126,7 @@ def test_a_bad_night_never_alerts_but_is_still_recorded(settings, monkeypatch):
 def test_an_unreachable_forecast_is_recorded_as_unknown(settings, monkeypatch):
     """A run that could not decide is itself a fact worth keeping -- and it
     must not be silently indistinguishable from "no good window"."""
-    from window_advisor.weather import WeatherError
+    from weather_advice.weather import WeatherError
 
     def boom(s, use_cache=True):
         raise WeatherError("connection reset")
@@ -137,3 +138,21 @@ def test_an_unreachable_forecast_is_recorded_as_unknown(settings, monkeypatch):
         rows = h.recent_decisions()
         assert rows[0]["route"] == "unknown"
         assert "connection reset" in rows[0]["reasons"]
+
+
+def test_the_pinned_station_is_the_one_actually_asked_for(settings, monkeypatch):
+    """The config pins KADS; the run must request KADS by name rather than
+    falling through to whichever station happens to answer first."""
+    settings.location.station = "KADS"
+    captured = {}
+
+    class FakeClient:
+        def latest_observation(self, grid, station=None):
+            captured["station"] = station
+            return None
+
+    monkeypatch.setattr(cli, "_fetch", lambda s, use_cache=True:
+                        (FakeClient(), GRID, hours_from(COOL_NIGHT, start=EIGHT_PM)))
+    monkeypatch.setattr(cli, "_now", lambda s, tz="": EVENING)
+    cli.cmd_check(settings, Args())
+    assert captured["station"] == "KADS"

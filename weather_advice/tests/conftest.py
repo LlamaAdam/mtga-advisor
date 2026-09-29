@@ -6,9 +6,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from window_advisor.models import HourForecast          # noqa: E402
-from window_advisor.schedule import SleepSchedule       # noqa: E402
-from window_advisor.windows import Thresholds           # noqa: E402
+from weather_advice.models import HourForecast          # noqa: E402
+from weather_advice.schedule import SleepSchedule       # noqa: E402
+from weather_advice.windows import Thresholds           # noqa: E402
 
 # Monday 5 Oct 2026, 7pm -> the night runs to Tuesday 8am.
 MONDAY_EVENING = datetime(2026, 10, 5, 19, 0)

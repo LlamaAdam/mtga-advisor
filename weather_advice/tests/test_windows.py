@@ -5,7 +5,7 @@ from datetime import datetime
 import pytest
 
 from conftest import COOL_NIGHT, MONDAY_EVENING, hours_from
-from window_advisor.windows import Thresholds, evaluate
+from weather_advice.windows import Thresholds, evaluate
 
 
 def test_a_clear_cool_night_opens(schedule, thresholds):

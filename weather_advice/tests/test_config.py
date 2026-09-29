@@ -2,7 +2,7 @@
 
 import pytest
 
-from window_advisor.config import _opt_float, _time, Settings
+from weather_advice.config import _opt_float, _time, Settings
 from datetime import time
 
 
@@ -32,7 +32,7 @@ def test_a_threshold_set_to_on_is_rejected_loudly():
 
 
 def test_the_shipped_config_does_not_veto_every_night():
-    """Loads config/window_advisor.yaml as committed and checks the optional
+    """Loads config/weather_advice.yaml as committed and checks the optional
     thresholds really are off."""
     s = Settings.load()
     assert s.thresholds.max_dewpoint_f is None

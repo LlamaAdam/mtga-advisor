@@ -2,8 +2,8 @@
 
 from datetime import datetime
 
-from window_advisor.models import Decision
-from window_advisor.notify import Notifier
+from weather_advice.models import Decision
+from weather_advice.notify import Notifier
 
 OPEN_AT = datetime(2026, 10, 5, 22, 0)
 CLOSE_AT = datetime(2026, 10, 6, 7, 0)

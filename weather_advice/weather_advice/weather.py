@@ -38,7 +38,7 @@ from .models import HourForecast, Observation
 log = logging.getLogger(__name__)
 
 API = "https://api.weather.gov"
-USER_AGENT = "window-advisor (github.com/LlamaAdam/window-advisor)"
+USER_AGENT = "weather-advice (github.com/LlamaAdam/weather-advice)"
 
 # NWS asks for GeoJSON explicitly; the default content type has changed before.
 HEADERS = {"User-Agent": USER_AGENT, "Accept": "application/geo+json"}
@@ -225,27 +225,65 @@ class NWSClient:
             raise WeatherError("hourly forecast contained no periods")
         return [parse_period(p) for p in periods]
 
-    def latest_observation(self, grid: Grid) -> Optional[Observation]:
-        """Actual conditions from the nearest reporting station.
+    def latest_observation(self, grid: Grid,
+                           station: Optional[str] = None) -> Optional[Observation]:
+        """Actual conditions from a reporting station.
 
         Best-effort on purpose: this feeds the accuracy record, not tonight's
         decision, so a station that is down must not fail the run.
+
+        `station` pins a specific identifier (e.g. KADS, Dallas/Addison
+        Airport). PREFER PINNING ONE. Accuracy is a comparison across time,
+        and a comparison is only meaningful if the thing being compared holds
+        still: letting the client pick "whichever of the nearest three answered
+        first" means an outage silently swaps in a station miles away, and the
+        forecast-error number quietly starts measuring the distance between two
+        airports instead of the quality of the forecast.
+
+        For the same reason a pinned station does NOT fall back to another one.
+        Losing a few rows while a station is down is recoverable; a history
+        table that mixes sources without saying so is not.
         """
+        if station:
+            try:
+                obs = self._get(f"{API}/stations/{station}/observations/latest")
+                return parse_observation(obs, station)
+            except WeatherError as exc:
+                # Deliberately no fallback -- see the docstring.
+                log.warning("pinned station %s had no usable observation: %s",
+                            station, exc)
+                return None
         try:
             stations = self._get(grid.observation_stations)
             ids = [f.get("properties", {}).get("stationIdentifier")
                    for f in stations.get("features", [])]
             ids = [i for i in ids if i]
-            for station in ids[:3]:
+            for candidate in ids[:3]:
                 try:
-                    obs = self._get(f"{API}/stations/{station}/observations/latest")
-                    return parse_observation(obs, station)
+                    obs = self._get(f"{API}/stations/{candidate}/observations/latest")
+                    return parse_observation(obs, candidate)
                 except WeatherError as exc:
                     log.info("station %s had no usable observation: %s",
-                             station, exc)
+                             candidate, exc)
         except WeatherError as exc:
             log.warning("could not read observations: %s", exc)
         return None
+
+    def nearby_stations(self, grid: Grid) -> List[str]:
+        """Station identifiers serving this grid cell, nearest first.
+
+        Used by `resolve` to confirm a pinned station is actually one NWS
+        associates with the location -- a typo'd identifier otherwise looks
+        exactly like a station that happens to be down.
+        """
+        try:
+            stations = self._get(grid.observation_stations)
+            ids = [f.get("properties", {}).get("stationIdentifier")
+                   for f in stations.get("features", [])]
+            return [i for i in ids if i]
+        except WeatherError as exc:
+            log.warning("could not list stations: %s", exc)
+            return []
 
 
 def parse_period(p: Dict[str, Any]) -> HourForecast:

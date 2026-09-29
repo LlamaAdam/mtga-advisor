@@ -2,7 +2,7 @@
 
 from datetime import datetime, time, timedelta
 
-from window_advisor.schedule import SleepSchedule
+from weather_advice.schedule import SleepSchedule
 
 
 def test_friday_night_gets_the_weekend_wake_time():

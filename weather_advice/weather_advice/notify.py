@@ -98,7 +98,7 @@ class Notifier:
             if domain in DEAD_GATEWAYS:
                 out.append(
                     f"{addr} will silently go nowhere: {DEAD_GATEWAYS[domain]}. "
-                    "Set WINDOW_ALERT_EMAIL_TO to a real inbox instead.")
+                    "Set WEATHER_ALERT_EMAIL_TO to a real inbox instead.")
             elif domain in SUNSETTING_GATEWAYS:
                 out.append(
                     f"{addr} still works today, but {SUNSETTING_GATEWAYS[domain]} "

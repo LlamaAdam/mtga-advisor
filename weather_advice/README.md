@@ -1,4 +1,4 @@
-# window-advisor
+# weather-advice
 
 Tells you, each evening, whether to open the windows for the night — and when
 to expect to close them.
@@ -8,9 +8,22 @@ whether there is a long enough stretch of cool, rain-free air between bedtime
 and your alarm, and emails or texts you the answer. Records every night it
 looks at, so the forecast's track record becomes a number rather than a memory.
 
-Self-contained: nothing here imports from `mtga-advisor`, and the whole
-directory can be lifted into its own repository with a single `git mv`.
-It lives on this branch only because that is where it could be pushed.
+**This belongs in its own repository, not in `mtga-advisor`.** It is here only
+because that is the only repo this session could push to — creating a new one
+was refused (`403 Resource not accessible by integration`). Nothing here
+imports from `mtga-advisor`; this directory is a complete project root. To move
+it, create an empty `weather-advice` repo and:
+
+```bash
+git clone https://github.com/LlamaAdam/mtga-advisor.git tmp
+cd tmp && git checkout claude/zen-cori-051izr
+git filter-repo --subdirectory-filter weather_advice   # or just copy the dir
+git remote add origin https://github.com/LlamaAdam/weather-advice.git
+git push -u origin master
+```
+
+Copying the directory into a fresh `git init` is fine too — there is only one
+commit's worth of history to lose.
 
 ---
 
@@ -68,7 +81,7 @@ unchanged verdict stays quiet.
 
 ```bash
 python -m pip install -r requirements.txt
-python -m window_advisor preview --hours
+python -m weather_advice preview --hours
 ```
 
 `preview` reads and writes nothing, so it is safe to run repeatedly. `--hours`
@@ -78,28 +91,30 @@ decision being made.
 Pretend it is a different evening:
 
 ```bash
-python -m window_advisor preview --at 2026-10-05T20:00
+python -m weather_advice preview --at 2026-10-05T20:00
 ```
 
 Check the location is right before trusting anything:
 
 ```bash
-python -m window_advisor resolve
+python -m weather_advice resolve
 ```
 
-That prints the city NWS matched for the configured coordinate. **Do this
-first** — the shipped coordinate is an approximate centroid for ZIP 75287, and
-a wrong one forecasts the next town over without ever looking wrong.
+That prints the city NWS matched for the configured coordinate, and verifies
+the pinned station is one NWS actually serves for that grid cell. **Do this
+first** — a wrong coordinate forecasts the next town over without ever looking
+wrong, and a typo'd station identifier is indistinguishable from a station that
+is down: both just produce no observations, quietly.
 
 ---
 
 ## Setting up the alerts
 
-Preferences live in `config/window_advisor.yaml` and are safe to commit.
+Preferences live in `config/weather_advice.yaml` and are safe to commit.
 Secrets do not: copy `.env.example` to
 
 ```
-../.secrets/window-advisor/.env
+../.secrets/weather-advice/.env
 ```
 
 i.e. *outside* the project directory. The reasoning is lifted from
@@ -111,7 +126,7 @@ accident unavailable.
 Then:
 
 ```bash
-python -m window_advisor doctor
+python -m weather_advice doctor
 ```
 
 `doctor` prints which config and secrets files were actually loaded, the
@@ -133,7 +148,7 @@ They **fail silently**: no bounce, no error, no acknowledgement. `doctor`
 warns you if you configure a dead one, but it cannot detect a gateway that
 accepts your mail and drops it.
 
-So `WINDOW_ALERT_EMAIL_TO` — a real inbox — is the channel of record, and the
+So `WEATHER_ALERT_EMAIL_TO` — a real inbox — is the channel of record, and the
 text is a convenience on top. Configuring SMS with no email address is a
 warning, not a setup, because that arrangement cannot tell you it has stopped
 working. That is the deal tracker's own lesson: it was once found
@@ -169,7 +184,7 @@ working and is not.
 ## The record
 
 ```bash
-python -m window_advisor report
+python -m weather_advice report
 ```
 
 ```
@@ -190,7 +205,17 @@ questions:
   rather than `start`, so successive runs do not overwrite each other. That is
   the point: the interesting record is how a given hour's forecast **moved** as
   the night approached.
-* `observation` — what actually happened, from the nearest NWS station.
+* `observation` — what actually happened, from **one pinned station**
+  (`KADS`, Dallas/Addison Airport — the nearest reporting station).
+
+  Pinning matters more than it looks. Accuracy is a comparison across time, and
+  a comparison only means something if the thing being compared holds still.
+  Left unpinned, the client takes whichever nearby station answers first, so a
+  KADS outage silently swaps in an airport miles away and "forecast error"
+  quietly starts measuring the distance between two stations instead of the
+  quality of the forecast. For the same reason a pinned station deliberately
+  does **not** fall back to another one: losing a few rows while it is down is
+  recoverable, a history that mixes sources without saying so is not.
 * `decision` — what was recommended, and whether an alert was delivered.
 
 Accuracy joins the last forecast issued *before* each hour against the
@@ -214,6 +239,7 @@ forecast said 74°F and it was 81°F" a number.
 | `thresholds.target_hours` | `6` | Worth waking the phone for |
 | `thresholds.min_hours` | `3` | Below this you hear nothing |
 | `schedule.wake_weekend` | `09:00` | You said "9 or 10am"; 9 is the safe default, since assuming 10 would recommend a window that needs someone awake at 10 to close it |
+| `location.station` | `KADS` | Dallas/Addison Airport. Blank it to use the nearest available, at the cost of a mixed accuracy history |
 
 > One gotcha, since it cost a bug already: in YAML the bare word `off` parses as
 > the boolean `false`, and `float(false)` is `0.0` — which would mean "only open
@@ -229,7 +255,7 @@ forecast said 74°F and it was 81°F" a number.
 python -m pytest
 ```
 
-54 tests, entirely offline — no network, matching how `mtga-advisor` and
+58 tests, entirely offline — no network, matching how `mtga-advisor` and
 `mtgdeals` both test. Most encode a specific way of being wrong; the ones worth
 reading are `test_rain_at_5am_cancels_the_night_even_though_six_clean_hours_exist`,
 `test_friday_night_gets_the_weekend_wake_time`, and
@@ -238,7 +264,8 @@ reading are `test_rain_at_5am_cancels_the_night_even_though_six_clean_hours_exis
 ## Limits
 
 * **US only.** api.weather.gov does not cover anywhere else.
-* **One location.** No reason it could not take several; nothing needs it yet.
+* **One location, one station.** No reason it could not take several; nothing
+  needs it yet.
 * **Not verified against the live API.** It was built where
   `api.weather.gov` is unreachable, so the parsing is tested against captured
   fixtures rather than a real response. `preview` on a real machine is the

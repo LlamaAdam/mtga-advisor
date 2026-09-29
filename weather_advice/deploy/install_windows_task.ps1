@@ -22,12 +22,12 @@
 
     Install:   powershell -ExecutionPolicy Bypass -File deploy\install_windows_task.ps1
     Remove:    powershell -ExecutionPolicy Bypass -File deploy\install_windows_task.ps1 -Uninstall
-    Inspect:   Get-ScheduledTask window-advisor | Get-ScheduledTaskInfo
+    Inspect:   Get-ScheduledTask weather-advice | Get-ScheduledTaskInfo
 #>
 
 param(
     [switch]$Uninstall,
-    [string]$TaskName = "window-advisor",
+    [string]$TaskName = "weather-advice",
     [string[]]$RunAt = @("20:00", "21:00", "22:00"),
     [string]$ProjectDir = (Split-Path -Parent $PSScriptRoot)
 )
@@ -55,8 +55,8 @@ if (-not $python -or -not (Test-Path $python)) {
 $pythonw = $python -replace 'python\.exe$', 'pythonw.exe'
 if (-not (Test-Path $pythonw)) { $pythonw = $python }
 
-if (-not (Test-Path (Join-Path $ProjectDir "window_advisor\__main__.py"))) {
-    throw "no window_advisor package under $ProjectDir"
+if (-not (Test-Path (Join-Path $ProjectDir "weather_advice\__main__.py"))) {
+    throw "no weather_advice package under $ProjectDir"
 }
 
 # Prove it runs BEFORE scheduling it. A task that fails on first launch looks
@@ -65,8 +65,8 @@ if (-not (Test-Path (Join-Path $ProjectDir "window_advisor\__main__.py"))) {
 Write-Host "checking the package imports..." -NoNewline
 Push-Location $ProjectDir
 try {
-    & $python -c "import window_advisor" 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "window_advisor failed to import under $python" }
+    & $python -c "import weather_advice" 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "weather_advice failed to import under $python" }
 } finally {
     Pop-Location
 }
@@ -78,7 +78,7 @@ Write-Host " ok"
 Write-Host "checking the alert setup..."
 Push-Location $ProjectDir
 try {
-    & $python -m window_advisor doctor
+    & $python -m weather_advice doctor
     if ($LASTEXITCODE -ne 0) {
         Write-Host ""
         Write-Host "doctor reported problems (above). The task will still be"
@@ -90,7 +90,7 @@ try {
 }
 
 $action = New-ScheduledTaskAction -Execute $pythonw `
-    -Argument "-m window_advisor check" -WorkingDirectory $ProjectDir
+    -Argument "-m weather_advice check" -WorkingDirectory $ProjectDir
 
 $triggers = @()
 foreach ($t in $RunAt) {
@@ -114,7 +114,7 @@ try {
     Write-Host "  runs at     : $($RunAt -join ', ') daily"
     Write-Host ""
     Write-Host "Test it now without waiting for 8pm:"
-    Write-Host "  python -m window_advisor preview"
+    Write-Host "  python -m weather_advice preview"
 }
 catch {
     # Registering a task needs an elevated shell on some machines. Unlike the

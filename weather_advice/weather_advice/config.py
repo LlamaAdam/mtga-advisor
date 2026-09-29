@@ -2,7 +2,7 @@
 
 The split follows the deal tracker. Thresholds and the sleep schedule are
 preferences worth committing and diffing, so they live in
-`config/window_advisor.yaml`. The SMTP password is not, so it comes from the
+`config/weather_advice.yaml`. The SMTP password is not, so it comes from the
 environment, loaded from a `.env` that sits OUTSIDE the project directory.
 
 That last point is load-bearing, and the reasoning is lifted verbatim from
@@ -28,25 +28,25 @@ from .windows import Thresholds
 log = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parent.parent
-CONFIG_DIR = Path(os.environ.get("WINDOW_CONFIG_DIR") or (ROOT / "config"))
-DATA_DIR = Path(os.environ.get("WINDOW_DATA_DIR") or (ROOT / "data"))
-CONFIG_FILE = CONFIG_DIR / "window_advisor.yaml"
+CONFIG_DIR = Path(os.environ.get("WEATHER_CONFIG_DIR") or (ROOT / "config"))
+DATA_DIR = Path(os.environ.get("WEATHER_DATA_DIR") or (ROOT / "data"))
+CONFIG_FILE = CONFIG_DIR / "weather_advice.yaml"
 
 
 def env_candidates() -> List[Path]:
     """Where the secrets file may live, best first."""
-    explicit = os.getenv("WINDOW_ENV")
+    explicit = os.getenv("WEATHER_ENV")
     out: List[Path] = []
     if explicit:
         out.append(Path(explicit))
     # A `.secrets` directory ALONGSIDE the project: portable, obviously
     # outside the repo, and no absolute path baked into the code.
-    out.append(ROOT.parent / ".secrets" / "window-advisor" / ".env")
+    out.append(ROOT.parent / ".secrets" / "weather-advice" / ".env")
     appdata = os.getenv("APPDATA")
     if appdata:
-        out.append(Path(appdata) / "window-advisor" / ".env")
+        out.append(Path(appdata) / "weather-advice" / ".env")
     home = Path.home()
-    out.append(home / ".config" / "window-advisor" / ".env")
+    out.append(home / ".config" / "weather-advice" / ".env")
     # Honoured LAST so an existing install keeps working, but never preferred.
     out.append(ROOT / ".env")
     return out
@@ -130,12 +130,17 @@ def _opt_float(value: Any) -> Optional[float]:
 @dataclass
 class Location:
     zip_code: str = "75287"
-    # Approximate centroid for 75287 (far north Dallas). `window-advisor
-    # resolve` replaces these with the values NWS confirms and prints the city
-    # it matched, so a wrong coordinate is visible rather than assumed.
-    lat: float = 32.9968
-    lon: float = -96.8400
-    approximate: bool = True
+    # Dallas/Addison Airport (KADS), the nearest reporting station -- supplied
+    # by the operator, so this is a real point rather than a guessed centroid.
+    lat: float = 32.97
+    lon: float = -96.83
+    approximate: bool = False
+    # Pin the observation station. Accuracy is a comparison across time, and a
+    # comparison only means something if the thing compared holds still: left
+    # unpinned the client takes whichever nearby station answers first, so an
+    # outage silently swaps in one miles away and the forecast-error number
+    # starts measuring the gap between two airports.
+    station: str = "KADS"
 
 
 @dataclass
@@ -156,9 +161,10 @@ class Settings:
         loc_raw = raw.get("location") or {}
         location = Location(
             zip_code=str(loc_raw.get("zip", "") or "75287"),
-            lat=float(loc_raw.get("lat", 32.9968)),
-            lon=float(loc_raw.get("lon", -96.8400)),
-            approximate=bool(loc_raw.get("approximate", True)),
+            lat=float(loc_raw.get("lat", 32.97)),
+            lon=float(loc_raw.get("lon", -96.83)),
+            approximate=bool(loc_raw.get("approximate", False)),
+            station=str(loc_raw.get("station", "") or "").strip().upper(),
         )
 
         s = raw.get("schedule") or {}
@@ -188,15 +194,15 @@ class Settings:
             smtp_port=int(g("SMTP_PORT", "587") or 587),
             smtp_user=g("SMTP_USER", ""),
             smtp_password=g("SMTP_PASSWORD", ""),
-            email_to=_csv(g("WINDOW_ALERT_EMAIL_TO", "")),
-            sms_to=_csv(g("WINDOW_ALERT_SMS_TO", "")),
+            email_to=_csv(g("WEATHER_ALERT_EMAIL_TO", "")),
+            sms_to=_csv(g("WEATHER_ALERT_SMS_TO", "")),
             routes=tuple(alerts.get("routes") or ("open", "marginal")),
             sms_routes=tuple(alerts.get("sms_routes") or ("open",)),
             dry_run=dry_run or _truthy(g("DRY_RUN", "")),
         )
 
         return cls(location=location, schedule=schedule, thresholds=thresholds,
-                   db_path=Path(g("WINDOW_DB") or (DATA_DIR / "history.db")),
+                   db_path=Path(g("WEATHER_DB") or (DATA_DIR / "history.db")),
                    grid_cache=DATA_DIR / "grid.json",
                    notifier=notifier)
 
