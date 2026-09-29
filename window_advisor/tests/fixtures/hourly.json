@@ -1,0 +1,24 @@
+{
+  "properties": {
+    "periods": [
+      {
+        "startTime": "2026-10-05T20:00:00-05:00",
+        "temperature": 76,
+        "temperatureUnit": "F",
+        "probabilityOfPrecipitation": {"unitCode": "wmoUnit:percent", "value": 5},
+        "dewpoint": {"unitCode": "wmoUnit:degC", "value": 18.333333333333332},
+        "windSpeed": "5 to 10 mph",
+        "shortForecast": "Mostly Clear"
+      },
+      {
+        "startTime": "2026-10-05T21:00:00-05:00",
+        "temperature": 74,
+        "temperatureUnit": "F",
+        "probabilityOfPrecipitation": {"unitCode": "wmoUnit:percent", "value": null},
+        "dewpoint": {"unitCode": "wmoUnit:degC", "value": 17.0},
+        "windSpeed": "10 mph",
+        "shortForecast": "Clear"
+      }
+    ]
+  }
+}
