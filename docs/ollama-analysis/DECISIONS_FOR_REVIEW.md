@@ -429,3 +429,29 @@ deck still runs Ballista/Triskelion. Options: (a) a tenth route,
 a route — a lock needs one of the nine to end the game, so it changes
 nothing in the verdict. **Recommended: (b)**; a lock deck with no
 closer is exactly the deck the owner's premise wants flagged.
+
+## FP-021 decisions (2026-10-02) — build assist (deck-conditional recommendations)
+
+Context: `BUILD_ASSIST_SCOPE.md`. Each has a recommended default.
+
+### FP21-D1. EDHREC's `POST /api/recs`, or the public per-card JSON pages? — [open]
+
+The Recs page posts `{cards, commanders, name, options}` to an
+undocumented endpoint; the per-card pages (`json.edhrec.com/pages/
+cards/<slug>.json`) carry the same pairwise counts in a captured,
+documented shape. **Recommended: the pages.**
+
+### FP21-D2. CLI first (`commander recs`) or the Build panel first? — [open]
+
+**Recommended: CLI first** — offline-testable on captured pages; the
+panel needs `deck_builder` to accept an include list.
+
+### FP21-D3. Cap on card-page fetches per build session? — [open]
+
+One fetch per picked card, 0.5 s apart, 24 h cache. **Recommended: cap
+at 40 picks per session, count shown.**
+
+### FP21-D4. Does `fit` feed the heuristic advisor? — [open]
+
+**Recommended: not until G1 passes** (the top-10 by fit must differ
+from the top-10 by commander inclusion in at least half the corpus).

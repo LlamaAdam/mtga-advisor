@@ -38,9 +38,14 @@ Ollama) or your accounts. In rough order:
    `WIN_ROUTES_SCOPE.md`. Nothing is built until you answer; "go with
    the defaults" is a complete answer.
 
+8. **FP-021 build assist — four design calls** (FP21-D1…D4 in
+   `DECISIONS_FOR_REVIEW.md`; scoping note `BUILD_ASSIST_SCOPE.md`).
+   Note the inclusion-percentage bug it surfaced is already fixed on
+   PR #86 — the advisor's "N% of decks" had been reading 0 for months.
+
 ## mtgdeals (whenever you revisit deals)
 
-8. PR #1 stays parked per your "leave it for now" (draft, conflicts
+9. PR #1 stays parked per your "leave it for now" (draft, conflicts
    with your newer main). When you do want it: resolve the classify.py
    + score.py conflicts, then activate the Opus review gate with
    `pip install anthropic` + `ANTHROPIC_API_KEY` in the bot's
