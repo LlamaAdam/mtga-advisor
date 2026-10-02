@@ -297,3 +297,161 @@ in this deck) retire the arm immediately — it can never work; transient
 skips (sim crash, zero decisive games) stop counting toward retirement.
 A small behavior change in the sensible direction. — [queued]
 
+
+---
+
+## Round-3 decisions (2026-09-03)
+
+Raised by the round-3 negative-mode review (`NEGATIVE_MODE_ROUND3.md`),
+which covered master `0b944ef` plus the two open pull requests written
+by a different assistant (#85 `feat/fp-019-primer-heuristics`, #84
+`codex/windows-desktop-lock-diagnostics`). These three are product or
+policy calls that the engineering fixes cannot make for you.
+
+### R3-D1. Does the FP-018 auto-Protect reversal in PR #85 stand? — [open]
+
+Master's `commander adopt` auto-protected every card the primer's
+card-link embeds name (`future-plans.md` FP-018 table "Don't touch the
+identity"; CHANGELOG 2026-08-27; `architecture.md` adopt row). PR #85
+removes it: primer links become "references only", the only lock is a
+hand-written `Protect=` line, and the pinning test is inverted so a
+linked card *is* suggested as a cut. The commit's rationale — "treating a
+link as consent to prevent a cut made ordinary primer references
+sticky" — is legitimate engineering, which is exactly why it is a
+product trade rather than a bug fix; `DECISIONS_FOR_REVIEW.md` had no
+FP-018 item, the PR body's "approved primer hardening" has no referent,
+and #85 carries zero GitHub reviews (PR-06, major).
+
+Options:
+
+- **Keep master's behavior** (auto-Protect stays; reject that part of
+  #85) — adopt keeps an identity guarantee for imported decks without
+  the pilot writing metadata; over-protects when authors link cards
+  casually.
+- **Accept the reversal** — adopt never locks anything the pilot did
+  not lock; the "small modifications, not an overhaul" promise then
+  rests on the polish cap alone.
+- **Middle: opt-in `--trust-primer-links`** (cross-examiner's
+  suggestion) — links protect only when the pilot asks, and the report
+  says which cards would have been protected.
+
+Note either way F-02 (DFC names: card-links carry `Front // Back`, the
+`.dck` carries the front face, so every linked DFC is reported "NOT in
+the list") must be fixed before links can be trusted for anything.
+
+### R3-D2. Can the FP-019 primer knowledge base ship without reproducible provenance? — [open]
+
+`data/primer_kb.json` (1,700 lines of structured claims about 40 decks)
+and the heuristics wired into consistency floors, quotas, card-score
+penalties, nonbo lint and the advisor/judge prompts all cite
+`primer_harvest/deckbuilding_heuristics.md` §1–§16 and two harvest
+JSONs that exist in no tree, branch or commit. 35 of the 40 decks have
+no list or prose anywhere in the repo; the five that overlap the CI
+captures deleted on 2026-08-27 were recovered from git history and
+match the KB's presence flags 54/55. The code is not wrong *because* the
+files are absent — the question is whether a data asset whose
+derivation cannot be re-run, and prompt text "distilled from 40
+community primers", is acceptable in the package (PR-05 B3; the
+cross-examiner separated this from the two code defects in the same
+finding, which are routed to #85 regardless).
+
+Options:
+
+- **Require the harvest + heuristics document to be committed** before
+  #85 merges (or regenerate the KB through the capture lane so every
+  record carries `_provenance`).
+- **Ship as an author-machine artifact**, labeled unreproducible in
+  the KB `meta` and with the § citations removed from code.
+- **Do not ship the KB**; keep #85's import/legality/test fixes only.
+
+### R3-D3. Which "Change commander" contract survives, #84's or #85's? — [open]
+
+Both PRs add `/api/deck_commander` with different request/response
+contracts, different validation and duplicated top-level `let`s in
+`app.js` (a SyntaxError for the whole bundle if both land); a
+merge-tree of the two conflicts in 7 files / 18 hunks. Each is
+`mergeable_state: clean` on its own, so GitHub gives no warning
+(PR-08, major). The cross-examiner's recommendation: keep #85's
+superset contract and drop commit `d8207d0` from #84 — but #85's
+version has its own confirmed defects (PR-12: accepts `"2 Krenko"` as a
+name, demotes a `Protect=`-locked card without touching the lock;
+PR-13: rewrites every card line on a change). Whichever you pick, the
+other PR needs a rebase before it can merge second.
+
+## FP-020 decisions (2026-09-26) — win routes
+
+Context: `WINCON_RESEARCH.md` + `WIN_ROUTES_SCOPE.md`. All five are
+design calls the research cannot settle; each has a recommended
+default so a "go with your defaults" answer is enough.
+
+### FP20-D1. Does a resource loop without a recognised outlet count as a route? — [open]
+
+Lumra (31 landfall/land-token loops, no haste or overrun the prototype
+recognises) and Henzie (a Protean Hulk pile) are the live cases.
+Options: (a) `thin` — engine present, kill not recognised, the tile
+says so; (b) `none` — only kills count. **Recommended: (a)**, because
+(b) would tell a pilot with a working Hulk line that they cannot win,
+and the honest state is "the tool cannot see the last step".
+
+### FP20-D2. What is the redundancy bar for `present`? — [open]
+
+The research found every tuned deck carries a backup. Options: (a) one
+global rule, `strength ≥ 2`; (b) per-route bars taken from the
+prototype table (voltron ≥ 8 gear, poison ≥ 5, drain ≥ 3, combo ≥ 1
+kill + 1 other route or second kill). **Recommended: (b)** — the routes
+are not commensurable, and (a) would call a single Craterhoof + 30
+tokens `thin`.
+
+### FP20-D3. May `improve` add a route on its own? — [open]
+
+Phase 3 proposes a route-add when the verdict is `none`. Options:
+(a) propose and let the sim judge, like any swap; (b) flag only —
+print "no closer detected; candidates: …" and never auto-add.
+**Recommended: (b) until G2 passes on your own decks**, then (a).
+Adding a wincon is the largest identity change a deck can take.
+
+### FP20-D4. Ship a trimmed combos file? — [open]
+
+`data/` is gitignored; the sandbox, CI and a fresh install see only the
+20-entry fallback, so Phase 1 tests and any fresh user get no combo
+routes. Options: (a) commit `data/combos_top1500.json` (363 KB,
+Spellbook popularity order, `_provenance` stamped, refreshed through
+the capture lane); (b) keep owner-machine-only via `--refresh`.
+**Recommended: (a)** — the capture already exists and the lane can
+refresh it; Spellbook's terms permit redistribution of the data with
+attribution (verify on your side before merging).
+
+### FP20-D5. Is a stax lock a route? — [open]
+
+Heliod's primer: "You believe silence is a valid win condition." The
+deck still runs Ballista/Triskelion. Options: (a) a tenth route,
+`lock`, from the 103 Spellbook "Lock" features + stax density; (b) not
+a route — a lock needs one of the nine to end the game, so it changes
+nothing in the verdict. **Recommended: (b)**; a lock deck with no
+closer is exactly the deck the owner's premise wants flagged.
+
+## FP-021 decisions (2026-10-02) — build assist (deck-conditional recommendations)
+
+Context: `BUILD_ASSIST_SCOPE.md`. Each has a recommended default.
+
+### FP21-D1. EDHREC's `POST /api/recs`, or the public per-card JSON pages? — [open]
+
+The Recs page posts `{cards, commanders, name, options}` to an
+undocumented endpoint; the per-card pages (`json.edhrec.com/pages/
+cards/<slug>.json`) carry the same pairwise counts in a captured,
+documented shape. **Recommended: the pages.**
+
+### FP21-D2. CLI first (`commander recs`) or the Build panel first? — [open]
+
+**Recommended: CLI first** — offline-testable on captured pages; the
+panel needs `deck_builder` to accept an include list.
+
+### FP21-D3. Cap on card-page fetches per build session? — [open]
+
+One fetch per picked card, 0.5 s apart, 24 h cache. **Recommended: cap
+at 40 picks per session, count shown.**
+
+### FP21-D4. Does `fit` feed the heuristic advisor? — [open]
+
+**Recommended: not until G1 passes** (the top-10 by fit must differ
+from the top-10 by commander inclusion in at least half the corpus).

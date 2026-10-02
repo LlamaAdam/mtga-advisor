@@ -32,9 +32,20 @@ Ollama) or your accounts. In rough order:
    the truth: flag off is green; flag on needs Ollama running AND the
    model pulled (`ollama pull llama3.2:3b`).
 
+7. **FP-020 win routes — five design calls** (`docs/ollama-analysis/
+   DECISIONS_FOR_REVIEW.md`, FP20-D1…D5; each has a recommended
+   default). Research: `WINCON_RESEARCH.md`; design:
+   `WIN_ROUTES_SCOPE.md`. Nothing is built until you answer; "go with
+   the defaults" is a complete answer.
+
+8. **FP-021 build assist — four design calls** (FP21-D1…D4 in
+   `DECISIONS_FOR_REVIEW.md`; scoping note `BUILD_ASSIST_SCOPE.md`).
+   Note the inclusion-percentage bug it surfaced is already fixed on
+   PR #86 — the advisor's "N% of decks" had been reading 0 for months.
+
 ## mtgdeals (whenever you revisit deals)
 
-7. PR #1 stays parked per your "leave it for now" (draft, conflicts
+9. PR #1 stays parked per your "leave it for now" (draft, conflicts
    with your newer main). When you do want it: resolve the classify.py
    + score.py conflicts, then activate the Opus review gate with
    `pip install anthropic` + `ANTHROPIC_API_KEY` in the bot's

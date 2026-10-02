@@ -1,5 +1,12 @@
 # FP-016 (proposed) — LLM deck judge
 
+> Numbering note (2026-10-02): this note took the label FP-016 at
+> proposal time; commander-builder's `docs/future-plans.md` uses FP-016
+> for replay-lite (shipped PR #59). The deck judge shipped under its own
+> name (`deck_judge.py`, `judge_agreement.py`) and is referred to by
+> name, not number, everywhere else. Left as-is to keep the decision
+> history (D1–D6) citable.
+
 Scoping note, 2026-08-17. Written for owner review **before** any code
 lands. Nothing here is built yet.
 

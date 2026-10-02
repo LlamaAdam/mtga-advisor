@@ -1,0 +1,4988 @@
+{
+ "_provenance": {
+  "method": "WINCON_RESEARCH.md §2; prototype classifier scratch/win_routes_proto.py (not repo code)",
+  "date": "2026-09-26",
+  "decks": 58
+ },
+ "decks": {
+  "arch:1017047": {
+   "source": "arch",
+   "id": "1017047",
+   "name": "Upping the Average - Meren of Clan Nel Toth",
+   "commanders": [
+    "Meren of Clan Nel Toth"
+   ],
+   "card_count": 96,
+   "primer_chars": 288,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combo",
+    "drain"
+   ],
+   "signals": {
+    "combo": 5,
+    "voltron_gear": 5,
+    "drain": 5,
+    "fatties": 8,
+    "tokens": 3,
+    "anthem": 1,
+    "mill": 2,
+    "burn": 1,
+    "alt_win": 0,
+    "poison": 0,
+    "overrun": 0,
+    "extra_combat": 0
+   },
+   "pieces": {
+    "combo": [
+     "Mikaeus, the Unhallowed + Ashnod's Altar [via death,ltb,mana]",
+     "Mikaeus, the Unhallowed + Carrion Feeder [via counters,death,ltb]",
+     "Mikaeus, the Unhallowed + Viscera Seer [via death,ltb]",
+     "Mikaeus, the Unhallowed + Altar of Dementia",
+     "Mikaeus, the Unhallowed + Woe Strider [via death,ltb]"
+    ],
+    "voltron_gear": [
+     "Journey to Eternity // Atzal, Cave of Eternity",
+     "Pattern of Rebirth",
+     "Skullclamp",
+     "Lightning Greaves",
+     "Animate Dead"
+    ],
+    "drain": [
+     "Kokusho, the Evening Star",
+     "Deathrite Shaman",
+     "Gray Merchant of Asphodel",
+     "Zulaport Cutthroat",
+     "Jarad, Golgari Lich Lord"
+    ],
+    "fatties": [
+     "Kokusho, the Evening Star",
+     "Razaketh, the Foulblooded",
+     "Mikaeus, the Unhallowed",
+     "Protean Hulk",
+     "Massacre Wurm",
+     "Sheoldred, Whispering One",
+     "Syr Konrad, the Grim",
+     "Butcher of Malakir"
+    ],
+    "tokens": [
+     "Mitotic Slime",
+     "Liliana, Dreadhorde General",
+     "Woe Strider"
+    ],
+    "anthem": [
+     "Mikaeus, the Unhallowed"
+    ],
+    "mill": [
+     "Altar of Dementia",
+     "Syr Konrad, the Grim"
+    ],
+    "burn": [
+     "Syr Konrad, the Grim"
+    ],
+    "alt_win": [],
+    "poison": [],
+    "overrun": [],
+    "extra_combat": []
+   },
+   "outlets": {
+    "ltb": [
+     "Syr Konrad, the Grim"
+    ],
+    "death": [
+     "Midnight Reaper",
+     "Syr Konrad, the Grim"
+    ],
+    "tokens": [
+     "Mikaeus, the Unhallowed",
+     "Lightning Greaves"
+    ],
+    "mana": [
+     "Gray Merchant of Asphodel"
+    ],
+    "counters": [
+     "Razaketh, the Foulblooded",
+     "Mikaeus, the Unhallowed",
+     "Shriekmaw",
+     "Sheoldred, Whispering One"
+    ]
+   },
+   "combo_kill": 5,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 17,
+   "repo_finisher_count_today": 3
+  },
+  "arch:1173110": {
+   "source": "arch",
+   "id": "1173110",
+   "name": "Upping the Average - Lathril, Blade of the Elves",
+   "commanders": [
+    "Lathril, Blade of the Elves"
+   ],
+   "card_count": 92,
+   "primer_chars": 222,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "drain",
+    "combat_wide"
+   ],
+   "signals": {
+    "drain": 6,
+    "tokens": 11,
+    "overrun": 4,
+    "anthem": 5,
+    "voltron_gear": 4,
+    "alt_win": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "drain": [
+     "Lathril, Blade of the Elves",
+     "Throne of the God-Pharaoh",
+     "Elderfang Venom",
+     "Shaman of the Pack",
+     "Poison-Tip Archer",
+     "Skemfar Shadowsage"
+    ],
+    "tokens": [
+     "Lathril, Blade of the Elves",
+     "Freyalise, Llanowar's Fury",
+     "Elven Ambush",
+     "Elvish Warmaster",
+     "Skemfar Elderhall",
+     "Imperious Perfect",
+     "Lys Alana Huntmaster",
+     "Elvish Promenade"
+    ],
+    "overrun": [
+     "Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun",
+     "Ezuri, Renegade Leader",
+     "Shamanic Revelation",
+     "Overwhelming Stampede"
+    ],
+    "anthem": [
+     "Ezuri, Renegade Leader",
+     "Joraga Warcaller",
+     "Return of the Wildspeaker",
+     "Elvish Archdruid",
+     "Dwynen, Gilt-Leaf Daen"
+    ],
+    "voltron_gear": [
+     "Lightning Greaves",
+     "Skullclamp",
+     "Crown of Skemfar",
+     "Swiftfoot Boots"
+    ],
+    "alt_win": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "fatties": []
+   },
+   "outlets": {
+    "ltb": [
+     "Poison-Tip Archer"
+    ],
+    "death": [
+     "Poison-Tip Archer"
+    ],
+    "tokens": [
+     "Ezuri, Renegade Leader",
+     "Joraga Warcaller",
+     "Finale of Devastation",
+     "Lightning Greaves"
+    ],
+    "mana": [
+     "Skemfar Shadowsage"
+    ],
+    "counters": [
+     "Lathril, Blade of the Elves",
+     "Ezuri, Renegade Leader",
+     "Elvish Champion",
+     "Abomination of Llanowar"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 6,
+   "repo_finisher_count_today": 5
+  },
+  "arch:2073351": {
+   "source": "arch",
+   "id": "2073351",
+   "name": "Upping the Average - Edgar Markov Redux",
+   "commanders": [
+    "Edgar Markov"
+   ],
+   "card_count": 100,
+   "primer_chars": 210,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combo",
+    "drain",
+    "combat_wide"
+   ],
+   "signals": {
+    "combo": 1,
+    "tokens": 6,
+    "drain": 6,
+    "voltron_gear": 2,
+    "anthem": 3,
+    "burn": 1,
+    "fatties": 1,
+    "alt_win": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0
+   },
+   "pieces": {
+    "combo": [
+     "Vito, Thorn of the Dusk Rose + Blood Tribute"
+    ],
+    "tokens": [
+     "Edgar Markov",
+     "Legion's Landing // Adanto, the First Fort",
+     "Mavren Fein, Dusk Apostle",
+     "Bloodline Keeper // Lord of Lineage",
+     "Elenda, the Dusk Rose",
+     "Edgar, Charmed Groom // Edgar Markov's Coffin"
+    ],
+    "drain": [
+     "Twilight Prophet",
+     "Cruel Celebrant",
+     "Vito, Thorn of the Dusk Rose",
+     "Sanctum Seeker",
+     "Malakir Bloodwitch",
+     "Sanguine Bond"
+    ],
+    "voltron_gear": [
+     "Blade of the Bloodchief",
+     "Skullclamp"
+    ],
+    "anthem": [
+     "Bloodline Keeper // Lord of Lineage",
+     "Captivating Vampire",
+     "Stromkirk Captain"
+    ],
+    "burn": [
+     "Crackling Doom"
+    ],
+    "fatties": [
+     "Butcher of Malakir"
+    ],
+    "alt_win": [],
+    "poison": [],
+    "mill": [],
+    "overrun": []
+   },
+   "outlets": {
+    "tokens": [
+     "Edgar Markov",
+     "Yahenni, Undying Partisan",
+     "Bloodline Keeper // Lord of Lineage",
+     "Captivating Vampire"
+    ],
+    "mana": [
+     "Twilight Prophet"
+    ],
+    "counters": [
+     "Boros Charm",
+     "Vampire Socialite",
+     "Shadow Alley Denizen",
+     "Nullpriest of Oblivion"
+    ]
+   },
+   "combo_kill": 1,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 14,
+   "repo_finisher_count_today": 2
+  },
+  "arch:2223923": {
+   "source": "arch",
+   "id": "2223923",
+   "name": "Upping the Average - Muldrotha, the Gravetide Redux",
+   "commanders": [
+    "Muldrotha, the Gravetide"
+   ],
+   "card_count": 103,
+   "primer_chars": 270,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "mill"
+   ],
+   "signals": {
+    "fatties": 4,
+    "voltron_gear": 4,
+    "burn": 1,
+    "mill": 4,
+    "tokens": 2,
+    "alt_win": 0,
+    "drain": 0,
+    "poison": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "fatties": [
+     "Muldrotha, the Gravetide",
+     "Syr Konrad, the Grim",
+     "Lord of the Forsaken",
+     "The Gitrog Monster"
+    ],
+    "voltron_gear": [
+     "Swiftfoot Boots",
+     "Lightning Greaves",
+     "Animate Dead",
+     "Kaya's Ghostform"
+    ],
+    "burn": [
+     "Syr Konrad, the Grim"
+    ],
+    "mill": [
+     "Syr Konrad, the Grim",
+     "Lord of the Forsaken",
+     "Altar of Dementia",
+     "Ashiok, Dream Render"
+    ],
+    "tokens": [
+     "Wrenn and Seven",
+     "Sidisi, Brood Tyrant"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "poison": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "ltb": [
+     "Syr Konrad, the Grim"
+    ],
+    "death": [
+     "Syr Konrad, the Grim"
+    ],
+    "tokens": [
+     "Swiftfoot Boots",
+     "Lightning Greaves"
+    ],
+    "counters": [
+     "Shriekmaw",
+     "Lord of the Forsaken"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 2,
+   "combo_one_away": 11,
+   "repo_finisher_count_today": 0
+  },
+  "arch:2425068": {
+   "source": "arch",
+   "id": "2425068",
+   "name": "Upping the Average - Isshin, Two Heavens as One (Budget)",
+   "commanders": [
+    "Isshin, Two Heavens as One"
+   ],
+   "card_count": 111,
+   "primer_chars": 329,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combat_big"
+   ],
+   "signals": {
+    "voltron_gear": 4,
+    "extra_combat": 2,
+    "fatties": 9,
+    "tokens": 12,
+    "anthem": 1,
+    "burn": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0
+   },
+   "pieces": {
+    "voltron_gear": [
+     "Shiny Impetus",
+     "Swiftfoot Boots",
+     "Lightning Greaves",
+     "Sword of the Animist"
+    ],
+    "extra_combat": [
+     "Raiyuu, Storm's Edge",
+     "Aurelia, the Warleader"
+    ],
+    "fatties": [
+     "Inferno Titan",
+     "Calculating Lich",
+     "Kazuul, Tyrant of the Cliffs",
+     "Iroas, God of Victory",
+     "Sun Titan",
+     "Drakuseth, Maw of Flames",
+     "Grave Titan",
+     "Karazikar, the Eye Tyrant"
+    ],
+    "tokens": [
+     "Silverwing Squadron",
+     "General's Enforcer",
+     "Goblin Traprunner",
+     "Kazuul, Tyrant of the Cliffs",
+     "Hanweir Garrison",
+     "Mardu Ascendancy",
+     "Hero of Bladehold",
+     "Leonin Warleader"
+    ],
+    "anthem": [
+     "Mardu Ascendancy"
+    ],
+    "burn": [
+     "Tectonic Giant"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "poison": [],
+    "mill": [],
+    "overrun": []
+   },
+   "outlets": {
+    "tokens": [
+     "Fireflux Squad",
+     "Captain Lannery Storm",
+     "Hanweir Battlements",
+     "Mardu Ascendancy"
+    ],
+    "storm": [
+     "Captain Lannery Storm"
+    ],
+    "counters": [
+     "Bruse Tarl, Boorish Herder",
+     "Boros Charm",
+     "Duelist's Heritage"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 8,
+   "repo_finisher_count_today": 0
+  },
+  "arch:3949764": {
+   "source": "arch",
+   "id": "3949764",
+   "name": "Upping the Average - Atraxa Infect",
+   "commanders": [
+    "Atraxa, Praetors' Voice"
+   ],
+   "card_count": 114,
+   "primer_chars": 400,
+   "pilot_stated_routes": [
+    "poison"
+   ],
+   "detected_routes": [
+    "combo",
+    "poison"
+   ],
+   "signals": {
+    "combo": 1,
+    "poison": 44,
+    "tokens": 3,
+    "overrun": 1,
+    "anthem": 2,
+    "voltron_gear": 5,
+    "fatties": 4,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "mill": 0
+   },
+   "pieces": {
+    "combo": [
+     "Vraska, Betrayal's Sting + Vorinclex, Monstrous Raider"
+    ],
+    "poison": [
+     "Phyrexian Swarmlord",
+     "Plague Stinger",
+     "Plague Myr",
+     "Reaper of Sheoldred",
+     "Triumph of the Hordes",
+     "Grafted Exoskeleton",
+     "Corrupted Conscience",
+     "Inkmoth Nexus"
+    ],
+    "tokens": [
+     "Phyrexian Swarmlord",
+     "White Sun's Twilight",
+     "Vishgraz, the Doomhive"
+    ],
+    "overrun": [
+     "Triumph of the Hordes"
+    ],
+    "anthem": [
+     "Triumph of the Hordes",
+     "Elesh Norn, Grand Cenobite"
+    ],
+    "voltron_gear": [
+     "Grafted Exoskeleton",
+     "Lightning Greaves",
+     "Sword of Truth and Justice",
+     "Corrupted Conscience",
+     "Phyresis"
+    ],
+    "fatties": [
+     "Vorinclex, Monstrous Raider",
+     "Tyrranax Rex",
+     "Glissa's Retriever",
+     "Contaminant Grafter"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "mill": []
+   },
+   "outlets": {
+    "tokens": [
+     "Triumph of the Hordes",
+     "Lightning Greaves",
+     "Elesh Norn, Grand Cenobite",
+     "Skithiryx, the Blight Dragon"
+    ],
+    "counters": [
+     "Triumph of the Hordes",
+     "Rogue's Passage",
+     "Blighted Agent",
+     "Vorinclex, Monstrous Raider"
+    ]
+   },
+   "combo_kill": 1,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 5,
+   "repo_finisher_count_today": 43
+  },
+  "arch:5984805": {
+   "source": "arch",
+   "id": "5984805",
+   "name": "Upping the Average - Pantlaza, Sun-Favored",
+   "commanders": [
+    "Pantlaza, Sun-Favored"
+   ],
+   "card_count": 110,
+   "primer_chars": 347,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combo",
+    "combat_big"
+   ],
+   "signals": {
+    "combo": 2,
+    "fatties": 19,
+    "poison": 1,
+    "tokens": 4,
+    "anthem": 2,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "mill": 0,
+    "overrun": 0,
+    "voltron_gear": 0
+   },
+   "pieces": {
+    "combo": [
+     "Apex Altisaur + Wrathful Raptors + Akroma's Will",
+     "Apex Altisaur + Wrathful Raptors + Heroic Intervention"
+    ],
+    "fatties": [
+     "Apex Altisaur",
+     "Earthshaker Dreadmaw",
+     "Etali, Primal Storm",
+     "Etali, Primal Conqueror // Etali, Primal Sickness",
+     "Scion of Calamity",
+     "Ghalta, Stampede Tyrant",
+     "Gishath, Sun's Avatar",
+     "Quartzwood Crasher"
+    ],
+    "poison": [
+     "Etali, Primal Conqueror // Etali, Primal Sickness"
+    ],
+    "tokens": [
+     "The Skullspore Nexus",
+     "Regisaur Alpha",
+     "Welcome to . . . // Jurassic Park",
+     "Ghalta and Mavren"
+    ],
+    "anthem": [
+     "Return of the Wildspeaker",
+     "Legion's Initiative"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "mill": [],
+    "overrun": [],
+    "voltron_gear": []
+   },
+   "outlets": {
+    "tokens": [
+     "Rhythm of the Wild",
+     "Gishath, Sun's Avatar",
+     "Regisaur Alpha",
+     "Return of the Wildspeaker"
+    ],
+    "counters": [
+     "Chandra's Ignition",
+     "Earthshaker Dreadmaw",
+     "Etali, Primal Conqueror // Etali, Primal Sickness",
+     "Akroma's Will"
+    ]
+   },
+   "combo_kill": 2,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 12,
+   "repo_finisher_count_today": 1
+  },
+  "arch:60036": {
+   "source": "arch",
+   "id": "60036",
+   "name": "Gobs of Goblins",
+   "commanders": [
+    "Krenko, Mob Boss"
+   ],
+   "card_count": 87,
+   "primer_chars": 650,
+   "pilot_stated_routes": [
+    "combat_wide",
+    "burn"
+   ],
+   "detected_routes": [
+    "combo",
+    "combat_wide"
+   ],
+   "signals": {
+    "combo": 16,
+    "tokens": 8,
+    "voltron_gear": 6,
+    "anthem": 4,
+    "burn": 2,
+    "fatties": 1,
+    "overrun": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "poison": 0,
+    "mill": 0
+   },
+   "pieces": {
+    "combo": [
+     "Krenko, Mob Boss + Skirk Prospector + Goblin Warchief",
+     "Krenko, Mob Boss + Skirk Prospector + Goblin Chieftain",
+     "Krenko, Mob Boss + Skirk Prospector + Thousand-Year Elixir",
+     "Krenko, Mob Boss + Thornbite Staff + Skirk Prospector",
+     "Krenko, Mob Boss + Thornbite Staff + Goblin Bombardment",
+     "Skirk Prospector + Krenko, Mob Boss + Staff of Domination [via etb,ltb,tokens]",
+     "Krenko, Mob Boss + Thornbite Staff + Goblin Trashmaster [via etb,ltb,tokens]",
+     "Skirk Prospector + Krenko, Mob Boss + Umbral Mantle"
+    ],
+    "tokens": [
+     "Krenko, Mob Boss",
+     "Mogg War Marshal",
+     "Siege-Gang Commander",
+     "Goblin Instigator",
+     "Beetleback Chief",
+     "Legion Warboss",
+     "Krenko, Tin Street Kingpin",
+     "Pashalik Mons"
+    ],
+    "voltron_gear": [
+     "Skullclamp",
+     "Basilisk Collar",
+     "Umbral Mantle",
+     "Thornbite Staff",
+     "Lightning Greaves",
+     "Swiftfoot Boots"
+    ],
+    "anthem": [
+     "Eldrazi Monument",
+     "Purphoros, God of the Forge",
+     "Goblin Chieftain",
+     "Castle Embereth"
+    ],
+    "burn": [
+     "Impact Tremors",
+     "Purphoros, God of the Forge"
+    ],
+    "fatties": [
+     "Purphoros, God of the Forge"
+    ],
+    "overrun": [
+     "Slate of Ancestry"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "poison": [],
+    "mill": []
+   },
+   "outlets": {
+    "etb": [
+     "Impact Tremors",
+     "Purphoros, God of the Forge"
+    ],
+    "ltb": [
+     "Outpost Siege"
+    ],
+    "tokens": [
+     "Kiki-Jiki, Mirror Breaker",
+     "Eldrazi Monument",
+     "Thousand-Year Elixir",
+     "Hanweir Battlements"
+    ],
+    "counters": [
+     "Warren Instigator"
+    ]
+   },
+   "combo_kill": 16,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 1,
+   "combo_one_away": 54,
+   "repo_finisher_count_today": 0
+  },
+  "arch:639285": {
+   "source": "arch",
+   "id": "639285",
+   "name": "Upping the Average - Yuriko, the Tiger's Shadow",
+   "commanders": [
+    "Yuriko, the Tiger's Shadow"
+   ],
+   "card_count": 102,
+   "primer_chars": 315,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "alt_win"
+   ],
+   "signals": {
+    "drain": 1,
+    "fatties": 3,
+    "mill": 1,
+    "tokens": 1,
+    "voltron_gear": 3,
+    "alt_win": 1,
+    "burn": 0,
+    "poison": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "drain": [
+     "Yuriko, the Tiger's Shadow"
+    ],
+    "fatties": [
+     "Ink-Eyes, Servant of Oni",
+     "Silent-Blade Oni",
+     "Fallen Shinobi"
+    ],
+    "mill": [
+     "Ashiok, Dream Render"
+    ],
+    "tokens": [
+     "Moonblade Shinobi"
+    ],
+    "voltron_gear": [
+     "Smoke Shroud",
+     "Lightning Greaves",
+     "Whispersilk Cloak"
+    ],
+    "alt_win": [
+     "Thassa's Oracle"
+    ],
+    "burn": [],
+    "poison": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "tokens": [
+     "Lightning Greaves",
+     "Gingerbrute"
+    ],
+    "draw": [
+     "Thassa's Oracle"
+    ],
+    "counters": [
+     "Tetsuko Umezawa, Fugitive",
+     "Higure, the Still Wind",
+     "Tormented Soul",
+     "Dimir Infiltrator"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 9,
+   "repo_finisher_count_today": 1
+  },
+  "arch:696285": {
+   "source": "arch",
+   "id": "696285",
+   "name": "Upping the Average - Kaalia of the Vast",
+   "commanders": [
+    "Kaalia of the Vast"
+   ],
+   "card_count": 110,
+   "primer_chars": 403,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combo",
+    "alt_win",
+    "combat_big"
+   ],
+   "signals": {
+    "combo": 1,
+    "fatties": 29,
+    "burn": 2,
+    "alt_win": 1,
+    "extra_combat": 1,
+    "tokens": 2,
+    "voltron_gear": 4,
+    "stax": 2,
+    "drain": 1,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "combo": [
+     "Kaalia of the Vast + Master of Cruelties"
+    ],
+    "fatties": [
+     "Demonlord Belzenlok",
+     "Gisela, Blade of Goldnight",
+     "Yosei, the Morning Star",
+     "Archfiend of Depravity",
+     "Hellkite Tyrant",
+     "Bruna, the Fading Light",
+     "Twilight Shepherd",
+     "Bloodgift Demon"
+    ],
+    "burn": [
+     "Dragon Tempest",
+     "Crackling Doom"
+    ],
+    "alt_win": [
+     "Hellkite Tyrant"
+    ],
+    "extra_combat": [
+     "Aurelia, the Warleader"
+    ],
+    "tokens": [
+     "Utvara Hellkite",
+     "Serra the Benevolent"
+    ],
+    "voltron_gear": [
+     "Swiftfoot Boots",
+     "Lightning Greaves",
+     "Whispersilk Cloak",
+     "Animate Dead"
+    ],
+    "stax": [
+     "Angelic Arbiter",
+     "Archfiend of Despair"
+    ],
+    "drain": [
+     "Archfiend of Despair"
+    ],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "tokens": [
+     "Dragon Tempest",
+     "Aurelia, the Warleader",
+     "Fervor",
+     "Akroma, Angel of Wrath"
+    ],
+    "draw": [
+     "Hellkite Tyrant"
+    ],
+    "mana": [
+     "Dragon Tempest"
+    ],
+    "counters": [
+     "Demonlord Belzenlok",
+     "Hellkite Tyrant",
+     "Ob Nixilis, Unshackled",
+     "Doom Whisperer"
+    ]
+   },
+   "combo_kill": 1,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 13,
+   "repo_finisher_count_today": 1
+  },
+  "arch:854121": {
+   "source": "arch",
+   "id": "854121",
+   "name": "Upping the Average - The Ur-Dragon",
+   "commanders": [
+    "The Ur-Dragon"
+   ],
+   "card_count": 109,
+   "primer_chars": 270,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "burn",
+    "combat_wide",
+    "combat_big"
+   ],
+   "signals": {
+    "fatties": 21,
+    "anthem": 3,
+    "burn": 3,
+    "tokens": 6,
+    "extra_combat": 1,
+    "stax": 1,
+    "voltron_gear": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0
+   },
+   "pieces": {
+    "fatties": [
+     "The Ur-Dragon",
+     "Wasitora, Nekoru Queen",
+     "Hellkite Charger",
+     "Atarka, World Render",
+     "Dromoka, the Eternal",
+     "Intet, the Dreamer",
+     "Ojutai, Soul of Winter",
+     "Teneb, the Harvester"
+    ],
+    "anthem": [
+     "Crucible of Fire",
+     "Kolaghan, the Storm's Fury",
+     "Return of the Wildspeaker"
+    ],
+    "burn": [
+     "Dragon Tempest",
+     "Scourge of Valkas",
+     "Earthquake"
+    ],
+    "tokens": [
+     "Wasitora, Nekoru Queen",
+     "Broodmate Dragon",
+     "Sarkhan Unbroken",
+     "Utvara Hellkite",
+     "Lathliss, Dragon Queen",
+     "Sarkhan, Fireblood"
+    ],
+    "extra_combat": [
+     "Hellkite Charger"
+    ],
+    "stax": [
+     "Dragonlord Dromoka"
+    ],
+    "voltron_gear": [
+     "Lightning Greaves"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "poison": [],
+    "mill": [],
+    "overrun": []
+   },
+   "outlets": {
+    "tokens": [
+     "Crucible of Fire",
+     "Dragon Tempest",
+     "Hellkite Charger",
+     "Kolaghan, the Storm's Fury"
+    ],
+    "mana": [
+     "Dragon Tempest",
+     "Scourge of Valkas",
+     "Earthquake"
+    ],
+    "counters": [
+     "Wasitora, Nekoru Queen",
+     "Atarka, World Render",
+     "Boros Charm",
+     "Sylvia Brightspear"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 19,
+   "repo_finisher_count_today": 0
+  },
+  "arch:86888": {
+   "source": "arch",
+   "id": "86888",
+   "name": "Sisay, Onion Queen",
+   "commanders": [
+    "Sisay, Weatherlight Captain"
+   ],
+   "card_count": 100,
+   "primer_chars": 4391,
+   "pilot_stated_routes": [
+    "combo",
+    "alt_win"
+   ],
+   "detected_routes": [
+    "combo",
+    "alt_win"
+   ],
+   "signals": {
+    "combo": 4,
+    "mill": 3,
+    "stax": 1,
+    "overrun": 1,
+    "burn": 1,
+    "drain": 1,
+    "alt_win": 2,
+    "fatties": 1,
+    "poison": 0,
+    "tokens": 0,
+    "anthem": 0,
+    "voltron_gear": 0
+   },
+   "pieces": {
+    "combo": [
+     "Demonic Consultation + Laboratory Maniac",
+     "Tainted Pact + Laboratory Maniac",
+     "Demonic Consultation + Jace, Wielder of Mysteries",
+     "Tainted Pact + Jace, Wielder of Mysteries"
+    ],
+    "mill": [
+     "Jace, Vryn's Prodigy // Jace, Telepath Unbound",
+     "Jace, Wielder of Mysteries",
+     "Ashiok, Dream Render"
+    ],
+    "stax": [
+     "Silence"
+    ],
+    "overrun": [
+     "Gaea's Cradle"
+    ],
+    "burn": [
+     "Fire Covenant"
+    ],
+    "drain": [
+     "Deathrite Shaman"
+    ],
+    "alt_win": [
+     "Laboratory Maniac",
+     "Jace, Wielder of Mysteries"
+    ],
+    "fatties": [
+     "Protean Hulk"
+    ],
+    "poison": [],
+    "tokens": [],
+    "anthem": [],
+    "voltron_gear": []
+   },
+   "outlets": {
+    "tokens": [
+     "Delay",
+     "Torch Courier"
+    ],
+    "storm": [
+     "Flusterstorm"
+    ],
+    "draw": [
+     "Laboratory Maniac",
+     "Jace, Wielder of Mysteries"
+    ],
+    "mana": [
+     "Fire Covenant"
+    ]
+   },
+   "combo_kill": 4,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 14,
+   "repo_finisher_count_today": 3
+  },
+  "arch:1221862": {
+   "source": "arch",
+   "id": "1221862",
+   "name": "Upping the Average - Brudiclad, Telchor Engineer",
+   "commanders": [
+    "Brudiclad, Telchor Engineer"
+   ],
+   "card_count": 95,
+   "primer_chars": 406,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combo",
+    "alt_win"
+   ],
+   "signals": {
+    "combo": 2,
+    "tokens": 27,
+    "extra_combat": 1,
+    "voltron_gear": 2,
+    "alt_win": 2,
+    "fatties": 4,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "combo": [
+     "Combat Celebrant + Helm of the Host",
+     "Brass's Bounty + Mechanized Production"
+    ],
+    "tokens": [
+     "Brudiclad, Telchor Engineer",
+     "Reef Worm",
+     "Tilonalli's Summoner",
+     "Hanweir Garrison",
+     "Tempt with Vengeance",
+     "Sai, Master Thopterist",
+     "Thopter Spy Network",
+     "Retrofitter Foundry"
+    ],
+    "extra_combat": [
+     "Combat Celebrant"
+    ],
+    "voltron_gear": [
+     "Helm of the Host",
+     "Skullclamp"
+    ],
+    "alt_win": [
+     "Mechanized Production",
+     "Mirrodin Besieged"
+    ],
+    "fatties": [
+     "Thopter Assembly",
+     "Wurmcoil Engine",
+     "Desolation Twin",
+     "Ancient Stone Idol"
+    ],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "tokens": [
+     "Brudiclad, Telchor Engineer",
+     "Helm of the Host",
+     "Flameshadow Conjuring",
+     "Tempt with Vengeance"
+    ],
+    "storm": [
+     "Storm the Vault // Vault of Catlacan"
+    ],
+    "draw": [
+     "Mechanized Production",
+     "Mirrodin Besieged"
+    ],
+    "mana": [
+     "Myr Battlesphere"
+    ],
+    "counters": [
+     "Whirler Rogue",
+     "Ancient Stone Idol"
+    ]
+   },
+   "combo_kill": 2,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 25,
+   "repo_finisher_count_today": 2
+  },
+  "arch:1234196": {
+   "source": "arch",
+   "id": "1234196",
+   "name": "Upping the Average - Arcades, the Strategist",
+   "commanders": [
+    "Arcades, the Strategist"
+   ],
+   "card_count": 98,
+   "primer_chars": 263,
+   "pilot_stated_routes": null,
+   "detected_routes": [],
+   "signals": {
+    "anthem": 4,
+    "tokens": 2,
+    "overrun": 1,
+    "voltron_gear": 2,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "anthem": [
+     "Bar the Door",
+     "Tower Defense",
+     "Assault Formation",
+     "Angelic Shield"
+    ],
+    "tokens": [
+     "Teyo, the Shieldmage",
+     "The Birth of Meletis"
+    ],
+    "overrun": [
+     "Overgrown Battlement"
+    ],
+    "voltron_gear": [
+     "Lightning Greaves",
+     "Swiftfoot Boots"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "fatties": []
+   },
+   "outlets": {
+    "tokens": [
+     "Bar the Door",
+     "Tower Defense",
+     "Crashing Drawbridge",
+     "Assault Formation"
+    ],
+    "counters": [
+     "Tetsuko Umezawa, Fugitive",
+     "Towering Titan",
+     "Akroma's Will"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 1,
+   "combo_value": 0,
+   "combo_one_away": 0,
+   "repo_finisher_count_today": 0
+  },
+  "arch:13765265": {
+   "source": "arch",
+   "id": "13765265",
+   "name": "Vivi Ornitier, semi-budget EDH",
+   "commanders": [
+    "Vivi Ornitier"
+   ],
+   "card_count": 93,
+   "primer_chars": 4158,
+   "pilot_stated_routes": [
+    "combo",
+    "burn"
+   ],
+   "detected_routes": [
+    "combo"
+   ],
+   "signals": {
+    "combo": 11,
+    "burn": 2,
+    "fatties": 2,
+    "anthem": 1,
+    "tokens": 3,
+    "voltron_gear": 4,
+    "alt_win": 0,
+    "drain": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0
+   },
+   "pieces": {
+    "combo": [
+     "Curiosity + Niv-Mizzet, Parun",
+     "Niv-Mizzet, Parun + Niv-Mizzet, Visionary",
+     "Niv-Mizzet, Parun + Ophidian Eye",
+     "Tandem Lookout + Niv-Mizzet, Parun",
+     "Reiterate + Mana Geyser [via storm]",
+     "Storm-Kiln Artist + Seething Song + Reiterate [via storm]",
+     "Storm-Kiln Artist + Haze of Rage [via storm]",
+     "Reiterate + Seething Song + Ruby Medallion [via storm]"
+    ],
+    "burn": [
+     "Vivi Ornitier",
+     "Lindblum, Industrial Regency // Mage Siege"
+    ],
+    "fatties": [
+     "Niv-Mizzet, Parun",
+     "Niv-Mizzet, Visionary"
+    ],
+    "anthem": [
+     "Haze of Rage"
+    ],
+    "tokens": [
+     "Into the Flood Maw",
+     "Lindblum, Industrial Regency // Mage Siege",
+     "Rite of the Dragoncaller"
+    ],
+    "voltron_gear": [
+     "Curiosity",
+     "Swiftfoot Boots",
+     "Sigil of Sleep",
+     "Ophidian Eye"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "poison": [],
+    "mill": [],
+    "overrun": []
+   },
+   "outlets": {
+    "tokens": [
+     "Haze of Rage",
+     "Haste Magic",
+     "Stormcatch Mentor",
+     "Stormsplitter"
+    ],
+    "storm": [
+     "Haze of Rage",
+     "Mind's Desire"
+    ],
+    "draw": [
+     "Niv-Mizzet, Parun"
+    ],
+    "counters": [
+     "Ojer Axonil, Deepest Might // Temple of Power",
+     "Monstrous Rage"
+    ]
+   },
+   "combo_kill": 11,
+   "combo_resource_no_outlet": 1,
+   "combo_value": 0,
+   "combo_one_away": 15,
+   "repo_finisher_count_today": 0
+  },
+  "arch:14397447": {
+   "source": "arch",
+   "id": "14397447",
+   "name": "World Shaper - Edge of Eternities Commander Deck",
+   "commanders": [
+    "Szarel, Genesis Shepherd"
+   ],
+   "card_count": 87,
+   "primer_chars": 919,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combat_big"
+   ],
+   "signals": {
+    "tokens": 7,
+    "fatties": 9,
+    "burn": 1,
+    "extra_combat": 1,
+    "drain": 1,
+    "alt_win": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0,
+    "voltron_gear": 0
+   },
+   "pieces": {
+    "tokens": [
+     "Titania, Protector of Argoth",
+     "Omnath, Locus of Rage",
+     "Rampaging Baloths",
+     "Hammer of Purphoros",
+     "Baloth Prime",
+     "Scouring Swarm",
+     "Eumidian Hatchery"
+    ],
+    "fatties": [
+     "Titania, Protector of Argoth",
+     "God-Eternal Bontu",
+     "The Gitrog Monster",
+     "Moraug, Fury of Akoum",
+     "Omnath, Locus of Rage",
+     "Soul of Windgrace",
+     "Rampaging Baloths",
+     "World Breaker"
+    ],
+    "burn": [
+     "Worldsoul's Rage"
+    ],
+    "extra_combat": [
+     "Moraug, Fury of Akoum"
+    ],
+    "drain": [
+     "Hearthhull, the Worldseed"
+    ],
+    "alt_win": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": [],
+    "voltron_gear": []
+   },
+   "outlets": {
+    "tokens": [
+     "Hammer of Purphoros",
+     "Eumidian Wastewaker",
+     "Hearthhull, the Worldseed"
+    ],
+    "mana": [
+     "Worldsoul's Rage"
+    ],
+    "counters": [
+     "Juri, Master of the Revue",
+     "Centaur Vinecrasher",
+     "Multani, Yavimaya's Avatar",
+     "Rampaging Baloths"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 1,
+   "combo_one_away": 5,
+   "repo_finisher_count_today": 1
+  },
+  "arch:14420275": {
+   "source": "arch",
+   "id": "14420275",
+   "name": "Counter Intelligence - Edge of Eternities Commander Deck",
+   "commanders": [
+    "Kilo, Apogee Mind"
+   ],
+   "card_count": 94,
+   "primer_chars": 859,
+   "pilot_stated_routes": [
+    "alt_win"
+   ],
+   "detected_routes": [
+    "alt_win",
+    "burn"
+   ],
+   "signals": {
+    "burn": 3,
+    "fatties": 2,
+    "voltron_gear": 1,
+    "alt_win": 1,
+    "tokens": 4,
+    "drain": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "burn": [
+     "Alibou, Ancient Witness",
+     "Chain Reaction",
+     "Lux Artillery"
+    ],
+    "fatties": [
+     "Angel of the Ruins",
+     "Depthshaker Titan"
+    ],
+    "voltron_gear": [
+     "Gavel of the Righteous"
+    ],
+    "alt_win": [
+     "Darksteel Reactor"
+    ],
+    "tokens": [
+     "Golem Foundry",
+     "Titan Forge",
+     "Threefold Thunderhulk",
+     "Hangarback Walker"
+    ],
+    "drain": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "tokens": [
+     "Kilo, Apogee Mind",
+     "Alibou, Ancient Witness",
+     "Wake the Past",
+     "Depthshaker Titan"
+    ],
+    "draw": [
+     "Darksteel Reactor"
+    ],
+    "mana": [
+     "Alibou, Ancient Witness",
+     "Chain Reaction"
+    ],
+    "counters": [
+     "Kappa Cannoneer",
+     "Gavel of the Righteous",
+     "Depthshaker Titan"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 7,
+   "repo_finisher_count_today": 1
+  },
+  "arch:1585124": {
+   "source": "arch",
+   "id": "1585124",
+   "name": "Baby Lasagna",
+   "commanders": [
+    "Baba Lysaga, Night Witch"
+   ],
+   "card_count": 112,
+   "primer_chars": 17471,
+   "pilot_stated_routes": [
+    "drain",
+    "combat_wide"
+   ],
+   "detected_routes": [
+    "drain",
+    "combat_wide",
+    "combat_voltron"
+   ],
+   "signals": {
+    "drain": 6,
+    "voltron_gear": 13,
+    "overrun": 1,
+    "tokens": 15,
+    "fatties": 3,
+    "poison": 2,
+    "anthem": 1,
+    "mill": 1,
+    "alt_win": 0,
+    "burn": 0
+   },
+   "pieces": {
+    "drain": [
+     "Baba Lysaga, Night Witch",
+     "Deadly Tempest",
+     "Starscream, Power Hungry // Starscream, Seeker Leader",
+     "Marionette Master",
+     "Villainous Wrath",
+     "Defiling Daemogoth"
+    ],
+    "voltron_gear": [
+     "Animate Dead",
+     "Journey to Eternity // Atzal, Cave of Eternity",
+     "Kaya's Ghostform",
+     "Necrogen Communion",
+     "Glimmerlight",
+     "Rancor",
+     "Swiftfoot Boots",
+     "Lightning Greaves"
+    ],
+    "overrun": [
+     "Blossoming Bogbeast"
+    ],
+    "tokens": [
+     "Jolrael, Mwonvuli Recluse",
+     "Marionette Master",
+     "Titania, Protector of Argoth",
+     "Khalni Garden",
+     "Galadhrim Ambush",
+     "Field of the Dead",
+     "Mindless Conscription",
+     "Glimmerlight"
+    ],
+    "fatties": [
+     "Titania, Protector of Argoth",
+     "Baloth Prime",
+     "Defiling Daemogoth"
+    ],
+    "poison": [
+     "Necrogen Communion",
+     "Inkmoth Nexus"
+    ],
+    "anthem": [
+     "Blossoming Tortoise"
+    ],
+    "mill": [
+     "Will of the Sultai"
+    ],
+    "alt_win": [],
+    "burn": []
+   },
+   "outlets": {
+    "tokens": [
+     "Starscream, Power Hungry // Starscream, Seeker Leader",
+     "Blossoming Bogbeast",
+     "Crashing Drawbridge",
+     "Blossoming Tortoise"
+    ],
+    "draw": [
+     "Starscream, Power Hungry // Starscream, Seeker Leader"
+    ],
+    "mana": [
+     "Defiling Daemogoth"
+    ],
+    "counters": [
+     "Blossoming Bogbeast",
+     "Rancor",
+     "Earthbender Ascension",
+     "Will of the Sultai"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 1,
+   "repo_finisher_count_today": 3
+  },
+  "arch:1794593": {
+   "source": "arch",
+   "id": "1794593",
+   "name": "All Free EDH Sac Outlets",
+   "commanders": [
+    "Atogatog"
+   ],
+   "card_count": 350,
+   "primer_chars": 458,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "drain",
+    "burn",
+    "combat_wide",
+    "combat_voltron",
+    "combat_big"
+   ],
+   "signals": {
+    "fatties": 52,
+    "tokens": 49,
+    "voltron_gear": 14,
+    "burn": 3,
+    "anthem": 3,
+    "poison": 1,
+    "overrun": 1,
+    "mill": 2,
+    "drain": 5,
+    "stax": 1,
+    "alt_win": 0
+   },
+   "pieces": {
+    "fatties": [
+     "Atogatog",
+     "Defiler of Souls",
+     "Desecration Elemental",
+     "Devouring Strossus",
+     "Doomgape",
+     "Drinker of Sorrow",
+     "Ebon Praetor",
+     "Elder Spawn"
+    ],
+    "tokens": [
+     "Daretti, Ingenious Iconoclast",
+     "Deathspore Thallid",
+     "Diamond Kaleidoscope",
+     "Doom Foretold",
+     "Elvish Farmer",
+     "Fain, the Broker",
+     "Feed the Pack",
+     "Flamewright"
+    ],
+    "voltron_gear": [
+     "Dark Privilege",
+     "Demonmail Hauberk",
+     "Fortitude",
+     "Grafted Wargear",
+     "Inevitable End",
+     "Necrotic Plague",
+     "Nettlevine Blight",
+     "Piston Sledge"
+    ],
+    "burn": [
+     "Desolation",
+     "Minsc & Boo, Timeless Heroes",
+     "Oni-Cult Anvil"
+    ],
+    "anthem": [
+     "Eldrazi Monument",
+     "Maw of the Obzedat",
+     "Betrothed of Fire"
+    ],
+    "poison": [
+     "Flesh-Eater Imp"
+    ],
+    "overrun": [
+     "Garruk Relentless // Garruk, the Veil-Cursed"
+    ],
+    "mill": [
+     "Grinding Station",
+     "Altar of Dementia"
+    ],
+    "drain": [
+     "Baba Lysaga, Night Witch",
+     "Vermin Gorger",
+     "Xathrid Demon",
+     "Ayara, First of Locthwain",
+     "Bolas's Citadel"
+    ],
+    "stax": [
+     "Territorial Dispute"
+    ],
+    "alt_win": []
+   },
+   "outlets": {
+    "tokens": [
+     "Eldrazi Monument",
+     "Falkenrath Aristocrat",
+     "Fireblade Artist",
+     "Garruk Relentless // Garruk, the Veil-Cursed"
+    ],
+    "mana": [
+     "Minsc & Boo, Timeless Heroes",
+     "Psychic Allergy"
+    ],
+    "counters": [
+     "Desecration Elemental",
+     "Devouring Strossus",
+     "Dimir House Guard",
+     "Doomgape"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 22,
+   "repo_finisher_count_today": 6
+  },
+  "arch:18520785": {
+   "source": "arch",
+   "id": "18520785",
+   "name": "Praise the Sun, Fire the Gun",
+   "commanders": [
+    "Heliod, Sun-Crowned"
+   ],
+   "card_count": 89,
+   "primer_chars": 4915,
+   "pilot_stated_routes": [
+    "combo"
+   ],
+   "detected_routes": [
+    "combo"
+   ],
+   "signals": {
+    "combo": 2,
+    "fatties": 1,
+    "stax": 18,
+    "drain": 1,
+    "tokens": 1,
+    "alt_win": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0,
+    "voltron_gear": 0
+   },
+   "pieces": {
+    "combo": [
+     "Heliod, Sun-Crowned + Walking Ballista",
+     "Heliod, Sun-Crowned + Triskelion"
+    ],
+    "fatties": [
+     "Heliod, Sun-Crowned"
+    ],
+    "stax": [
+     "Bilbo's Gambit",
+     "Ethersworn Canonist",
+     "Archon of Emeria",
+     "Deafening Silence",
+     "Ranger-Captain of Eos",
+     "Abeyance",
+     "Grafdigger's Cage",
+     "Calamity's Wake"
+    ],
+    "drain": [
+     "Blind Obedience"
+    ],
+    "tokens": [
+     "Voice of Victory"
+    ],
+    "alt_win": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": [],
+    "voltron_gear": []
+   },
+   "outlets": {
+    "lifegain": [
+     "Heliod, Sun-Crowned"
+    ]
+   },
+   "combo_kill": 2,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 6,
+   "repo_finisher_count_today": 1
+  },
+  "arch:18744715": {
+   "source": "arch",
+   "id": "18744715",
+   "name": "Blight Curse - Lorwyn Eclipsed Commander Deck",
+   "commanders": [
+    "Auntie Ool, Cursewretch"
+   ],
+   "card_count": 85,
+   "primer_chars": 434,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combo",
+    "burn"
+   ],
+   "signals": {
+    "combo": 2,
+    "tokens": 5,
+    "fatties": 6,
+    "poison": 1,
+    "burn": 3,
+    "stax": 1,
+    "drain": 1,
+    "alt_win": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0,
+    "voltron_gear": 0
+   },
+   "pieces": {
+    "combo": [
+     "Blowfly Infestation + Flourishing Defenses [via death,ltb]",
+     "Blowfly Infestation + Hapatra, Vizier of Poisons [via death,ltb]"
+    ],
+    "tokens": [
+     "Grave Titan",
+     "Ferrafor, Young Yew",
+     "Wickersmith's Tools",
+     "Hapatra, Vizier of Poisons",
+     "Flourishing Defenses"
+    ],
+    "fatties": [
+     "Grave Titan",
+     "The Scorpion God",
+     "Carnifex Demon",
+     "Midnight Banshee",
+     "Village Pillagers",
+     "Archfiend of Ifnir"
+    ],
+    "poison": [
+     "Vraska, Betrayal's Sting"
+    ],
+    "burn": [
+     "Chain Reaction",
+     "Fire Covenant",
+     "Lasting Tarfire"
+    ],
+    "stax": [
+     "Everlasting Torment"
+    ],
+    "drain": [
+     "Grave Venerations"
+    ],
+    "alt_win": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": [],
+    "voltron_gear": []
+   },
+   "outlets": {
+    "ltb": [
+     "Grave Venerations"
+    ],
+    "death": [
+     "Grave Venerations"
+    ],
+    "tokens": [
+     "Puppeteer Clique"
+    ],
+    "mana": [
+     "Chain Reaction",
+     "Fire Covenant"
+    ]
+   },
+   "combo_kill": 2,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 7,
+   "repo_finisher_count_today": 2
+  },
+  "arch:18744843": {
+   "source": "arch",
+   "id": "18744843",
+   "name": "Dance of the Elements - Lorwyn Eclipsed Commander Deck",
+   "commanders": [
+    "Ashling, the Limitless"
+   ],
+   "card_count": 89,
+   "primer_chars": 532,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combat_wide",
+    "combat_big"
+   ],
+   "signals": {
+    "fatties": 14,
+    "tokens": 9,
+    "anthem": 3,
+    "overrun": 1,
+    "drain": 1,
+    "alt_win": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "voltron_gear": 0
+   },
+   "pieces": {
+    "fatties": [
+     "Impulsivity",
+     "Avenger of Zendikar",
+     "Cavalier of Thorns",
+     "Greenwarden of Murasa",
+     "Horde of Notions",
+     "Maelstrom Wanderer",
+     "Muldrotha, the Gravetide",
+     "Omnath, Locus of Rage"
+    ],
+    "tokens": [
+     "Elemental Spectacle",
+     "Avenger of Zendikar",
+     "Omnath, Locus of Rage",
+     "Titan of Industry",
+     "Vernal Sovereign",
+     "Hoofprints of the Stag",
+     "Belonging",
+     "Springleaf Parade"
+    ],
+    "anthem": [
+     "Incandescent Soulstoke",
+     "Return of the Wildspeaker",
+     "Jubilation"
+    ],
+    "overrun": [
+     "Jubilation"
+    ],
+    "drain": [
+     "Shimmercreep"
+    ],
+    "alt_win": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "voltron_gear": []
+   },
+   "outlets": {
+    "tokens": [
+     "Ashling, the Limitless",
+     "Impulsivity",
+     "Horde of Notions",
+     "Incandescent Soulstoke"
+    ],
+    "mana": [
+     "Shimmercreep"
+    ],
+    "counters": [
+     "Fury",
+     "Horde of Notions",
+     "Shriekmaw",
+     "Titan of Industry"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 10,
+   "repo_finisher_count_today": 1
+  },
+  "arch:1904544": {
+   "source": "arch",
+   "id": "1904544",
+   "name": "Upping the Average - Wilhelt, the Rotcleaver",
+   "commanders": [
+    "Wilhelt, the Rotcleaver"
+   ],
+   "card_count": 93,
+   "primer_chars": 235,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combo",
+    "drain",
+    "combat_wide"
+   ],
+   "signals": {
+    "combo": 5,
+    "tokens": 23,
+    "drain": 6,
+    "fatties": 3,
+    "anthem": 3,
+    "voltron_gear": 1,
+    "mill": 3,
+    "alt_win": 0,
+    "burn": 0,
+    "poison": 0,
+    "overrun": 0
+   },
+   "pieces": {
+    "combo": [
+     "Gravecrawler + Rooftop Storm + Carrion Feeder [via counters,death,ltb]",
+     "Gravecrawler + Rooftop Storm + Ashnod's Altar [via death,ltb,mana]",
+     "Acererak the Archlich + Rooftop Storm",
+     "Wilhelt, the Rotcleaver + Poppet Stitcher // Poppet Factory + Carrion Feeder [via counters,death,ltb]",
+     "Wilhelt, the Rotcleaver + Poppet Stitcher // Poppet Factory + Ashnod's Altar [via death,ltb,mana]"
+    ],
+    "tokens": [
+     "Wilhelt, the Rotcleaver",
+     "Noosegraf Mob",
+     "Lazotep Plating",
+     "Bastion of Remembrance",
+     "Cryptbreaker",
+     "Ghoulcaller Gisa",
+     "Rise of the Dread Marn",
+     "Acererak the Archlich"
+    ],
+    "drain": [
+     "Vengeful Dead",
+     "Bastion of Remembrance",
+     "Plague Belcher",
+     "The Scarab God",
+     "Gray Merchant of Asphodel",
+     "Diregraf Captain"
+    ],
+    "fatties": [
+     "Plague Belcher",
+     "The Scarab God",
+     "Acererak the Archlich"
+    ],
+    "anthem": [
+     "Undead Warchief",
+     "Cemetery Reaper",
+     "Diregraf Captain"
+    ],
+    "voltron_gear": [
+     "Wand of Orcus"
+    ],
+    "mill": [
+     "Drown in Dreams",
+     "Undead Alchemist",
+     "Dread Summons"
+    ],
+    "alt_win": [],
+    "burn": [],
+    "poison": [],
+    "overrun": []
+   },
+   "outlets": {
+    "ltb": [
+     "Bastion of Remembrance"
+    ],
+    "death": [
+     "Bastion of Remembrance",
+     "Midnight Reaper"
+    ],
+    "tokens": [
+     "Undead Warchief",
+     "Cemetery Reaper",
+     "Diregraf Captain"
+    ],
+    "mana": [
+     "The Scarab God",
+     "Gray Merchant of Asphodel"
+    ],
+    "counters": [
+     "Relentless Dead"
+    ]
+   },
+   "combo_kill": 5,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 1,
+   "repo_finisher_count_today": 3
+  },
+  "arch:20105223": {
+   "source": "arch",
+   "id": "20105223",
+   "name": "Turtle Power! - Teenage Mutant Ninja Turtles Commander Deck",
+   "commanders": [
+    "Heroes in a Half Shell"
+   ],
+   "card_count": 93,
+   "primer_chars": 576,
+   "pilot_stated_routes": null,
+   "detected_routes": [],
+   "signals": {
+    "fatties": 4,
+    "tokens": 6,
+    "drain": 1,
+    "voltron_gear": 2,
+    "burn": 1,
+    "alt_win": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "fatties": [
+     "Heroes in a Half Shell",
+     "Shredder, Shadow Master",
+     "Leatherhead, Iron Gator",
+     "Vigor"
+    ],
+    "tokens": [
+     "Endless Foot Assault",
+     "Foot Chopper",
+     "Rat King, Pale Piper",
+     "Big Mother Mouser",
+     "Big Apple, 3 a.m.",
+     "Biogenic Ooze"
+    ],
+    "drain": [
+     "Dimension X Pizzasaur"
+    ],
+    "voltron_gear": [
+     "Foot Chopper",
+     "Level Up"
+    ],
+    "burn": [
+     "Shellshock"
+    ],
+    "alt_win": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "ltb": [
+     "Electric Seaweed"
+    ],
+    "death": [
+     "Electric Seaweed"
+    ],
+    "tokens": [
+     "Heroes in a Half Shell",
+     "Electric Seaweed",
+     "Tempestra, Dame of Games",
+     "Leatherhead, Iron Gator"
+    ],
+    "mana": [
+     "Shellshock"
+    ],
+    "counters": [
+     "Heroes in a Half Shell",
+     "Leonardo, the Balance",
+     "Michelangelo, the Heart",
+     "Special Move"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 3,
+   "repo_finisher_count_today": 1
+  },
+  "arch:21319304": {
+   "source": "arch",
+   "id": "21319304",
+   "name": "Silverquill Influence - Secrets of Strixhaven",
+   "commanders": [
+    "Killian, Decisive Mentor"
+   ],
+   "card_count": 86,
+   "primer_chars": 298,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combat_wide",
+    "combat_voltron"
+   ],
+   "signals": {
+    "tokens": 5,
+    "voltron_gear": 22,
+    "overrun": 1,
+    "drain": 1,
+    "alt_win": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "tokens": [
+     "Forum Filibuster",
+     "Intermediate Chirography",
+     "Ajani's Chosen",
+     "Archon of Sun's Grace",
+     "Inkshield"
+    ],
+    "voltron_gear": [
+     "Changing Loyalty",
+     "Coercive Impetus",
+     "Eldrazi Conscription",
+     "Angelic Destiny",
+     "Gift of Immortality",
+     "Redemption Arc",
+     "Shielded by Faith",
+     "Songbirds' Blessing"
+    ],
+    "overrun": [
+     "Eidolon of Countless Battles"
+    ],
+    "drain": [
+     "Eriette of the Charmed Apple"
+    ],
+    "alt_win": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "fatties": []
+   },
+   "outlets": {
+    "mana": [
+     "Eriette of the Charmed Apple"
+    ],
+    "counters": [
+     "Eldrazi Conscription",
+     "Shadrix Silverquill",
+     "Killian, Ink Duelist"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 0,
+   "repo_finisher_count_today": 0
+  },
+  "arch:21319431": {
+   "source": "arch",
+   "id": "21319431",
+   "name": "Prismari Artistry - Secrets of Strixhaven",
+   "commanders": [
+    "Rootha, Mastering the Moment"
+   ],
+   "card_count": 87,
+   "primer_chars": 280,
+   "pilot_stated_routes": null,
+   "detected_routes": [],
+   "signals": {
+    "tokens": 5,
+    "burn": 2,
+    "fatties": 1,
+    "voltron_gear": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "tokens": [
+     "Furygale Flocking",
+     "Prismari Pianist",
+     "Determined Iteration",
+     "Brudiclad, Telchor Engineer",
+     "Magma Opus"
+    ],
+    "burn": [
+     "Chain Reaction",
+     "Volcanic Torrent"
+    ],
+    "fatties": [
+     "Plargg and Nassari"
+    ],
+    "voltron_gear": [
+     "Lightning Greaves"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "tokens": [
+     "Rootha, Mastering the Moment",
+     "Inspired Skypainter // Maestro's Gift",
+     "Furygale Flocking",
+     "Determined Iteration"
+    ],
+    "mana": [
+     "Chain Reaction",
+     "Volcanic Torrent"
+    ],
+    "magecraft": [
+     "Archmage Emeritus"
+    ],
+    "counters": [
+     "Leitmotif Composer",
+     "Renegade Bull"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 10,
+   "repo_finisher_count_today": 0
+  },
+  "arch:21319521": {
+   "source": "arch",
+   "id": "21319521",
+   "name": "Witherbloom Pestilence - Secrets of Strixhaven",
+   "commanders": [
+    "Dina, Essence Brewer"
+   ],
+   "card_count": 86,
+   "primer_chars": 285,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combo",
+    "drain",
+    "combat_wide"
+   ],
+   "signals": {
+    "combo": 4,
+    "tokens": 15,
+    "drain": 4,
+    "fatties": 3,
+    "overrun": 1,
+    "anthem": 1,
+    "mill": 1,
+    "alt_win": 0,
+    "burn": 0,
+    "poison": 0,
+    "voltron_gear": 0
+   },
+   "pieces": {
+    "combo": [
+     "Viscera Seer + Gorma, the Gullet [via counters]",
+     "Umbral Collar Zealot + Gorma, the Gullet [via counters]",
+     "Gorma, the Gullet + Yahenni, Undying Partisan [via counters]",
+     "Woe Strider + Gorma, the Gullet [via counters]"
+    ],
+    "tokens": [
+     "Trudge Garden",
+     "Feral Appetite",
+     "Pest Rescuer",
+     "Ribtruss Roaster",
+     "Eccentric Pestfinder // Turn Stones",
+     "Ophiomancer",
+     "Tendershoot Dryad",
+     "Blight Mound"
+    ],
+    "drain": [
+     "Defiling Daemogoth",
+     "Stensian Sanguinist // Exsanguinate",
+     "Zulaport Cutthroat",
+     "Dina, Soul Steeper"
+    ],
+    "fatties": [
+     "Defiling Daemogoth",
+     "Eccentric Pestfinder // Turn Stones",
+     "Gyome, Master Chef"
+    ],
+    "overrun": [
+     "Blossoming Bogbeast"
+    ],
+    "anthem": [
+     "Creakwood Liege"
+    ],
+    "mill": [
+     "Witherbloom Command"
+    ],
+    "alt_win": [],
+    "burn": [],
+    "poison": [],
+    "voltron_gear": []
+   },
+   "outlets": {
+    "tokens": [
+     "Bloodghast",
+     "Nether Traitor",
+     "Yahenni, Undying Partisan",
+     "Blossoming Bogbeast"
+    ],
+    "mana": [
+     "Defiling Daemogoth",
+     "Stensian Sanguinist // Exsanguinate"
+    ],
+    "lifegain": [
+     "Dina, Soul Steeper"
+    ],
+    "counters": [
+     "Trudge Garden",
+     "Eccentric Pestfinder // Turn Stones",
+     "Blossoming Bogbeast",
+     "Gyome, Master Chef"
+    ]
+   },
+   "combo_kill": 4,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 3,
+   "repo_finisher_count_today": 3
+  },
+  "arch:21319610": {
+   "source": "arch",
+   "id": "21319610",
+   "name": "Lorehold Spirit - Secrets of Strixhaven",
+   "commanders": [
+    "Quintorius, History Chaser"
+   ],
+   "card_count": 85,
+   "primer_chars": 322,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combat_wide"
+   ],
+   "signals": {
+    "tokens": 7,
+    "burn": 1,
+    "fatties": 4,
+    "anthem": 2,
+    "voltron_gear": 1,
+    "overrun": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "poison": 0,
+    "mill": 0
+   },
+   "pieces": {
+    "tokens": [
+     "Quintorius, History Chaser",
+     "Ceaseless Conflict",
+     "Staff of the Storyteller",
+     "Quintorius, Loremaster",
+     "Bitterthorn, Nissa's Animus",
+     "Currency Converter",
+     "Quintorius, Field Historian"
+    ],
+    "burn": [
+     "Advanced Reconstruction"
+    ],
+    "fatties": [
+     "Moonshaker Cavalry",
+     "Angel of Indemnity",
+     "Ao, the Dawn Sky",
+     "Sun Titan"
+    ],
+    "anthem": [
+     "Balefire Liege",
+     "Lorehold Charm"
+    ],
+    "voltron_gear": [
+     "Bitterthorn, Nissa's Animus"
+    ],
+    "overrun": [
+     "Lorehold Charm"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "poison": [],
+    "mill": []
+   },
+   "outlets": {
+    "tokens": [
+     "Excava, the Risen Past",
+     "Angel of Indemnity",
+     "Laelia, the Blade Reforged",
+     "Balefire Liege"
+    ],
+    "counters": [
+     "Quintorius, History Chaser",
+     "Atsushi, the Blazing Sky",
+     "Hofri Ghostforge",
+     "Venerable Warsinger"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 0,
+   "repo_finisher_count_today": 1
+  },
+  "arch:21319716": {
+   "source": "arch",
+   "id": "21319716",
+   "name": "Quandrix Unlimited - Secrets of Strixhaven",
+   "commanders": [
+    "Zimone, Infinite Analyst"
+   ],
+   "card_count": 89,
+   "primer_chars": 267,
+   "pilot_stated_routes": [
+    "x_spells"
+   ],
+   "detected_routes": [],
+   "signals": {
+    "tokens": 5,
+    "voltron_gear": 1,
+    "anthem": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "tokens": [
+     "Primo, the Unbounded",
+     "Lattice Library",
+     "Deekah, Fractal Theorist",
+     "Fractal Harness",
+     "Hangarback Walker"
+    ],
+    "voltron_gear": [
+     "Fractal Harness"
+    ],
+    "anthem": [
+     "Guardian Augmenter"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "fatties": []
+   },
+   "outlets": {
+    "tokens": [
+     "Guardian Augmenter",
+     "Goldvein Hydra"
+    ],
+    "counters": [
+     "Primo, the Unbounded",
+     "Nev, the Practical Dean",
+     "Ingenious Prodigy",
+     "Deekah, Fractal Theorist"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 3,
+   "repo_finisher_count_today": 0
+  },
+  "arch:24364891": {
+   "source": "arch",
+   "id": "24364891",
+   "name": "The Unity - Children of the Cathedral",
+   "commanders": [
+    "The Master, Transcendent"
+   ],
+   "card_count": 91,
+   "primer_chars": 3107,
+   "pilot_stated_routes": [
+    "mill",
+    "drain",
+    "combat_big"
+   ],
+   "detected_routes": [
+    "mill"
+   ],
+   "signals": {
+    "mill": 8,
+    "fatties": 7,
+    "voltron_gear": 2,
+    "burn": 1,
+    "tokens": 2,
+    "alt_win": 0,
+    "drain": 0,
+    "poison": 0,
+    "overrun": 0,
+    "anthem": 0,
+    "extra_combat": 0
+   },
+   "pieces": {
+    "mill": [
+     "Altar of Dementia",
+     "Altar of the Brood",
+     "Court of Cunning",
+     "Mindcrank",
+     "Raul, Trouble Shooter",
+     "Ruin Crab",
+     "Phenax, God of Deception",
+     "Syr Konrad, the Grim"
+    ],
+    "fatties": [
+     "Colossal Grave-Reaver",
+     "Syr Konrad, the Grim",
+     "Strong, the Brutish Thespian",
+     "Alpha Deathclaw",
+     "Agent Frank Horrigan",
+     "Screeching Scorchbeast",
+     "Muldrotha, the Gravetide"
+    ],
+    "voltron_gear": [
+     "Sting, the Glinting Dagger",
+     "Lightning Greaves"
+    ],
+    "burn": [
+     "Syr Konrad, the Grim"
+    ],
+    "tokens": [
+     "Vault 12: The Necropolis",
+     "Screeching Scorchbeast"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "poison": [],
+    "overrun": [],
+    "anthem": [],
+    "extra_combat": []
+   },
+   "outlets": {
+    "ltb": [
+     "Syr Konrad, the Grim"
+    ],
+    "death": [
+     "Syr Konrad, the Grim"
+    ],
+    "tokens": [
+     "Tyvar, Jubilant Brawler",
+     "Sting, the Glinting Dagger",
+     "Lightning Greaves"
+    ],
+    "counters": [
+     "Nightkin Ambusher",
+     "Alpha Deathclaw",
+     "Agent Frank Horrigan",
+     "Rogue's Passage"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 11,
+   "repo_finisher_count_today": 0
+  },
+  "arch:2498709": {
+   "source": "arch",
+   "id": "2498709",
+   "name": "Upping the Average - Shorikai, Genesis Engine",
+   "commanders": [
+    "Shorikai, Genesis Engine"
+   ],
+   "card_count": 93,
+   "primer_chars": 202,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combo"
+   ],
+   "signals": {
+    "combo": 1,
+    "tokens": 6,
+    "voltron_gear": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "combo": [
+     "Shorikai, Genesis Engine + Intruder Alarm [via tokens]"
+    ],
+    "tokens": [
+     "Shorikai, Genesis Engine",
+     "Prodigy's Prototype",
+     "Reckoner Bankbuster",
+     "Thopter Spy Network",
+     "Sai, Master Thopterist",
+     "Parhelion II"
+    ],
+    "voltron_gear": [
+     "Swift Reconfiguration"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": [],
+    "fatties": []
+   },
+   "outlets": {
+    "tokens": [
+     "Mechtitan Core"
+    ],
+    "counters": [
+     "Manifold Key",
+     "Mechtitan Core"
+    ]
+   },
+   "combo_kill": 1,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 1,
+   "repo_finisher_count_today": 0
+  },
+  "arch:3887": {
+   "source": "arch",
+   "id": "3887",
+   "name": "Reki, the History of Kamigawa: Legendfall",
+   "commanders": [
+    "Reki, the History of Kamigawa"
+   ],
+   "card_count": 75,
+   "primer_chars": 4797,
+   "pilot_stated_routes": [
+    "combat_big"
+   ],
+   "detected_routes": [
+    "combat_big"
+   ],
+   "signals": {
+    "fatties": 9,
+    "overrun": 2,
+    "anthem": 2,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "tokens": 0,
+    "voltron_gear": 0,
+    "extra_combat": 0
+   },
+   "pieces": {
+    "fatties": [
+     "Ghalta, Primal Hunger",
+     "Rhonas the Indomitable",
+     "God-Eternal Rhonas",
+     "Nylea, Keen-Eyed",
+     "Nylea, God of the Hunt",
+     "Kodama of the East Tree",
+     "Surrak and Goreclaw",
+     "Lizard, Connors's Curse"
+    ],
+    "overrun": [
+     "Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun",
+     "Casal, Lurkwood Pathfinder // Casal, Pathbreaker Owlbear"
+    ],
+    "anthem": [
+     "Casal, Lurkwood Pathfinder // Casal, Pathbreaker Owlbear",
+     "Beastmaster Ascension"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "tokens": [],
+    "voltron_gear": [],
+    "extra_combat": []
+   },
+   "outlets": {
+    "tokens": [
+     "Questing Beast",
+     "Casal, Lurkwood Pathfinder // Casal, Pathbreaker Owlbear",
+     "Surrak and Goreclaw",
+     "Tyvar, the Pummeler"
+    ],
+    "counters": [
+     "Ghalta, Primal Hunger",
+     "Rhonas the Indomitable",
+     "Questing Beast",
+     "Casal, Lurkwood Pathfinder // Casal, Pathbreaker Owlbear"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 6,
+   "repo_finisher_count_today": 1
+  },
+  "arch:582352": {
+   "source": "arch",
+   "id": "582352",
+   "name": "Upping the Average - Niv-Mizzet Parun",
+   "commanders": [
+    "Niv-Mizzet, Parun"
+   ],
+   "card_count": 96,
+   "primer_chars": 337,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combo",
+    "alt_win",
+    "burn"
+   ],
+   "signals": {
+    "combo": 7,
+    "fatties": 1,
+    "voltron_gear": 2,
+    "burn": 4,
+    "alt_win": 1,
+    "tokens": 4,
+    "drain": 1,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "combo": [
+     "Curiosity + Niv-Mizzet, Parun",
+     "Niv-Mizzet, Parun + Ophidian Eye",
+     "Tandem Lookout + Niv-Mizzet, Parun",
+     "Niv-Mizzet, the Firemind + Curiosity",
+     "Niv-Mizzet, the Firemind + Ophidian Eye",
+     "Niv-Mizzet, the Firemind + Tandem Lookout",
+     "Primal Amulet // Primal Wellspring + Frantic Search + Narset's Reversal [via draw,mana]"
+    ],
+    "fatties": [
+     "Niv-Mizzet, Parun"
+    ],
+    "voltron_gear": [
+     "Ophidian Eye",
+     "Curiosity"
+    ],
+    "burn": [
+     "Expansion // Explosion",
+     "Electrostatic Field",
+     "Guttersnipe",
+     "Firebrand Archer"
+    ],
+    "alt_win": [
+     "Laboratory Maniac"
+    ],
+    "tokens": [
+     "The Locust God",
+     "Young Pyromancer",
+     "Talrand, Sky Summoner",
+     "Murmuring Mystic"
+    ],
+    "drain": [
+     "Psychosis Crawler"
+    ],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "tokens": [
+     "The Locust God"
+    ],
+    "draw": [
+     "Niv-Mizzet, Parun",
+     "Laboratory Maniac",
+     "Psychosis Crawler",
+     "Niv-Mizzet, the Firemind"
+    ],
+    "mana": [
+     "Expansion // Explosion"
+    ]
+   },
+   "combo_kill": 7,
+   "combo_resource_no_outlet": 1,
+   "combo_value": 0,
+   "combo_one_away": 24,
+   "repo_finisher_count_today": 2
+  },
+  "mox:-0nnoB084EKcpOioUKxOcw": {
+   "source": "mox",
+   "id": "-0nnoB084EKcpOioUKxOcw",
+   "name": "Disciple of Matoya: Yshtola, Night's Blessed Primer",
+   "commanders": [
+    "Y'shtola, Night's Blessed"
+   ],
+   "card_count": 93,
+   "primer_chars": 216,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "burn",
+    "combat_wide"
+   ],
+   "signals": {
+    "burn": 5,
+    "stax": 2,
+    "voltron_gear": 5,
+    "drain": 2,
+    "overrun": 1,
+    "tokens": 4,
+    "alt_win": 0,
+    "poison": 0,
+    "mill": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "burn": [
+     "Y'shtola, Night's Blessed",
+     "Black Mage's Rod",
+     "Papalymo Totolymo",
+     "Circle of Power",
+     "Transpose"
+    ],
+    "stax": [
+     "Single Combat",
+     "Render Silent"
+    ],
+    "voltron_gear": [
+     "Ophidian Eye",
+     "Helm of the Ghastlord",
+     "Sigil of Sleep",
+     "Black Mage's Rod",
+     "Curiosity"
+    ],
+    "drain": [
+     "Blind Obedience",
+     "Exsanguinate"
+    ],
+    "overrun": [
+     "The Battle of Bywater"
+    ],
+    "tokens": [
+     "G'raha Tia, Scion Reborn",
+     "Black Mage's Rod",
+     "Circle of Power",
+     "Transpose"
+    ],
+    "alt_win": [],
+    "poison": [],
+    "mill": [],
+    "fatties": []
+   },
+   "outlets": {
+    "mana": [
+     "Exsanguinate"
+    ],
+    "counters": [
+     "Lyse Hext"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 11,
+   "repo_finisher_count_today": 1
+  },
+  "mox:1s8NYUejwEixuKljP6OwDA": {
+   "source": "mox",
+   "id": "1s8NYUejwEixuKljP6OwDA",
+   "name": "Marneus Calgar: Travel/Souvenir Deck",
+   "commanders": [
+    "Marneus Calgar"
+   ],
+   "card_count": 85,
+   "primer_chars": 217,
+   "pilot_stated_routes": [
+    "drain",
+    "combat_wide"
+   ],
+   "detected_routes": [
+    "alt_win",
+    "drain"
+   ],
+   "signals": {
+    "tokens": 25,
+    "alt_win": 1,
+    "drain": 7,
+    "anthem": 2,
+    "poison": 1,
+    "burn": 0,
+    "mill": 0,
+    "overrun": 0,
+    "voltron_gear": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "tokens": [
+     "Marneus Calgar",
+     "Call the Bloodline",
+     "Sorin, Lord of Innistrad",
+     "Bastion of Remembrance",
+     "Thalisse, Reverent Medium",
+     "Inkshield",
+     "Scuttletide",
+     "Death Tyrant"
+    ],
+    "alt_win": [
+     "Revel in Riches"
+    ],
+    "drain": [
+     "Zulaport Cutthroat",
+     "Cruel Celebrant",
+     "Bastion of Remembrance",
+     "Elas il-Kor, Sadistic Pilgrim",
+     "Nadier's Nightblade",
+     "The Meathook Massacre",
+     "Kambal, Profiteering Mayor"
+    ],
+    "anthem": [
+     "Sorin, Lord of Innistrad",
+     "Elspeth, Sun's Champion"
+    ],
+    "poison": [
+     "Mirrex"
+    ],
+    "burn": [],
+    "mill": [],
+    "overrun": [],
+    "voltron_gear": [],
+    "fatties": []
+   },
+   "outlets": {
+    "ltb": [
+     "Bastion of Remembrance",
+     "Elas il-Kor, Sadistic Pilgrim",
+     "The Meathook Massacre"
+    ],
+    "death": [
+     "Bastion of Remembrance",
+     "Elas il-Kor, Sadistic Pilgrim",
+     "The Meathook Massacre"
+    ],
+    "tokens": [
+     "Sorin, Lord of Innistrad",
+     "Delay",
+     "Teysa Karlov",
+     "Elspeth, Sun's Champion"
+    ],
+    "draw": [
+     "Revel in Riches"
+    ],
+    "counters": [
+     "Marneus Calgar",
+     "The Eternal Wanderer"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 4,
+   "repo_finisher_count_today": 8
+  },
+  "mox:2MrG9ADf9km-Lg4hVDHweQ": {
+   "source": "mox",
+   "id": "2MrG9ADf9km-Lg4hVDHweQ",
+   "name": "Cocaine Bear",
+   "commanders": [
+    "Lumra, Bellow of the Woods"
+   ],
+   "card_count": 95,
+   "primer_chars": 224,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combat_wide"
+   ],
+   "signals": {
+    "tokens": 4,
+    "overrun": 1,
+    "anthem": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "voltron_gear": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "tokens": [
+     "Eldrazi Confluence",
+     "Field of the Dead",
+     "Springheart Nantuko",
+     "Urza's Saga"
+    ],
+    "overrun": [
+     "Gaea's Cradle"
+    ],
+    "anthem": [
+     "Blossoming Tortoise"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "voltron_gear": [],
+    "fatties": []
+   },
+   "outlets": {
+    "tokens": [
+     "Finale of Devastation",
+     "Blossoming Tortoise"
+    ],
+    "counters": [
+     "Archdruid's Charm"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 31,
+   "combo_value": 0,
+   "combo_one_away": 2,
+   "repo_finisher_count_today": 0
+  },
+  "mox:6AR9GAj1bkW2zwOCvuyQ0Q": {
+   "source": "mox",
+   "id": "6AR9GAj1bkW2zwOCvuyQ0Q",
+   "name": "🇯🇵Jin's Vengeance⛩️",
+   "commanders": [
+    "Jin Sakai, Ghost of Tsushima"
+   ],
+   "card_count": 99,
+   "primer_chars": 903,
+   "pilot_stated_routes": [
+    "combat_voltron",
+    "poison"
+   ],
+   "detected_routes": [
+    "combat_voltron"
+   ],
+   "signals": {
+    "poison": 4,
+    "voltron_gear": 17,
+    "tokens": 4,
+    "drain": 1,
+    "stax": 2,
+    "extra_combat": 1,
+    "fatties": 1,
+    "alt_win": 0,
+    "burn": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "poison": [
+     "Grafted Exoskeleton",
+     "Tainted Strike",
+     "Inkmoth Nexus",
+     "Skithiryx, the Blight Dragon"
+    ],
+    "voltron_gear": [
+     "Grafted Exoskeleton",
+     "Shadowspear",
+     "Lightning Greaves",
+     "Sword of Feast and Famine",
+     "Dowsing Dagger // Lost Vale",
+     "Hammer of Nazahn",
+     "Halvar, God of Battle // Sword of the Realms",
+     "Sword of Hearth and Home"
+    ],
+    "tokens": [
+     "Urza, Lord High Artificer",
+     "Urza's Saga",
+     "Voice of Victory",
+     "Dark Leo & Shredder"
+    ],
+    "drain": [
+     "Yuriko, the Tiger's Shadow"
+    ],
+    "stax": [
+     "Permission Denied",
+     "Voice of Victory"
+    ],
+    "extra_combat": [
+     "Genji Glove"
+    ],
+    "fatties": [
+     "Shredder, Shadow Master"
+    ],
+    "alt_win": [],
+    "burn": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "tokens": [
+     "Lightning Greaves",
+     "Skithiryx, the Blight Dragon",
+     "Swiftfoot Boots",
+     "Super State"
+    ],
+    "counters": [
+     "Jin Sakai, Ghost of Tsushima",
+     "Shizo, Death's Storehouse",
+     "Shadowspear",
+     "Halvar, God of Battle // Sword of the Realms"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 14,
+   "repo_finisher_count_today": 3
+  },
+  "mox:79hYZQUBdUaA9xD8zLX4vQ": {
+   "source": "mox",
+   "id": "79hYZQUBdUaA9xD8zLX4vQ",
+   "name": "[cEDH] Rograkh Silas Storm Combo",
+   "commanders": [
+    "Rograkh, Son of Rohgahh",
+    "Silas Renn, Seeker Adept"
+   ],
+   "card_count": 98,
+   "primer_chars": 257,
+   "pilot_stated_routes": [
+    "combo"
+   ],
+   "detected_routes": [
+    "combo",
+    "alt_win"
+   ],
+   "signals": {
+    "combo": 6,
+    "voltron_gear": 1,
+    "mill": 1,
+    "alt_win": 1,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "overrun": 0,
+    "anthem": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "combo": [
+     "Demonic Consultation + Thassa's Oracle",
+     "Tainted Pact + Thassa's Oracle",
+     "Underworld Breach + Lotus Petal + Brain Freeze",
+     "Underworld Breach + Lion's Eye Diamond + Brain Freeze",
+     "Underworld Breach + Wheel of Fortune + Jeska's Will [via draw,storm]",
+     "Underworld Breach + Lion's Eye Diamond + Wheel of Fortune [via draw,storm]"
+    ],
+    "voltron_gear": [
+     "Paradise Mantle"
+    ],
+    "mill": [
+     "Brain Freeze"
+    ],
+    "alt_win": [
+     "Thassa's Oracle"
+    ],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "overrun": [],
+    "anthem": [],
+    "fatties": []
+   },
+   "outlets": {
+    "tokens": [
+     "Ragavan, Nimble Pilferer",
+     "Spider-Punk"
+    ],
+    "storm": [
+     "Brain Freeze",
+     "Flusterstorm"
+    ],
+    "draw": [
+     "Thassa's Oracle"
+    ],
+    "counters": [
+     "Rograkh, Son of Rohgahh"
+    ]
+   },
+   "combo_kill": 6,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 15,
+   "repo_finisher_count_today": 1
+  },
+  "mox:8Y4qOAcLN0O_HHYhOboV3Q": {
+   "source": "mox",
+   "id": "8Y4qOAcLN0O_HHYhOboV3Q",
+   "name": "The Magdanomicon - Magda CEDH Primer",
+   "commanders": [
+    "Magda, Brazen Outlaw"
+   ],
+   "card_count": 94,
+   "primer_chars": 790,
+   "pilot_stated_routes": [
+    "combo"
+   ],
+   "detected_routes": [
+    "combo",
+    "alt_win"
+   ],
+   "signals": {
+    "combo": 4,
+    "stax": 2,
+    "mill": 1,
+    "burn": 1,
+    "tokens": 7,
+    "alt_win": 1,
+    "anthem": 1,
+    "voltron_gear": 1,
+    "drain": 0,
+    "poison": 0,
+    "overrun": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "combo": [
+     "Magda, Brazen Outlaw + Clock of Omens + Roaming Throne [via mana]",
+     "Magda, Brazen Outlaw + Battered Golem + Maskwood Nexus [via mana]",
+     "Magda, Brazen Outlaw + Battered Golem + Maskwood Nexus [via mana]",
+     "Battered Golem + Dwarven Bloodboiler + Magda, Brazen Outlaw + Maskwood Nexus [via mana]"
+    ],
+    "stax": [
+     "Sudden Shock",
+     "Grafdigger's Cage"
+    ],
+    "mill": [
+     "Grinding Station"
+    ],
+    "burn": [
+     "Shatterskull Smashing // Shatterskull, the Hammer Pass"
+    ],
+    "tokens": [
+     "Maskwood Nexus",
+     "Urza's Saga",
+     "Sokenzan, Crucible of Defiance",
+     "Clown Car",
+     "Magda, the Hoardmaster",
+     "Kavaron, Memorial World",
+     "Stalactite Dagger"
+    ],
+    "alt_win": [
+     "Knuckles the Echidna"
+    ],
+    "anthem": [
+     "Kavaron, Memorial World"
+    ],
+    "voltron_gear": [
+     "Stalactite Dagger"
+    ],
+    "drain": [],
+    "poison": [],
+    "overrun": [],
+    "fatties": []
+   },
+   "outlets": {
+    "tokens": [
+     "Axgard Cavalry",
+     "Sokenzan, Crucible of Defiance",
+     "Cursed Mirror",
+     "Magda, the Hoardmaster"
+    ],
+    "draw": [
+     "Knuckles the Echidna"
+    ],
+    "mana": [
+     "Shatterskull Smashing // Shatterskull, the Hammer Pass"
+    ],
+    "counters": [
+     "Dwarven Grunt",
+     "Knuckles the Echidna"
+    ]
+   },
+   "combo_kill": 4,
+   "combo_resource_no_outlet": 6,
+   "combo_value": 0,
+   "combo_one_away": 5,
+   "repo_finisher_count_today": 1
+  },
+  "mox:GnqlEhG3IUysVv3ub5EEEQ": {
+   "source": "mox",
+   "id": "GnqlEhG3IUysVv3ub5EEEQ",
+   "name": "Henzie - High Power (NonCedh) ",
+   "commanders": [
+    "Henzie \"Toolbox\" Torre"
+   ],
+   "card_count": 95,
+   "primer_chars": 261,
+   "pilot_stated_routes": [
+    "combat_big",
+    "combo"
+   ],
+   "detected_routes": [
+    "drain",
+    "combat_big"
+   ],
+   "signals": {
+    "voltron_gear": 1,
+    "fatties": 14,
+    "overrun": 1,
+    "drain": 3,
+    "poison": 1,
+    "anthem": 2,
+    "mill": 2,
+    "alt_win": 0,
+    "burn": 0,
+    "tokens": 0
+   },
+   "pieces": {
+    "voltron_gear": [
+     "Skullclamp"
+    ],
+    "fatties": [
+     "Massacre Wurm",
+     "Etali, Primal Conqueror // Etali, Primal Sickness",
+     "Mikaeus, the Unhallowed",
+     "Protean Hulk",
+     "Myojin of Night's Reach",
+     "Deadpool, Trading Card",
+     "Lizard, Connors's Curse",
+     "Junji, the Midnight Sky"
+    ],
+    "overrun": [
+     "Gaea's Cradle"
+    ],
+    "drain": [
+     "Deathrite Shaman",
+     "Gray Merchant of Asphodel",
+     "Kokusho, the Evening Star"
+    ],
+    "poison": [
+     "Etali, Primal Conqueror // Etali, Primal Sickness"
+    ],
+    "anthem": [
+     "Mikaeus, the Unhallowed",
+     "Blossoming Tortoise"
+    ],
+    "mill": [
+     "Tibalt's Trickery",
+     "Necron Deathmark"
+    ],
+    "alt_win": [],
+    "burn": [],
+    "tokens": []
+   },
+   "outlets": {
+    "tokens": [
+     "Henzie \"Toolbox\" Torre",
+     "Mikaeus, the Unhallowed",
+     "Chainer, Nightmare Adept",
+     "Blossoming Tortoise"
+    ],
+    "mana": [
+     "Gray Merchant of Asphodel",
+     "Incinerator of the Guilty"
+    ],
+    "counters": [
+     "Primeval Herald",
+     "Etali, Primal Conqueror // Etali, Primal Sickness",
+     "Mikaeus, the Unhallowed",
+     "Lizard, Connors's Curse"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 1,
+   "combo_value": 0,
+   "combo_one_away": 7,
+   "repo_finisher_count_today": 3
+  },
+  "mox:HYT9YcG0bEK1UMvmEEXtTA": {
+   "source": "mox",
+   "id": "HYT9YcG0bEK1UMvmEEXtTA",
+   "name": "[Cabal] A Faster K'rrik Storm 😈⚡️ (cEDH w/ Primer)",
+   "commanders": [
+    "K'rrik, Son of Yawgmoth"
+   ],
+   "card_count": 85,
+   "primer_chars": 269,
+   "pilot_stated_routes": [
+    "combo"
+   ],
+   "detected_routes": [
+    "combo",
+    "alt_win"
+   ],
+   "signals": {
+    "combo": 1,
+    "voltron_gear": 1,
+    "fatties": 3,
+    "drain": 2,
+    "tokens": 1,
+    "alt_win": 1,
+    "mill": 1,
+    "burn": 0,
+    "poison": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "combo": [
+     "Asmodeus the Archfiend + Necrotic Ooze + Skirge Familiar [via draw,mana]"
+    ],
+    "voltron_gear": [
+     "Animate Dead"
+    ],
+    "fatties": [
+     "Razaketh, the Foulblooded",
+     "Asmodeus the Archfiend",
+     "Hoarding Broodlord"
+    ],
+    "drain": [
+     "Gray Merchant of Asphodel",
+     "Not Dead After All"
+    ],
+    "tokens": [
+     "Urza's Saga"
+    ],
+    "alt_win": [
+     "Doctor Doom, Unrivaled"
+    ],
+    "mill": [
+     "The Master of Lake-town"
+    ],
+    "burn": [],
+    "poison": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "tokens": [
+     "Corpse Dance",
+     "Shallow Grave"
+    ],
+    "draw": [
+     "Doctor Doom, Unrivaled"
+    ],
+    "mana": [
+     "Gray Merchant of Asphodel"
+    ],
+    "counters": [
+     "Xiahou Dun, the One-Eyed",
+     "Razaketh, the Foulblooded",
+     "Cynical Loner"
+    ]
+   },
+   "combo_kill": 1,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 9,
+   "repo_finisher_count_today": 2
+  },
+  "mox:LYykXgfH5k2TEntKKQzIGQ": {
+   "source": "mox",
+   "id": "LYykXgfH5k2TEntKKQzIGQ",
+   "name": "🩸Sephiroth's Singularity🪽",
+   "commanders": [
+    "Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel"
+   ],
+   "card_count": 83,
+   "primer_chars": 545,
+   "pilot_stated_routes": [
+    "combo",
+    "drain"
+   ],
+   "detected_routes": [
+    "combo",
+    "drain"
+   ],
+   "signals": {
+    "combo": 17,
+    "drain": 8,
+    "tokens": 12,
+    "fatties": 2,
+    "voltron_gear": 2,
+    "alt_win": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "combo": [
+     "Gravecrawler + Phyrexian Altar [via death,ltb]",
+     "Pitiless Plunderer + Ashnod's Altar + Reassembling Skeleton [via death,ltb,mana]",
+     "Warren Soultrader + Gravecrawler + Blood Artist",
+     "Pitiless Plunderer + Reassembling Skeleton + Phyrexian Altar [via death,ltb]",
+     "Gravecrawler + Pitiless Plunderer + Ashnod's Altar [via death,ltb,mana]",
+     "Gravecrawler + Pitiless Plunderer + Viscera Seer [via death,ltb]",
+     "Warren Soultrader + Forsaken Miner + Blood Artist",
+     "Warren Soultrader + Gravecrawler + Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel"
+    ],
+    "drain": [
+     "Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel",
+     "Crypt Ghast",
+     "Gray Merchant of Asphodel",
+     "Great Unclean One",
+     "Ayara, First of Locthwain",
+     "Vein Ripper",
+     "Zulaport Cutthroat",
+     "Bolas's Citadel"
+    ],
+    "tokens": [
+     "Tevesh Szat, Doom of Fools",
+     "Urza's Saga",
+     "Jadar, Ghoulcaller of Nephalia",
+     "Black Market Connections",
+     "Great Unclean One",
+     "Biotransference",
+     "Bitterblossom",
+     "Lord Skitter, Sewer King"
+    ],
+    "fatties": [
+     "Drivnod, Carnage Dominus",
+     "Vein Ripper"
+    ],
+    "voltron_gear": [
+     "Skullclamp",
+     "My Precious // Allure of Power"
+    ],
+    "alt_win": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "ltb": [
+     "Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel",
+     "Vein Ripper"
+    ],
+    "death": [
+     "Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel",
+     "Vein Ripper"
+    ],
+    "tokens": [
+     "Tombstone Stairwell",
+     "Timeline Culler"
+    ],
+    "mana": [
+     "Gray Merchant of Asphodel"
+    ],
+    "counters": [
+     "Shizo, Death's Storehouse",
+     "My Precious // Allure of Power"
+    ]
+   },
+   "combo_kill": 17,
+   "combo_resource_no_outlet": 1,
+   "combo_value": 0,
+   "combo_one_away": 29,
+   "repo_finisher_count_today": 5
+  },
+  "mox:OYWg_0g7AkuzUapuc2DPpw": {
+   "source": "mox",
+   "id": "OYWg_0g7AkuzUapuc2DPpw",
+   "name": "Sauron, the Dark Lord",
+   "commanders": [
+    "Sauron, the Dark Lord"
+   ],
+   "card_count": 84,
+   "primer_chars": 262,
+   "pilot_stated_routes": [
+    "combat_voltron"
+   ],
+   "detected_routes": [
+    "combat_voltron"
+   ],
+   "signals": {
+    "fatties": 2,
+    "voltron_gear": 10,
+    "mill": 1,
+    "tokens": 9,
+    "drain": 1,
+    "burn": 2,
+    "alt_win": 0,
+    "poison": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "fatties": [
+     "Sauron, the Dark Lord",
+     "Witch-king of Angmar"
+    ],
+    "voltron_gear": [
+     "Sword of Feast and Famine",
+     "Mask of Riddles",
+     "Nim Deathmantle",
+     "Shadowspear",
+     "Lightning Greaves",
+     "Whispersilk Cloak",
+     "My Precious // Allure of Power",
+     "The Reaver Cleaver"
+    ],
+    "mill": [
+     "Tibalt's Trickery"
+    ],
+    "tokens": [
+     "Urza's Saga",
+     "Black Market Connections",
+     "Lazotep Plating",
+     "Saruman's Trickery",
+     "Corsairs of Umbar",
+     "Mindless Conscription",
+     "Bothersome Noisemaker",
+     "Saruman, the White Hand"
+    ],
+    "drain": [
+     "Monument to Endurance"
+    ],
+    "burn": [
+     "Cool but Rude",
+     "Mount Doom"
+    ],
+    "alt_win": [],
+    "poison": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "tokens": [
+     "Grishnákh, Brash Instigator",
+     "Lightning Greaves"
+    ],
+    "counters": [
+     "Mask of Riddles",
+     "Nim Deathmantle",
+     "Shadowspear",
+     "Corsairs of Umbar"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 7,
+   "repo_finisher_count_today": 1
+  },
+  "mox:OYpsy84lZU-HPrQiW9hmdQ": {
+   "source": "mox",
+   "id": "OYpsy84lZU-HPrQiW9hmdQ",
+   "name": "Grind Them Into Dust - Kinnan Midrange Control: With Primer 💚💙",
+   "commanders": [
+    "Kinnan, Bonder Prodigy"
+   ],
+   "card_count": 99,
+   "primer_chars": 220,
+   "pilot_stated_routes": [
+    "combo"
+   ],
+   "detected_routes": [
+    "combo",
+    "combat_big"
+   ],
+   "signals": {
+    "combo": 8,
+    "fatties": 8,
+    "overrun": 1,
+    "tokens": 1,
+    "stax": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "anthem": 0,
+    "voltron_gear": 0,
+    "extra_combat": 0
+   },
+   "pieces": {
+    "combo": [
+     "Hullbreaker Horror + Sol Ring [via storm]",
+     "Hullbreaker Horror + Mana Vault [via storm]",
+     "Hullbreaker Horror + Mox Amber [via storm]",
+     "Tidespout Tyrant + Sol Ring [via storm]",
+     "Tidespout Tyrant + Mana Vault [via storm]",
+     "Tidespout Tyrant + Mox Amber [via storm]",
+     "Tidespout Tyrant + Mox Opal [via storm]",
+     "Tidespout Tyrant + Grim Monolith [via storm]"
+    ],
+    "fatties": [
+     "Thorn Mammoth",
+     "Nyxbloom Ancient",
+     "Nezahal, Primal Tide",
+     "Hullbreaker Horror",
+     "Colossal Skyturtle",
+     "Tidespout Tyrant",
+     "Void Winnower",
+     "The Unagi of Kyoshi Island"
+    ],
+    "overrun": [
+     "Gaea's Cradle"
+    ],
+    "tokens": [
+     "Into the Flood Maw"
+    ],
+    "stax": [
+     "Void Winnower"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "anthem": [],
+    "voltron_gear": [],
+    "extra_combat": []
+   },
+   "outlets": {
+    "tokens": [
+     "Finale of Devastation"
+    ],
+    "storm": [
+     "Flusterstorm"
+    ],
+    "counters": [
+     "Thorn Mammoth",
+     "Nyxbloom Ancient"
+    ]
+   },
+   "combo_kill": 8,
+   "combo_resource_no_outlet": 3,
+   "combo_value": 0,
+   "combo_one_away": 2,
+   "repo_finisher_count_today": 0
+  },
+  "mox:PCJ2fiiIE0WpLJ6zJ8_Alg": {
+   "source": "mox",
+   "id": "PCJ2fiiIE0WpLJ6zJ8_Alg",
+   "name": "Lotuslight Gardens | Teval, the Balanced Scale",
+   "commanders": [
+    "Teval, the Balanced Scale"
+   ],
+   "card_count": 99,
+   "primer_chars": 295,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combo",
+    "alt_win",
+    "combat_big"
+   ],
+   "signals": {
+    "combo": 2,
+    "tokens": 3,
+    "fatties": 9,
+    "burn": 1,
+    "mill": 3,
+    "alt_win": 1,
+    "voltron_gear": 1,
+    "drain": 2,
+    "overrun": 1,
+    "poison": 0,
+    "anthem": 0,
+    "extra_combat": 0
+   },
+   "pieces": {
+    "combo": [
+     "Shifting Woodland + Aftermath Analyst + Amulet of Vigor + Sylvan Safekeeper [via death,ltb,mana]",
+     "Shifting Woodland + Aftermath Analyst + Zuran Orb + Amulet of Vigor [via death,ltb,mana]"
+    ],
+    "tokens": [
+     "Teval, the Balanced Scale",
+     "Field of the Dead",
+     "Urza's Saga"
+    ],
+    "fatties": [
+     "The Gitrog Monster",
+     "Aesi, Tyrant of Gyre Strait",
+     "Uro, Titan of Nature's Wrath",
+     "Syr Konrad, the Grim",
+     "The Scarab God",
+     "Muldrotha, the Gravetide",
+     "Bonny Pall, Clearcutter",
+     "Colossal Grave-Reaver"
+    ],
+    "burn": [
+     "Syr Konrad, the Grim"
+    ],
+    "mill": [
+     "Syr Konrad, the Grim",
+     "Hedron Crab",
+     "Altar of Dementia"
+    ],
+    "alt_win": [
+     "Laboratory Maniac"
+    ],
+    "voltron_gear": [
+     "Lightning Greaves"
+    ],
+    "drain": [
+     "The Scarab God",
+     "Polluted Cistern // Dim Oubliette"
+    ],
+    "overrun": [
+     "Gaea's Cradle"
+    ],
+    "poison": [],
+    "anthem": [],
+    "extra_combat": []
+   },
+   "outlets": {
+    "ltb": [
+     "Syr Konrad, the Grim"
+    ],
+    "death": [
+     "Syr Konrad, the Grim"
+    ],
+    "tokens": [
+     "Lightning Greaves"
+    ],
+    "draw": [
+     "Laboratory Maniac"
+    ],
+    "mana": [
+     "The Scarab God"
+    ],
+    "counters": [
+     "Shizo, Death's Storehouse",
+     "Archdruid's Charm",
+     "Season of Gathering",
+     "Herd Heirloom"
+    ]
+   },
+   "combo_kill": 2,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 2,
+   "combo_one_away": 12,
+   "repo_finisher_count_today": 2
+  },
+  "mox:SzdzUYguo0CqlPzxSMjI2Q": {
+   "source": "mox",
+   "id": "SzdzUYguo0CqlPzxSMjI2Q",
+   "name": "☠ Yawgmoth Xerox☠ [cEDH Primer]",
+   "commanders": [
+    "Yawgmoth, Thran Physician"
+   ],
+   "card_count": 88,
+   "primer_chars": 364,
+   "pilot_stated_routes": [
+    "combo"
+   ],
+   "detected_routes": [
+    "combo",
+    "drain"
+   ],
+   "signals": {
+    "combo": 9,
+    "tokens": 11,
+    "anthem": 1,
+    "fatties": 1,
+    "drain": 6,
+    "voltron_gear": 1,
+    "alt_win": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0
+   },
+   "pieces": {
+    "combo": [
+     "Warren Soultrader + Gravecrawler + Blood Artist",
+     "Warren Soultrader + Forsaken Miner + Blood Artist",
+     "Warren Soultrader + Gravecrawler + Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel",
+     "Warren Soultrader + Forsaken Miner + Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel",
+     "Mikaeus, the Unhallowed + Warren Soultrader + Blood Artist",
+     "Yawgmoth, Thran Physician + Nest of Scarabs + Blood Artist",
+     "Warren Soultrader + Forsaken Miner + Vengeful Bloodwitch",
+     "Mikaeus, the Unhallowed + Warren Soultrader + Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel"
+    ],
+    "tokens": [
+     "Blight Mound",
+     "Wriggling Grub",
+     "Pawn of Ulamog",
+     "Nest of Scarabs",
+     "Urza's Saga",
+     "Nested Shambler",
+     "Ophiomancer",
+     "Clown Car"
+    ],
+    "anthem": [
+     "Mikaeus, the Unhallowed"
+    ],
+    "fatties": [
+     "Mikaeus, the Unhallowed"
+    ],
+    "drain": [
+     "Geralf's Messenger",
+     "Vengeful Bloodwitch",
+     "Popular Egotist",
+     "Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel",
+     "Zulaport Cutthroat",
+     "Susurian Voidborn"
+    ],
+    "voltron_gear": [
+     "Skullclamp"
+    ],
+    "alt_win": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "overrun": []
+   },
+   "outlets": {
+    "ltb": [
+     "Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel"
+    ],
+    "death": [
+     "Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel"
+    ],
+    "tokens": [
+     "Mikaeus, the Unhallowed"
+    ],
+    "counters": [
+     "Mikaeus, the Unhallowed"
+    ]
+   },
+   "combo_kill": 9,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 27,
+   "repo_finisher_count_today": 1
+  },
+  "mox:V6TB_5VN4E2fFmajDMHgGg": {
+   "source": "mox",
+   "id": "V6TB_5VN4E2fFmajDMHgGg",
+   "name": "🐰Ms. Bumbleflower🌼: Keep calm☮ and draw a card🃏! | Budget EDH💸",
+   "commanders": [
+    "Ms. Bumbleflower"
+   ],
+   "card_count": 93,
+   "primer_chars": 241,
+   "pilot_stated_routes": null,
+   "detected_routes": [],
+   "signals": {
+    "fatties": 1,
+    "tokens": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0,
+    "voltron_gear": 0
+   },
+   "pieces": {
+    "fatties": [
+     "Dreamtide Whale"
+    ],
+    "tokens": [
+     "Parting Gust"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": [],
+    "voltron_gear": []
+   },
+   "outlets": {
+    "tokens": [
+     "Reins of Power"
+    ],
+    "storm": [
+     "Storm Seeker"
+    ],
+    "counters": [
+     "Duelist's Heritage",
+     "Kros, Defense Contractor"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 5,
+   "repo_finisher_count_today": 0
+  },
+  "mox:Vv7rGWqkHkaAa8U5o0H1qQ": {
+   "source": "mox",
+   "id": "Vv7rGWqkHkaAa8U5o0H1qQ",
+   "name": "Edgar Markov Aggro",
+   "commanders": [
+    "Edgar Markov"
+   ],
+   "card_count": 97,
+   "primer_chars": 212,
+   "pilot_stated_routes": [
+    "combat_wide",
+    "drain"
+   ],
+   "detected_routes": [
+    "combo",
+    "drain",
+    "combat_wide"
+   ],
+   "signals": {
+    "combo": 4,
+    "tokens": 5,
+    "drain": 5,
+    "anthem": 3,
+    "voltron_gear": 1,
+    "fatties": 1,
+    "overrun": 1,
+    "burn": 1,
+    "alt_win": 0,
+    "poison": 0,
+    "mill": 0
+   },
+   "pieces": {
+    "combo": [
+     "Vito, Thorn of the Dusk Rose + Exquisite Blood",
+     "Vito, Thorn of the Dusk Rose + Bloodthirsty Conqueror",
+     "Marauding Blight-Priest + Exquisite Blood",
+     "Marauding Blight-Priest + Bloodthirsty Conqueror"
+    ],
+    "tokens": [
+     "Edgar Markov",
+     "Bloodline Keeper // Lord of Lineage",
+     "Black Market Connections",
+     "Preacher of the Schism",
+     "Charismatic Conqueror"
+    ],
+    "drain": [
+     "Cruel Celebrant",
+     "Twilight Prophet",
+     "Sanctum Seeker",
+     "Marauding Blight-Priest",
+     "Vito, Thorn of the Dusk Rose"
+    ],
+    "anthem": [
+     "Captivating Vampire",
+     "Bloodline Keeper // Lord of Lineage",
+     "Vampire Nocturnus"
+    ],
+    "voltron_gear": [
+     "Skullclamp"
+    ],
+    "fatties": [
+     "Bloodthirsty Conqueror"
+    ],
+    "overrun": [
+     "Banner of Kinship"
+    ],
+    "burn": [
+     "Creeping Bloodsucker"
+    ],
+    "alt_win": [],
+    "poison": [],
+    "mill": []
+   },
+   "outlets": {
+    "tokens": [
+     "Edgar Markov",
+     "Captivating Vampire",
+     "Bloodline Keeper // Lord of Lineage",
+     "Vampire Nocturnus"
+    ],
+    "mana": [
+     "Twilight Prophet"
+    ],
+    "lifegain": [
+     "Marauding Blight-Priest"
+    ],
+    "counters": [
+     "Shadow Alley Denizen",
+     "Changeling Outcast",
+     "Akroma's Will",
+     "Vampire Socialite"
+    ]
+   },
+   "combo_kill": 4,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 37,
+   "repo_finisher_count_today": 3
+  },
+  "mox:avv--LFTaEaoReb0MofoeA": {
+   "source": "mox",
+   "id": "avv--LFTaEaoReb0MofoeA",
+   "name": "The Cold-Blooded Flame | Fire Lord Azula",
+   "commanders": [
+    "Fire Lord Azula"
+   ],
+   "card_count": 99,
+   "primer_chars": 405,
+   "pilot_stated_routes": [
+    "combat_big",
+    "combo"
+   ],
+   "detected_routes": [
+    "combo",
+    "burn"
+   ],
+   "signals": {
+    "combo": 1,
+    "burn": 5,
+    "stax": 1,
+    "voltron_gear": 5,
+    "tokens": 3,
+    "fatties": 2,
+    "alt_win": 0,
+    "drain": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0
+   },
+   "pieces": {
+    "combo": [
+     "Fire Lord Azula + Narset's Reversal + Frantic Search [via mana]"
+    ],
+    "burn": [
+     "Delayed Blast Fireball",
+     "Vivi Ornitier",
+     "Lindblum, Industrial Regency // Mage Siege",
+     "Vivi's Persistence",
+     "Traumatic Critique"
+    ],
+    "stax": [
+     "V.A.T.S."
+    ],
+    "voltron_gear": [
+     "Silver Shroud Costume",
+     "Brotherhood Regalia",
+     "Observed Stasis",
+     "Lost in Memories",
+     "Changing Loyalty"
+    ],
+    "tokens": [
+     "Sazacap's Brew",
+     "Lindblum, Industrial Regency // Mage Siege",
+     "Vivi's Persistence"
+    ],
+    "fatties": [
+     "Hullbreaker Horror",
+     "The Unagi of Kyoshi Island"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": []
+   },
+   "outlets": {
+    "tokens": [
+     "Delay",
+     "Arena of Glory"
+    ],
+    "mana": [
+     "Traumatic Critique"
+    ],
+    "counters": [
+     "Shizo, Death's Storehouse",
+     "Silver Shroud Costume",
+     "Brotherhood Regalia"
+    ]
+   },
+   "combo_kill": 1,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 3,
+   "repo_finisher_count_today": 0
+  },
+  "mox:b7JEv8j9d06-BicRKi2Lwg": {
+   "source": "mox",
+   "id": "b7JEv8j9d06-BicRKi2Lwg",
+   "name": "Earn Your 9th Tail: Light-Paws EDH [PRIMER]",
+   "commanders": [
+    "Light-Paws, Emperor's Voice"
+   ],
+   "card_count": 80,
+   "primer_chars": 295,
+   "pilot_stated_routes": [
+    "combat_voltron"
+   ],
+   "detected_routes": [
+    "combat_voltron"
+   ],
+   "signals": {
+    "voltron_gear": 39,
+    "tokens": 2,
+    "stax": 2,
+    "poison": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "voltron_gear": [
+     "All That Glitters",
+     "Gauntlets of Light",
+     "Daybreak Coronet",
+     "Gift of Granite",
+     "Hyena Umbra",
+     "Gryff's Boon",
+     "Saving Grace",
+     "Cho-Manno's Blessing"
+    ],
+    "tokens": [
+     "Cartouche of Solidarity",
+     "Urza's Saga"
+    ],
+    "stax": [
+     "Deafening Silence",
+     "Drannith Magistrate"
+    ],
+    "poison": [
+     "Skrelv, Defector Mite"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": [],
+    "fatties": []
+   },
+   "outlets": {
+    "counters": [
+     "Skrelv, Defector Mite",
+     "Twinblade Blessing"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 5,
+   "repo_finisher_count_today": 1
+  },
+  "mox:bN3w7aafZkqrrMLxjhoFiA": {
+   "source": "mox",
+   "id": "bN3w7aafZkqrrMLxjhoFiA",
+   "name": "$100 Fire Lord Azula: Grixis Storm-y Midrange Combo [Bracket 4 PRIMER!]",
+   "commanders": [
+    "Fire Lord Azula"
+   ],
+   "card_count": 87,
+   "primer_chars": 230,
+   "pilot_stated_routes": [
+    "combo"
+   ],
+   "detected_routes": [
+    "combo"
+   ],
+   "signals": {
+    "combo": 7,
+    "tokens": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0,
+    "voltron_gear": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "combo": [
+     "Dualcaster Mage + Saw in Half [via magecraft,tokens]",
+     "Dualcaster Mage + Electroduplicate",
+     "Fire Lord Azula + Narset's Reversal + Frantic Search [via magecraft]",
+     "Fire Lord Azula + Narset's Reversal + Storm-Kiln Artist [via magecraft]",
+     "Narset's Reversal + Increasing Vengeance [via magecraft]",
+     "Fire Lord Azula + Snap + Dualcaster Mage [via magecraft]",
+     "Narset's Reversal + Flare of Duplication [via magecraft]"
+    ],
+    "tokens": [
+     "Sazacap's Brew"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": [],
+    "voltron_gear": [],
+    "fatties": []
+   },
+   "outlets": {
+    "tokens": [
+     "Delay",
+     "Stormcatch Mentor",
+     "Electroduplicate"
+    ],
+    "magecraft": [
+     "Archmage Emeritus"
+    ]
+   },
+   "combo_kill": 7,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 10,
+   "repo_finisher_count_today": 0
+  },
+  "mox:eZhNMpUEe0aolZbpFJWDdA": {
+   "source": "mox",
+   "id": "eZhNMpUEe0aolZbpFJWDdA",
+   "name": "[PRIMER] 🥘NUTRITIONAL BEATS🥗 | Rocco,Street Chef ",
+   "commanders": [
+    "Rocco, Street Chef"
+   ],
+   "card_count": 99,
+   "primer_chars": 301,
+   "pilot_stated_routes": [
+    "combo",
+    "combat_wide"
+   ],
+   "detected_routes": [
+    "combo",
+    "burn",
+    "combat_wide"
+   ],
+   "signals": {
+    "combo": 1,
+    "overrun": 2,
+    "burn": 4,
+    "poison": 1,
+    "fatties": 2,
+    "tokens": 5,
+    "stax": 2,
+    "alt_win": 0,
+    "drain": 0,
+    "mill": 0,
+    "voltron_gear": 0
+   },
+   "pieces": {
+    "combo": [
+     "Rosie Cotton of South Lane + Basking Broodscale [via counters,mana,tokens]"
+    ],
+    "overrun": [
+     "Gaea's Cradle",
+     "Inspiring Call"
+    ],
+    "burn": [
+     "Volcanic Torrent",
+     "Quintorius Kand",
+     "Dragonhawk, Fate's Tempest",
+     "Delayed Blast Fireball"
+    ],
+    "poison": [
+     "Etali, Primal Conqueror // Etali, Primal Sickness"
+    ],
+    "fatties": [
+     "Etali, Primal Conqueror // Etali, Primal Sickness",
+     "Dragonhawk, Fate's Tempest"
+    ],
+    "tokens": [
+     "Quintorius Kand",
+     "Anim Pakal, Thousandth Moon",
+     "Basking Broodscale",
+     "Ocelot Pride",
+     "Elspeth, Storm Slayer"
+    ],
+    "stax": [
+     "Kutzil, Malamet Exemplar",
+     "Avatar's Wrath"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "mill": [],
+    "voltron_gear": []
+   },
+   "outlets": {
+    "tokens": [
+     "Night of the Sweets' Revenge",
+     "Ragavan, Nimble Pilferer",
+     "Gogo, Mysterious Mime",
+     "Urabrask, Heretic Praetor"
+    ],
+    "mana": [
+     "Volcanic Torrent"
+    ],
+    "counters": [
+     "Etali, Primal Conqueror // Etali, Primal Sickness",
+     "Baylen, the Haymaker",
+     "Stump Stomp // Burnwillow Clearing",
+     "Bridgeworks Battle // Tanglespan Bridgeworks"
+    ]
+   },
+   "combo_kill": 1,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 6,
+   "repo_finisher_count_today": 1
+  },
+  "mox:fRpNvS_9P0St1vOo88x7jg": {
+   "source": "mox",
+   "id": "fRpNvS_9P0St1vOo88x7jg",
+   "name": "Hearthhull, Land Shuffle (Degenerate/Best of 3) ",
+   "commanders": [
+    "Hearthhull, the Worldseed"
+   ],
+   "card_count": 93,
+   "primer_chars": 503,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combo",
+    "burn"
+   ],
+   "signals": {
+    "combo": 22,
+    "drain": 2,
+    "tokens": 4,
+    "burn": 3,
+    "alt_win": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0,
+    "voltron_gear": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "combo": [
+     "Springheart Nantuko + Tireless Provisioner [via landfall]",
+     "Springheart Nantuko + Tireless Provisioner [via landfall]",
+     "Springheart Nantuko + Lotus Cobra [via landfall]",
+     "Springheart Nantuko + Lotus Cobra [via landfall]",
+     "Springheart Nantuko + Nissa, Resurgent Animist [via landfall]",
+     "Springheart Nantuko + Nissa, Resurgent Animist [via landfall]",
+     "Shifting Woodland + Aftermath Analyst + Lotus Cobra + Sylvan Safekeeper [via landfall]",
+     "Ashaya, Soul of the Wild + Quirion Ranger [via landfall]"
+    ],
+    "drain": [
+     "Hearthhull, the Worldseed",
+     "Retreat to Hagra"
+    ],
+    "tokens": [
+     "Urza's Saga",
+     "Springheart Nantuko",
+     "The Earth King",
+     "Mole Man, Moloid Master"
+    ],
+    "burn": [
+     "Sabotender",
+     "Tannuk, Memorial Ensign",
+     "Valakut Exploration"
+    ],
+    "alt_win": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": [],
+    "voltron_gear": [],
+    "fatties": []
+   },
+   "outlets": {
+    "tokens": [
+     "Hearthhull, the Worldseed",
+     "Nissa, Who Shakes the World",
+     "Ba Sing Se",
+     "Rydia, Summoner of Mist"
+    ],
+    "landfall": [
+     "Iridescent Vinelasher",
+     "Sabotender",
+     "Tannuk, Memorial Ensign"
+    ]
+   },
+   "combo_kill": 22,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 7,
+   "combo_one_away": 2,
+   "repo_finisher_count_today": 1
+  },
+  "mox:j1jPk3k4yUKIs8d3LJK5VA": {
+   "source": "mox",
+   "id": "j1jPk3k4yUKIs8d3LJK5VA",
+   "name": " 🦠The Necrobloom🪻 [Primer]",
+   "commanders": [
+    "The Necrobloom"
+   ],
+   "card_count": 99,
+   "primer_chars": 249,
+   "pilot_stated_routes": [
+    "combo",
+    "combat_big"
+   ],
+   "detected_routes": [
+    "combo",
+    "combat_wide"
+   ],
+   "signals": {
+    "combo": 3,
+    "tokens": 4,
+    "overrun": 1,
+    "fatties": 2,
+    "stax": 1,
+    "voltron_gear": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0
+   },
+   "pieces": {
+    "combo": [
+     "Springheart Nantuko + Dryad Arbor + Tireless Provisioner + Lotus Cobra [via tokens]",
+     "Nissa, Resurgent Animist + Dryad Arbor + Lotus Cobra + Springheart Nantuko [via tokens]",
+     "Nissa, Resurgent Animist + Dryad Arbor + Tireless Provisioner + Springheart Nantuko [via tokens]"
+    ],
+    "tokens": [
+     "The Necrobloom",
+     "Return of the Mole Man",
+     "Springheart Nantuko",
+     "Urza's Saga"
+    ],
+    "overrun": [
+     "Gaea's Cradle"
+    ],
+    "fatties": [
+     "Angel of Indemnity",
+     "The Gitrog Monster"
+    ],
+    "stax": [
+     "Ranger-Captain of Eos"
+    ],
+    "voltron_gear": [
+     "Animate Dead"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "mill": []
+   },
+   "outlets": {
+    "tokens": [
+     "Finale of Devastation",
+     "Angel of Indemnity",
+     "Badgermole Cub",
+     "Tyvar, Jubilant Brawler"
+    ],
+    "counters": [
+     "Archdruid's Charm",
+     "Cultivator Colossus"
+    ]
+   },
+   "combo_kill": 3,
+   "combo_resource_no_outlet": 25,
+   "combo_value": 2,
+   "combo_one_away": 4,
+   "repo_finisher_count_today": 0
+  },
+  "mox:sbt8qFFKA0KMHWn8h9pUeg": {
+   "source": "mox",
+   "id": "sbt8qFFKA0KMHWn8h9pUeg",
+   "name": "Kefka budget Competitive High Power",
+   "commanders": [
+    "Kefka, Court Mage // Kefka, Ruler of Ruin"
+   ],
+   "card_count": 86,
+   "primer_chars": 599,
+   "pilot_stated_routes": [
+    "combo"
+   ],
+   "detected_routes": [
+    "combo"
+   ],
+   "signals": {
+    "combo": 3,
+    "fatties": 1,
+    "extra_combat": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "overrun": 0,
+    "anthem": 0,
+    "voltron_gear": 0
+   },
+   "pieces": {
+    "combo": [
+     "Dualcaster Mage + Saw in Half [via tokens]",
+     "Dualcaster Mage + Electroduplicate",
+     "Rionya, Fire Dancer + Combat Celebrant"
+    ],
+    "fatties": [
+     "Hoarding Broodlord"
+    ],
+    "extra_combat": [
+     "Combat Celebrant"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "overrun": [],
+    "anthem": [],
+    "voltron_gear": []
+   },
+   "outlets": {
+    "tokens": [
+     "Delay",
+     "Generator Servant",
+     "Electroduplicate",
+     "Gogo, Mysterious Mime"
+    ],
+    "counters": [
+     "Goldhound"
+    ]
+   },
+   "combo_kill": 3,
+   "combo_resource_no_outlet": 3,
+   "combo_value": 0,
+   "combo_one_away": 16,
+   "repo_finisher_count_today": 0
+  },
+  "mox:skuqS_lbSke63Hfk3WzGwQ": {
+   "source": "mox",
+   "id": "skuqS_lbSke63Hfk3WzGwQ",
+   "name": "Of Tricks and Temptations: Alela, Cunning Conqueror EDH",
+   "commanders": [
+    "Alela, Cunning Conqueror"
+   ],
+   "card_count": 93,
+   "primer_chars": 416,
+   "pilot_stated_routes": null,
+   "detected_routes": [
+    "combat_wide"
+   ],
+   "signals": {
+    "tokens": 6,
+    "anthem": 2,
+    "voltron_gear": 3,
+    "drain": 2,
+    "overrun": 1,
+    "alt_win": 0,
+    "burn": 0,
+    "poison": 0,
+    "mill": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "tokens": [
+     "Alela, Cunning Conqueror",
+     "Bitterbloom Bearer",
+     "Glen Elendra's Answer",
+     "Bitterblossom",
+     "Notorious Throng",
+     "Emrakul's Messenger"
+    ],
+    "anthem": [
+     "Scion of Oona",
+     "Glen Elendra Liege"
+    ],
+    "voltron_gear": [
+     "Sword of Feast and Famine",
+     "Dowsing Dagger // Lost Vale",
+     "Sword of Hearth and Home"
+    ],
+    "drain": [
+     "Faerie Bladecrafter",
+     "Obyra, Dreaming Duelist"
+    ],
+    "overrun": [
+     "Banner of Kinship"
+    ],
+    "alt_win": [],
+    "burn": [],
+    "poison": [],
+    "mill": [],
+    "fatties": []
+   },
+   "outlets": {
+    "tokens": [
+     "Scion of Oona",
+     "Whip of Erebos",
+     "Glen Elendra Liege"
+    ],
+    "storm": [
+     "Flusterstorm"
+    ],
+    "mana": [
+     "Faerie Bladecrafter"
+    ],
+    "counters": [
+     "Waterbender Ascension"
+    ]
+   },
+   "combo_kill": 0,
+   "combo_resource_no_outlet": 0,
+   "combo_value": 0,
+   "combo_one_away": 4,
+   "repo_finisher_count_today": 1
+  },
+  "mox:tj910qUf9Uq-Iibp40QfKw": {
+   "source": "mox",
+   "id": "tj910qUf9Uq-Iibp40QfKw",
+   "name": "[cEDH] To Infinity & Beyond",
+   "commanders": [
+    "Elsha of the Infinite"
+   ],
+   "card_count": 99,
+   "primer_chars": 237,
+   "pilot_stated_routes": [
+    "combo"
+   ],
+   "detected_routes": [
+    "combo"
+   ],
+   "signals": {
+    "combo": 6,
+    "mill": 2,
+    "stax": 2,
+    "tokens": 1,
+    "alt_win": 0,
+    "drain": 0,
+    "burn": 0,
+    "poison": 0,
+    "overrun": 0,
+    "anthem": 0,
+    "voltron_gear": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "combo": [
+     "Underworld Breach + Lotus Petal + Brain Freeze",
+     "Underworld Breach + Lion's Eye Diamond + Brain Freeze",
+     "Underworld Breach + Wheel of Fortune + Jeska's Will [via storm]",
+     "Underworld Breach + Lion's Eye Diamond + Wheel of Fortune [via storm]",
+     "Birgi, God of Storytelling // Harnfel, Horn of Bounty + Sensei's Divining Top + Helm of Awakening [via storm]",
+     "Birgi, God of Storytelling // Harnfel, Horn of Bounty + Sensei's Divining Top + Artist's Talent [via storm]"
+    ],
+    "mill": [
+     "Brain Freeze",
+     "Codex Shredder"
+    ],
+    "stax": [
+     "Silence",
+     "Orim's Chant"
+    ],
+    "tokens": [
+     "Into the Flood Maw"
+    ],
+    "alt_win": [],
+    "drain": [],
+    "burn": [],
+    "poison": [],
+    "overrun": [],
+    "anthem": [],
+    "voltron_gear": [],
+    "fatties": []
+   },
+   "outlets": {
+    "tokens": [
+     "Claim the Firstborn",
+     "Ragavan, Nimble Pilferer"
+    ],
+    "storm": [
+     "Brain Freeze",
+     "Flusterstorm"
+    ],
+    "counters": [
+     "Manifold Key"
+    ]
+   },
+   "combo_kill": 6,
+   "combo_resource_no_outlet": 1,
+   "combo_value": 0,
+   "combo_one_away": 2,
+   "repo_finisher_count_today": 0
+  },
+  "mox:xmH0i1HMHUi2iCd279RYPA": {
+   "source": "mox",
+   "id": "xmH0i1HMHUi2iCd279RYPA",
+   "name": "[CABLE] Clockside Outlawed",
+   "commanders": [
+    "Magda, Brazen Outlaw"
+   ],
+   "card_count": 95,
+   "primer_chars": 867,
+   "pilot_stated_routes": [
+    "combo",
+    "combat_big"
+   ],
+   "detected_routes": [
+    "combo"
+   ],
+   "signals": {
+    "combo": 4,
+    "stax": 2,
+    "burn": 2,
+    "drain": 1,
+    "tokens": 7,
+    "mill": 1,
+    "anthem": 1,
+    "voltron_gear": 1,
+    "alt_win": 0,
+    "poison": 0,
+    "overrun": 0,
+    "fatties": 0
+   },
+   "pieces": {
+    "combo": [
+     "Magda, Brazen Outlaw + Clock of Omens + Roaming Throne [via mana]",
+     "Magda, Brazen Outlaw + Battered Golem + Maskwood Nexus [via mana]",
+     "Magda, Brazen Outlaw + Battered Golem + Maskwood Nexus [via mana]",
+     "Battered Golem + Dwarven Bloodboiler + Magda, Brazen Outlaw + Maskwood Nexus [via mana]"
+    ],
+    "stax": [
+     "Grafdigger's Cage",
+     "Sudden Shock"
+    ],
+    "burn": [
+     "Ramunap Ruins",
+     "Shatterskull Smashing // Shatterskull, the Hammer Pass"
+    ],
+    "drain": [
+     "God-Pharaoh's Statue"
+    ],
+    "tokens": [
+     "Maskwood Nexus",
+     "Urza's Saga",
+     "Clown Car",
+     "Magda, the Hoardmaster",
+     "Legion Extruder",
+     "Kavaron, Memorial World",
+     "Stalactite Dagger"
+    ],
+    "mill": [
+     "Tibalt's Trickery"
+    ],
+    "anthem": [
+     "Kavaron, Memorial World"
+    ],
+    "voltron_gear": [
+     "Stalactite Dagger"
+    ],
+    "alt_win": [],
+    "poison": [],
+    "overrun": [],
+    "fatties": []
+   },
+   "outlets": {
+    "tokens": [
+     "Magda, the Hoardmaster",
+     "Molten Duplication",
+     "Gogo, Mysterious Mime",
+     "Kavaron, Memorial World"
+    ],
+    "mana": [
+     "Shatterskull Smashing // Shatterskull, the Hammer Pass"
+    ],
+    "counters": [
+     "Dwarven Grunt"
+    ]
+   },
+   "combo_kill": 4,
+   "combo_resource_no_outlet": 5,
+   "combo_value": 0,
+   "combo_one_away": 5,
+   "repo_finisher_count_today": 1
+  }
+ }
+}
